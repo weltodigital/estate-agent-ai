@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+.next
+.turbo
+coverage
+.venv
+pnpm-lock.yaml
+*.min.*
+packages/db/src/types.ts

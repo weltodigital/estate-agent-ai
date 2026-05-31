@@ -1,0 +1,5 @@
+:root {
+  /* Default brand colours — overridden per-agency at runtime via inline style. */
+  --brand-primary: #0f172a;
+  --brand-secondary: #e2e8f0;
+}

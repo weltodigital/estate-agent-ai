@@ -1,0 +1,14 @@
+{
+  "name": "ai-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Wrapper package so Turbo can drive uv-based scripts.",
+  "scripts": {
+    "dev": "uv run uvicorn app.main:app --reload --port 8000",
+    "build": "echo \"Python service — built via Docker\" && exit 0",
+    "lint": "uv run ruff check .",
+    "typecheck": "uv run mypy app",
+    "test": "uv run pytest -q",
+    "clean": "rm -rf .venv .pytest_cache .mypy_cache .ruff_cache"
+  }
+}
