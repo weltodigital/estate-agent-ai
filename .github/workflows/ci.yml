@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  node:
-    name: TS — lint / typecheck / test / build
+  ci:
+    name: Lint / typecheck / test / build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +26,19 @@ jobs:
           node-version: 20.11.0
           cache: pnpm
 
-      - name: Install
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync Python deps (ai-orchestrator)
+        working-directory: services/ai-orchestrator
+        run: uv sync
+
+      - name: Install Node deps
         run: pnpm install --frozen-lockfile
 
       - name: Lint
@@ -40,32 +52,3 @@ jobs:
 
       - name: Build
         run: pnpm build
-
-  python:
-    name: Python — lint / typecheck / test
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: services/ai-orchestrator
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: latest
-
-      - name: Set up Python
-        run: uv python install 3.12
-
-      - name: Sync deps
-        run: uv sync
-
-      - name: Ruff
-        run: uv run ruff check .
-
-      - name: Mypy
-        run: uv run mypy app
-
-      - name: Pytest
-        run: uv run pytest -q
