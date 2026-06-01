@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
@@ -12,22 +12,58 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Photo } from "@app/shared/schemas";
+import { PHOTO_ENHANCEMENTS, type Photo, type PhotoEnhancement } from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
+import { BeforeAfterSlider } from "./before-after-slider";
+
+const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
+  sky_replacement: "Sky replacement",
+  object_removal: "Object removal",
+  gdpr_blur: "GDPR blur (faces & plates)",
+  exposure_correction: "Exposure correction",
+  dusk_shot: "Dusk shot (extra image)",
+};
 
 export function PhotoManager({ propertyId }: { propertyId: string }) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [chosen, setChosen] = useState<Set<PhotoEnhancement>>(new Set(["exposure_correction"]));
+  const [enhanceError, setEnhanceError] = useState<string | null>(null);
+  const [inFlight, setInFlight] = useState<Map<string, Set<PhotoEnhancement>>>(new Map());
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.photos(propertyId),
     queryFn: () => photoApi.list(propertyId),
+    // Poll only while something is in flight. Stops paying for refetches once
+    // every queued enhancement has shown up on the row.
+    refetchInterval: inFlight.size > 0 ? 3000 : false,
   });
 
   const photos = data?.items ?? [];
+
+  // Clear in-flight markers once the photo row actually contains every
+  // enhancement we asked for (the callback has landed).
+  useMemo(() => {
+    if (inFlight.size === 0) return;
+    const next = new Map(inFlight);
+    let changed = false;
+    for (const photo of photos) {
+      const wanted = next.get(photo.id);
+      if (!wanted) continue;
+      const have = new Set(photo.enhancements_applied);
+      const stillMissing = [...wanted].some((e) => !have.has(e));
+      if (!stillMissing) {
+        next.delete(photo.id);
+        changed = true;
+      }
+    }
+    if (changed) setInFlight(next);
+  }, [photos, inFlight]);
 
   const reorder = useMutation({
     mutationFn: (photoIds: string[]) => photoApi.reorder(propertyId, { photo_ids: photoIds }),
@@ -88,6 +124,49 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
     }
   }
 
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleChosen(value: PhotoEnhancement) {
+    setChosen((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  }
+
+  async function runEnhance(ids: string[]) {
+    setEnhanceError(null);
+    if (ids.length === 0 || chosen.size === 0) {
+      setEnhanceError("Pick at least one photo and one enhancement.");
+      return;
+    }
+    const enhancements = Array.from(chosen);
+    try {
+      await Promise.all(ids.map((id) => photoApi.enhance(id, { enhancements })));
+      setInFlight((prev) => {
+        const next = new Map(prev);
+        for (const id of ids) {
+          const existing = next.get(id) ?? new Set<PhotoEnhancement>();
+          for (const e of enhancements) existing.add(e);
+          next.set(id, existing);
+        }
+        return next;
+      });
+      setSelected(new Set());
+      setDialogOpen(false);
+    } catch (err) {
+      setEnhanceError(err instanceof Error ? err.message : "Could not enqueue enhancements.");
+    }
+  }
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -113,6 +192,33 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
         </p>
       ) : null}
 
+      {selected.size > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-300 bg-slate-50 px-3 py-2">
+          <span className="text-sm">{selected.size} selected</span>
+          <div className="flex gap-2">
+            <Button onClick={() => setDialogOpen(true)}>Enhance selected</Button>
+            <Button variant="outline" onClick={() => setSelected(new Set())}>
+              Clear
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {dialogOpen ? (
+        <EnhanceDialog
+          chosen={chosen}
+          onToggle={toggleChosen}
+          onClose={() => setDialogOpen(false)}
+          onSubmit={() => runEnhance(Array.from(selected))}
+        />
+      ) : null}
+
+      {enhanceError ? (
+        <p role="alert" className="text-sm text-red-600">
+          {enhanceError}
+        </p>
+      ) : null}
+
       {isLoading ? (
         <p className="text-sm text-slate-500">Loading photos…</p>
       ) : photos.length === 0 ? (
@@ -125,6 +231,13 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
                 <SortablePhoto
                   key={photo.id}
                   photo={photo}
+                  isSelected={selected.has(photo.id)}
+                  isProcessing={inFlight.has(photo.id)}
+                  onToggleSelect={() => toggleSelected(photo.id)}
+                  onEnhanceJustThis={() => {
+                    setDialogOpen(true);
+                    setSelected(new Set([photo.id]));
+                  }}
                   onSetPrimary={() =>
                     update.mutate({ id: photo.id, payload: { is_primary: true } })
                   }
@@ -141,18 +254,66 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
   );
 }
 
+function EnhanceDialog({
+  chosen,
+  onToggle,
+  onClose,
+  onSubmit,
+}: {
+  chosen: Set<PhotoEnhancement>;
+  onToggle: (value: PhotoEnhancement) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-slate-300 bg-white p-4 shadow-sm">
+      <header className="mb-3 flex items-center justify-between">
+        <h3 className="font-semibold">Enhance photos</h3>
+        <button type="button" onClick={onClose} className="text-sm text-slate-500">
+          Cancel
+        </button>
+      </header>
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+        {PHOTO_ENHANCEMENTS.map((value) => (
+          <label
+            key={value}
+            className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
+          >
+            <input type="checkbox" checked={chosen.has(value)} onChange={() => onToggle(value)} />
+            <span>{ENHANCEMENT_LABELS[value]}</span>
+          </label>
+        ))}
+      </div>
+      <div className="mt-3 flex justify-end">
+        <Button onClick={onSubmit}>Run enhancements</Button>
+      </div>
+    </div>
+  );
+}
+
 function SortablePhoto({
   photo,
+  isSelected,
+  isProcessing,
+  onToggleSelect,
+  onEnhanceJustThis,
   onSetPrimary,
   onDelete,
 }: {
   photo: Photo;
+  isSelected: boolean;
+  isProcessing: boolean;
+  onToggleSelect: () => void;
+  onEnhanceJustThis: () => void;
   onSetPrimary: () => void;
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: photo.id,
   });
+  const [showCompare, setShowCompare] = useState(false);
+  const hasEnhanced = Boolean(photo.enhanced_url);
+
   return (
     <div
       ref={setNodeRef}
@@ -163,16 +324,51 @@ function SortablePhoto({
       }}
       className="group relative overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm"
     >
-      <img
-        src={photo.original_url}
-        alt=""
-        className="aspect-[4/3] w-full cursor-grab object-cover"
-        {...attributes}
-        {...listeners}
-      />
+      <label className="absolute left-2 top-2 z-10 flex h-6 w-6 cursor-pointer items-center justify-center rounded bg-white/90 shadow">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          aria-label="Select photo"
+        />
+      </label>
+      {isProcessing ? (
+        <span className="absolute right-2 top-2 z-10 rounded bg-black/60 px-2 py-0.5 text-xs text-white">
+          Processing…
+        </span>
+      ) : null}
+
+      {showCompare && photo.enhanced_url ? (
+        <BeforeAfterSlider before={photo.original_url} after={photo.enhanced_url} />
+      ) : (
+        <img
+          src={photo.enhanced_url ?? photo.original_url}
+          alt=""
+          className="aspect-[4/3] w-full cursor-grab object-cover"
+          {...attributes}
+          {...listeners}
+        />
+      )}
+
       <div className="flex items-center justify-between px-3 py-2 text-xs">
         <span>{photo.is_primary ? "Primary" : photo.room_type.replace("_", " ")}</span>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {hasEnhanced ? (
+            <button
+              type="button"
+              onClick={() => setShowCompare((v) => !v)}
+              className="text-slate-600 underline"
+            >
+              {showCompare ? "Hide compare" : "Compare"}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onEnhanceJustThis}
+            className="text-[color:var(--brand-primary)] underline"
+          >
+            Enhance
+          </button>
           {!photo.is_primary ? (
             <button
               type="button"

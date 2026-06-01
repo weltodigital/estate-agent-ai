@@ -2,12 +2,14 @@ import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
   enhancePhotoRequestSchema,
+  enhancePhotoResponseSchema,
   photoSchema,
   stagePhotoRequestSchema,
   updatePhotoSchema,
 } from "@app/shared/schemas";
 import { notImplemented } from "../errors.js";
 import { deletePhoto, updatePhoto } from "../services/photos.js";
+import { enqueuePhotoEnhance } from "../services/photo-enhancements.js";
 
 const photoParams = z.object({ id: z.string().uuid() });
 
@@ -32,9 +34,17 @@ export const photoRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/photos/:id/enhance",
-    { schema: { params: photoParams, body: enhancePhotoRequestSchema } },
-    async () => {
-      throw notImplemented("POST /v1/photos/:id/enhance");
+    {
+      schema: {
+        params: photoParams,
+        body: enhancePhotoRequestSchema,
+        response: { 202: enhancePhotoResponseSchema },
+      },
+    },
+    async (request, reply) => {
+      const result = await enqueuePhotoEnhance(request, request.params.id, request.body);
+      reply.code(202);
+      return result;
     },
   );
 

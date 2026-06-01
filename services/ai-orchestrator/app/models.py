@@ -28,6 +28,9 @@ class StagingGenerateRequest(BaseModel):
 
 
 class PhotoEnhanceRequest(BaseModel):
+    photo_id: str
+    agency_id: str
+    property_id: str | None = None
     photo_url: HttpUrl
     enhancements: list[
         Literal[

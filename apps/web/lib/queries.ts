@@ -2,6 +2,8 @@
 
 import type {
   CreatePropertyRequest,
+  EnhancePhotoRequest,
+  EnhancePhotoResponse,
   EpcLookupResponse,
   PhotosListResponse,
   Photo,
@@ -60,6 +62,8 @@ export const photoApi = {
       method: "PATCH",
       body,
     }),
+  enhance: (id: string, body: EnhancePhotoRequest) =>
+    callApi<EnhancePhotoResponse>(`/v1/photos/${id}/enhance`, { method: "POST", body }),
 };
 
 export const epcApi = {

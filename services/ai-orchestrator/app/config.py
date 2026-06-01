@@ -15,7 +15,16 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
     aws_region: str = "eu-west-2"
 
+    # Shared HMAC secret for orchestrator -> API callbacks.
     ai_callback_secret: str = ""
+
+    # Cloudflare R2 (S3-compatible) — orchestrator uploads enhanced/staged
+    # outputs directly, then POSTs the resulting URL to the API.
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = ""
+    r2_public_base_url: str = ""
 
 
 def get_settings() -> Settings:

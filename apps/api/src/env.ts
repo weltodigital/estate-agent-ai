@@ -15,6 +15,7 @@ const envSchema = z.object({
 
   AI_ORCHESTRATOR_URL: z.string().url(),
   AI_CALLBACK_SECRET: z.string().min(1).optional(),
+  API_PUBLIC_BASE_URL: z.string().url().default("http://localhost:3001"),
 
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   CLAUDE_DEFAULT_MODEL: z.string().default("claude-sonnet-4-6"),

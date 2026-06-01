@@ -49,20 +49,42 @@ export const updatePhotoSchema = z
   .partial();
 export type UpdatePhotoRequest = z.infer<typeof updatePhotoSchema>;
 
+export const PHOTO_ENHANCEMENTS = [
+  "sky_replacement",
+  "object_removal",
+  "gdpr_blur",
+  "exposure_correction",
+  "dusk_shot",
+] as const;
+export type PhotoEnhancement = (typeof PHOTO_ENHANCEMENTS)[number];
+
 export const enhancePhotoRequestSchema = z.object({
-  enhancements: z
-    .array(
-      z.enum([
-        "sky_replacement",
-        "object_removal",
-        "gdpr_blur",
-        "exposure_correction",
-        "dusk_shot",
-      ]),
-    )
-    .min(1),
+  enhancements: z.array(z.enum(PHOTO_ENHANCEMENTS)).min(1),
 });
 export type EnhancePhotoRequest = z.infer<typeof enhancePhotoRequestSchema>;
+
+export const enhancePhotoResponseSchema = z.object({
+  photo_id: z.string().uuid(),
+  job_id: z.string(),
+  status: z.literal("queued"),
+});
+export type EnhancePhotoResponse = z.infer<typeof enhancePhotoResponseSchema>;
+
+/**
+ * The orchestrator POSTs this payload back to the API once an enhancement
+ * job finishes. The body is signed with HMAC-SHA256(AI_CALLBACK_SECRET) and
+ * sent in the X-Orchestrator-Signature header (sha256=<hex>).
+ */
+export const photoEnhancedCallbackSchema = z.object({
+  photo_id: z.string().uuid(),
+  agency_id: z.string().uuid(),
+  enhancements_applied: z.array(z.enum(PHOTO_ENHANCEMENTS)),
+  enhanced_url: z.string().url().nullable(),
+  dusk_url: z.string().url().nullable(),
+  status: z.enum(["complete", "failed"]),
+  error: z.string().nullable().optional(),
+});
+export type PhotoEnhancedCallback = z.infer<typeof photoEnhancedCallbackSchema>;
 
 export const stagePhotoRequestSchema = z.object({
   style: z.enum(STAGING_STYLES),

@@ -1,16 +1,33 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 
 from app.models import JobAccepted, JobStatusResponse, PhotoEnhanceRequest
+from app.services.photo_enhance import run_photo_enhance_job
 
 router = APIRouter()
 
 
 @router.post("/enhance", response_model=JobAccepted)
-async def enhance(_request: PhotoEnhanceRequest) -> JobAccepted:
-    """Stub. Phase-1/5 orchestrates ClipDrop + Sharp + Rekognition."""
-    return JobAccepted(job_id="stub")
+async def enhance(
+    request: PhotoEnhanceRequest,
+    background: BackgroundTasks,
+) -> JobAccepted:
+    """Queues a photo-enhancement job. The work runs in a background task
+    (Pillow for exposure / GDPR blur, TODO ClipDrop + Replicate for the rest)
+    and POSTs the resulting URLs back to `callback_url` signed with HMAC."""
+    job_id = f"photo-enhance:{request.photo_id}"
+    background.add_task(
+        run_photo_enhance_job,
+        photo_id=request.photo_id,
+        agency_id=request.agency_id,
+        photo_url=str(request.photo_url),
+        enhancements=list(request.enhancements),
+        callback_url=str(request.callback_url),
+    )
+    return JobAccepted(job_id=job_id)
 
 
 @router.get("/{job_id}", response_model=JobStatusResponse)
 async def status(job_id: str) -> JobStatusResponse:
-    return JobStatusResponse(job_id=job_id, status="queued", detail="stub")
+    # We don't persist job state — the API gets the outcome via callback.
+    # This endpoint is kept for parity with the other queues.
+    return JobStatusResponse(job_id=job_id, status="processing", detail="callback-driven")

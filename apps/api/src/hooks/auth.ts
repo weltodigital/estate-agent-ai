@@ -13,7 +13,11 @@ declare module "fastify" {
   }
 }
 
-const PUBLIC_PATHS = new Set<string>(["/healthz", "/v1/webhooks/stripe"]);
+const PUBLIC_PATHS = new Set<string>([
+  "/healthz",
+  "/v1/webhooks/stripe",
+  "/v1/webhooks/orchestrator/photo-enhanced",
+]);
 
 /**
  * Routes that need a Supabase session but where the user has no public.users

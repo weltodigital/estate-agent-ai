@@ -11,6 +11,8 @@ dependencies = [
   "pydantic-settings>=2.5.0",
   "anthropic>=0.34.0",
   "python-multipart>=0.0.10",
+  "pillow>=10.4.0",
+  "boto3>=1.35.0",
 ]
 
 [tool.uv]
@@ -51,7 +53,7 @@ plugins = ["pydantic.mypy"]
 warn_unused_configs = true
 
 [[tool.mypy.overrides]]
-module = ["anthropic.*"]
+module = ["anthropic.*", "boto3.*", "botocore.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
