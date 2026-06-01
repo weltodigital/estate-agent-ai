@@ -20,6 +20,7 @@ import {
 } from "../integrations/r2.js";
 import { getServiceClient, getUserClient } from "../integrations/supabase.js";
 import { floorPlanParseQueue } from "../queues/floor-plan-parse.js";
+import { assertWithinQuota } from "./quota.js";
 import { recordUsageEvent } from "./usage.js";
 
 function buildSketchKey(args: {
@@ -141,6 +142,12 @@ export async function enqueueFloorPlanParse(
   id: string,
 ): Promise<ParseFloorPlanResponse> {
   if (!request.user || !request.agencyId) throw unauthorised();
+
+  await assertWithinQuota({
+    agencyId: request.agencyId,
+    eventType: "floor_plan_created",
+  });
+
   const supabase = getUserClient(request.user.accessToken);
 
   const { data, error } = await supabase

@@ -3,6 +3,7 @@ import type { EpcLookupResponse } from "@app/shared/schemas";
 import { AppError, unauthorised } from "../errors.js";
 import { EpcNotConfiguredError, searchByPostcode, type EpcLookupRow } from "../integrations/epc.js";
 import { getServiceClient } from "../integrations/supabase.js";
+import { assertWithinQuota } from "./quota.js";
 import { recordUsageEvent } from "./usage.js";
 
 type EpcCacheRow = { postcode_normalised: string; results: EpcLookupRow[]; expires_at: string };
@@ -27,6 +28,9 @@ export async function lookupEpcByPostcode(
   const normalised = normalisePostcode(postcode);
   const supabase = getServiceClient();
 
+  // Cache hits don't burn quota — only a true upstream call does. We check
+  // before the upstream below if we miss the cache.
+
   const { data: cached } = await supabase
     .from("epc_cache")
     .select("postcode_normalised, results, expires_at")
@@ -36,6 +40,12 @@ export async function lookupEpcByPostcode(
   if (cached && new Date(cached.expires_at) > new Date()) {
     return { results: cached.results };
   }
+
+  // Cache miss — this counts against the quota.
+  await assertWithinQuota({
+    agencyId: request.agencyId,
+    eventType: "epc_lookup",
+  });
 
   let rows: EpcLookupRow[];
   try {

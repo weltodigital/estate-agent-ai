@@ -9,6 +9,7 @@ import type {
 import { AppError, badRequest, notFound, unauthorised } from "../errors.js";
 import { getUserClient } from "../integrations/supabase.js";
 import { lookupEpcByPostcode } from "./epc.js";
+import { assertWithinQuota } from "./quota.js";
 import { recordUsageEvent } from "./usage.js";
 
 export async function listProperties(
@@ -63,6 +64,12 @@ export async function createProperty(
   payload: CreatePropertyRequest,
 ): Promise<Property> {
   if (!request.user || !request.agencyId) throw unauthorised();
+
+  await assertWithinQuota({
+    agencyId: request.agencyId,
+    eventType: "listing_created",
+  });
+
   const supabase = getUserClient(request.user.accessToken);
 
   // RLS asserts agency match; we still set it explicitly so the insert isn't

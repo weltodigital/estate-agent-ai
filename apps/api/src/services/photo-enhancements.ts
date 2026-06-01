@@ -7,6 +7,7 @@ import type {
 import { AppError, notFound, unauthorised } from "../errors.js";
 import { photoEnhanceQueue } from "../queues/photo-enhance.js";
 import { getServiceClient, getUserClient } from "../integrations/supabase.js";
+import { assertWithinQuota } from "./quota.js";
 import { recordUsageEvent } from "./usage.js";
 
 /**
@@ -19,6 +20,13 @@ export async function enqueuePhotoEnhance(
   payload: EnhancePhotoRequest,
 ): Promise<EnhancePhotoResponse> {
   if (!request.user || !request.agencyId) throw unauthorised();
+
+  await assertWithinQuota({
+    agencyId: request.agencyId,
+    eventType: "photo_enhanced",
+    units: payload.enhancements.length,
+  });
+
   const supabase = getUserClient(request.user.accessToken);
 
   // Confirm the photo exists in this agency. RLS will hide foreign photos.

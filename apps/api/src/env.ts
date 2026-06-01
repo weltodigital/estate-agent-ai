@@ -40,6 +40,14 @@ const envSchema = z.object({
   STRIPE_PRICE_PRO: z.string().min(1).optional(),
   STRIPE_PRICE_BUSINESS: z.string().min(1).optional(),
   STRIPE_PRICE_AGENCY: z.string().min(1).optional(),
+
+  // Sentry
+  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+
+  // Rate limiting
+  RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(60_000),
 });
 
 export type Env = z.infer<typeof envSchema>;

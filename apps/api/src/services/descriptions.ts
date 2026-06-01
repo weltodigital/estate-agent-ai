@@ -3,6 +3,7 @@ import type { GenerateDescriptionRequest, Property } from "@app/shared/schemas";
 import { AppError, unauthorised } from "../errors.js";
 import { ClaudeNotConfiguredError, defaultModel, getClaude } from "../integrations/claude.js";
 import { getProperty } from "./properties.js";
+import { assertWithinQuota } from "./quota.js";
 import { recordUsageEvent } from "./usage.js";
 
 const TONE_GUIDANCE: Record<GenerateDescriptionRequest["tone"], string> = {
@@ -80,6 +81,11 @@ export async function streamDescription(
   onChunk: (text: string) => void,
 ): Promise<void> {
   if (!request.user || !request.agencyId) throw unauthorised();
+
+  await assertWithinQuota({
+    agencyId: request.agencyId,
+    eventType: "description_generated",
+  });
 
   // RLS-guarded fetch — confirms the caller owns this property.
   const property = await getProperty(request, propertyId);

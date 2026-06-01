@@ -8,6 +8,7 @@ import type {
 import { AppError, badRequest, notFound, unauthorised } from "../errors.js";
 import { stagingGenerateQueue } from "../queues/staging-generate.js";
 import { getServiceClient, getUserClient } from "../integrations/supabase.js";
+import { assertWithinQuota } from "./quota.js";
 import { recordUsageEvent } from "./usage.js";
 
 export async function enqueueStaging(
@@ -16,6 +17,13 @@ export async function enqueueStaging(
   payload: StagePhotoRequest,
 ): Promise<StagePhotoResponse> {
   if (!request.user || !request.agencyId) throw unauthorised();
+
+  await assertWithinQuota({
+    agencyId: request.agencyId,
+    eventType: "staging_generated",
+    units: payload.variations,
+  });
+
   const supabase = getUserClient(request.user.accessToken);
   const { data: photo, error } = await supabase
     .from("property_photos")
