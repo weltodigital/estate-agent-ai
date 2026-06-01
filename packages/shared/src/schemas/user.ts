@@ -22,3 +22,14 @@ export const inviteUserRequestSchema = z.object({
   branch_id: z.string().uuid().nullable(),
 });
 export type InviteUserRequest = z.infer<typeof inviteUserRequestSchema>;
+
+export const usersListResponseSchema = z.object({
+  items: z.array(userSchema),
+});
+export type UsersListResponse = z.infer<typeof usersListResponseSchema>;
+
+export const updateUserRequestSchema = z.object({
+  role: z.enum(USER_ROLES).optional(),
+  branch_id: z.string().uuid().nullable().optional(),
+});
+export type UpdateUserRequest = z.infer<typeof updateUserRequestSchema>;

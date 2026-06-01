@@ -1,11 +1,16 @@
 "use client";
 
 import type {
+  Agency,
+  AgencyLogoUploadRequest,
+  AgencyLogoUploadResponse,
   BillingStatusResponse,
   CheckoutSessionRequest,
   CheckoutSessionResponse,
   CreateFloorPlanRequest,
   CreateFloorPlanResponse,
+  CreateInviteRequest,
+  CreateInviteResponse,
   CreatePropertyRequest,
   EnhancePhotoRequest,
   EnhancePhotoResponse,
@@ -14,6 +19,7 @@ import type {
   FloorPlan,
   FloorPlanParsed,
   FloorPlansListResponse,
+  Invite,
   ParseFloorPlanResponse,
   PhotosListResponse,
   Photo,
@@ -26,10 +32,14 @@ import type {
   StagePhotoRequest,
   StagePhotoResponse,
   SuggestStyleResponse,
+  UpdateAgencyRequest,
   UpdatePhotoRequest,
   UpdatePropertyRequest,
+  UpdateUserRequest,
   UploadPhotoSignedRequest,
   UploadPhotoSignedResponse,
+  User,
+  UsersListResponse,
 } from "@app/shared/schemas";
 import { callApi } from "./api-client";
 
@@ -91,6 +101,27 @@ export const photoApi = {
   clearStaging: (id: string) => callApi<null>(`/v1/photos/${id}/staging`, { method: "DELETE" }),
   suggestStyle: (id: string) =>
     callApi<SuggestStyleResponse>(`/v1/photos/${id}/suggest-style`, { method: "POST" }),
+};
+
+export const agencyApi = {
+  me: () => callApi<Agency>("/v1/agencies/me"),
+  update: (body: UpdateAgencyRequest) =>
+    callApi<Agency>("/v1/agencies/me", { method: "PATCH", body }),
+  createLogoUpload: (body: AgencyLogoUploadRequest) =>
+    callApi<AgencyLogoUploadResponse>("/v1/agencies/me/logo", { method: "POST", body }),
+};
+
+export const usersApi = {
+  list: () => callApi<UsersListResponse>("/v1/users"),
+  update: (id: string, body: UpdateUserRequest) =>
+    callApi<User>(`/v1/users/${id}`, { method: "PATCH", body }),
+  remove: (id: string) => callApi<null>(`/v1/users/${id}`, { method: "DELETE" }),
+};
+
+export const invitesApi = {
+  list: () => callApi<{ items: Invite[] }>("/v1/auth/invites"),
+  create: (body: CreateInviteRequest) =>
+    callApi<CreateInviteResponse>("/v1/auth/invites", { method: "POST", body }),
 };
 
 export const billingApi = {

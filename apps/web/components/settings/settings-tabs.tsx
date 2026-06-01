@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { AgencyTab } from "./agency-tab";
 import { BillingTab } from "./billing-tab";
+import { BrandingTab } from "./branding-tab";
+import { TeamTab } from "./team-tab";
 
 const TABS = [
   { key: "agency", label: "Agency" },
@@ -13,7 +16,7 @@ const TABS = [
 type TabKey = (typeof TABS)[number]["key"];
 
 export function SettingsTabs() {
-  const [tab, setTab] = useState<TabKey>("billing");
+  const [tab, setTab] = useState<TabKey>("agency");
 
   return (
     <div className="space-y-4">
@@ -35,25 +38,11 @@ export function SettingsTabs() {
       </nav>
 
       <div>
+        {tab === "agency" ? <AgencyTab /> : null}
+        {tab === "branding" ? <BrandingTab /> : null}
+        {tab === "team" ? <TeamTab /> : null}
         {tab === "billing" ? <BillingTab /> : null}
-        {tab === "agency" ? (
-          <Placeholder>Agency profile lands in feature prompt 9.</Placeholder>
-        ) : null}
-        {tab === "branding" ? (
-          <Placeholder>Branding controls land in feature prompt 9.</Placeholder>
-        ) : null}
-        {tab === "team" ? (
-          <Placeholder>Team management lands in feature prompt 9.</Placeholder>
-        ) : null}
       </div>
-    </div>
-  );
-}
-
-function Placeholder({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
-      {children}
     </div>
   );
 }

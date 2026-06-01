@@ -43,3 +43,15 @@ export const updateAgencySchema = agencySchema
   })
   .partial();
 export type UpdateAgencyRequest = z.infer<typeof updateAgencySchema>;
+
+export const agencyLogoUploadRequestSchema = z.object({
+  filename: z.string().min(1).max(200),
+  content_type: z.string().regex(/^image\//),
+});
+export type AgencyLogoUploadRequest = z.infer<typeof agencyLogoUploadRequestSchema>;
+
+export const agencyLogoUploadResponseSchema = z.object({
+  upload_url: z.string().url(),
+  logo_url: z.string().url(),
+});
+export type AgencyLogoUploadResponse = z.infer<typeof agencyLogoUploadResponseSchema>;
