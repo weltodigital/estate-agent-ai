@@ -17,6 +17,7 @@ const PUBLIC_PATHS = new Set<string>([
   "/healthz",
   "/v1/webhooks/stripe",
   "/v1/webhooks/orchestrator/photo-enhanced",
+  "/v1/webhooks/orchestrator/photo-staged",
 ]);
 
 /**

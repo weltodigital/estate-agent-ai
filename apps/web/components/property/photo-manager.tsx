@@ -16,6 +16,7 @@ import { PHOTO_ENHANCEMENTS, type Photo, type PhotoEnhancement } from "@app/shar
 import { Button } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
 import { BeforeAfterSlider } from "./before-after-slider";
+import { StageDialog } from "./stage-dialog";
 
 const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
   sky_replacement: "Sky replacement",
@@ -35,16 +36,20 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
   const [chosen, setChosen] = useState<Set<PhotoEnhancement>>(new Set(["exposure_correction"]));
   const [enhanceError, setEnhanceError] = useState<string | null>(null);
   const [inFlight, setInFlight] = useState<Map<string, Set<PhotoEnhancement>>>(new Map());
+  const [stageDialogPhotoId, setStageDialogPhotoId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.photos(propertyId),
     queryFn: () => photoApi.list(propertyId),
-    // Poll only while something is in flight. Stops paying for refetches once
-    // every queued enhancement has shown up on the row.
-    refetchInterval: inFlight.size > 0 ? 3000 : false,
+    // Poll while enhancements are in flight, or while a stage dialog is open
+    // waiting on a generation callback. Stops once nothing's pending.
+    refetchInterval: inFlight.size > 0 || stageDialogPhotoId !== null ? 3000 : false,
   });
 
   const photos = data?.items ?? [];
+  const stageDialogPhoto = stageDialogPhotoId
+    ? (photos.find((p) => p.id === stageDialogPhotoId) ?? null)
+    : null;
 
   // Clear in-flight markers once the photo row actually contains every
   // enhancement we asked for (the callback has landed).
@@ -238,6 +243,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
                     setDialogOpen(true);
                     setSelected(new Set([photo.id]));
                   }}
+                  onStage={() => setStageDialogPhotoId(photo.id)}
                   onSetPrimary={() =>
                     update.mutate({ id: photo.id, payload: { is_primary: true } })
                   }
@@ -250,6 +256,10 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
           </SortableContext>
         </DndContext>
       )}
+
+      {stageDialogPhoto ? (
+        <StageDialog photo={stageDialogPhoto} onClose={() => setStageDialogPhotoId(null)} />
+      ) : null}
     </section>
   );
 }
@@ -297,6 +307,7 @@ function SortablePhoto({
   isProcessing,
   onToggleSelect,
   onEnhanceJustThis,
+  onStage,
   onSetPrimary,
   onDelete,
 }: {
@@ -305,6 +316,7 @@ function SortablePhoto({
   isProcessing: boolean;
   onToggleSelect: () => void;
   onEnhanceJustThis: () => void;
+  onStage: () => void;
   onSetPrimary: () => void;
   onDelete: () => void;
 }) {
@@ -368,6 +380,13 @@ function SortablePhoto({
             className="text-[color:var(--brand-primary)] underline"
           >
             Enhance
+          </button>
+          <button
+            type="button"
+            onClick={onStage}
+            className="text-[color:var(--brand-primary)] underline"
+          >
+            Stage
           </button>
           {!photo.is_primary ? (
             <button

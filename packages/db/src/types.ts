@@ -145,6 +145,8 @@ type PropertyPhotoRow = {
   sort_order: number;
   enhancements_applied: Json;
   staging_style: StagingStyle | null;
+  staging_variations: Json;
+  suggested_style: StagingStyle | null;
   is_primary: boolean;
   created_at: IsoString;
 };

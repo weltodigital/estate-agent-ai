@@ -11,6 +11,9 @@ import type {
   PropertyListQuery,
   PropertyListResponse,
   ReorderPhotosRequest,
+  StagePhotoRequest,
+  StagePhotoResponse,
+  SuggestStyleResponse,
   UpdatePhotoRequest,
   UpdatePropertyRequest,
   UploadPhotoSignedRequest,
@@ -64,6 +67,16 @@ export const photoApi = {
     }),
   enhance: (id: string, body: EnhancePhotoRequest) =>
     callApi<EnhancePhotoResponse>(`/v1/photos/${id}/enhance`, { method: "POST", body }),
+  stage: (id: string, body: StagePhotoRequest) =>
+    callApi<StagePhotoResponse>(`/v1/photos/${id}/stage`, { method: "POST", body }),
+  selectStaging: (id: string, variationId: string) =>
+    callApi<{ photo_id: string; selected_variation_id: string; staged_url: string }>(
+      `/v1/photos/${id}/staging/select`,
+      { method: "POST", body: { variation_id: variationId } },
+    ),
+  clearStaging: (id: string) => callApi<null>(`/v1/photos/${id}/staging`, { method: "DELETE" }),
+  suggestStyle: (id: string) =>
+    callApi<SuggestStyleResponse>(`/v1/photos/${id}/suggest-style`, { method: "POST" }),
 };
 
 export const epcApi = {

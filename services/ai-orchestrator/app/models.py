@@ -21,6 +21,8 @@ class FloorPlanParseRequest(BaseModel):
 
 
 class StagingGenerateRequest(BaseModel):
+    photo_id: str
+    agency_id: str
     photo_url: HttpUrl
     style: Literal["modern", "scandi", "classic", "minimal", "luxury", "family"]
     variations: int = 3

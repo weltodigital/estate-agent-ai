@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { ROOM_TYPES, STAGING_STYLES } from "../constants";
 
+export const stagingVariationSchema = z.object({
+  id: z.string().uuid(),
+  style: z.enum(STAGING_STYLES),
+  url: z.string().url(),
+  sort_order: z.number().int().min(0),
+  selected: z.boolean().default(false),
+});
+export type StagingVariation = z.infer<typeof stagingVariationSchema>;
+
 export const photoSchema = z.object({
   id: z.string().uuid(),
   property_id: z.string().uuid(),
@@ -12,6 +21,8 @@ export const photoSchema = z.object({
   sort_order: z.number().int().min(0),
   enhancements_applied: z.array(z.string()),
   staging_style: z.enum(STAGING_STYLES).nullable(),
+  staging_variations: z.array(stagingVariationSchema).default([]),
+  suggested_style: z.enum(STAGING_STYLES).nullable(),
   is_primary: z.boolean(),
   created_at: z.string().datetime(),
 });
@@ -91,3 +102,43 @@ export const stagePhotoRequestSchema = z.object({
   variations: z.number().int().min(1).max(4).default(3),
 });
 export type StagePhotoRequest = z.infer<typeof stagePhotoRequestSchema>;
+
+export const stagePhotoResponseSchema = z.object({
+  photo_id: z.string().uuid(),
+  job_id: z.string(),
+  status: z.literal("queued"),
+});
+export type StagePhotoResponse = z.infer<typeof stagePhotoResponseSchema>;
+
+/**
+ * Orchestrator -> API callback for completed staging jobs. Same HMAC scheme
+ * as photo enhancement.
+ */
+export const photoStagedCallbackSchema = z.object({
+  photo_id: z.string().uuid(),
+  agency_id: z.string().uuid(),
+  style: z.enum(STAGING_STYLES),
+  variations: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        url: z.string().url(),
+        sort_order: z.number().int().min(0),
+      }),
+    )
+    .max(8),
+  status: z.enum(["complete", "failed"]),
+  error: z.string().nullable().optional(),
+});
+export type PhotoStagedCallback = z.infer<typeof photoStagedCallbackSchema>;
+
+export const selectStagingVariationSchema = z.object({
+  variation_id: z.string().uuid(),
+});
+export type SelectStagingVariationRequest = z.infer<typeof selectStagingVariationSchema>;
+
+export const suggestStyleResponseSchema = z.object({
+  room_type: z.enum(ROOM_TYPES),
+  suggested_style: z.enum(STAGING_STYLES),
+});
+export type SuggestStyleResponse = z.infer<typeof suggestStyleResponseSchema>;

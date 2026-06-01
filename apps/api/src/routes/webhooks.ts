@@ -1,8 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { photoEnhancedCallbackSchema } from "@app/shared/schemas";
+import { photoEnhancedCallbackSchema, photoStagedCallbackSchema } from "@app/shared/schemas";
 import { notImplemented, unauthorised } from "../errors.js";
 import { verifySignature } from "../integrations/hmac.js";
 import { applyEnhanceCallback } from "../services/photo-enhancements.js";
+import { applyStagingCallback } from "../services/staging.js";
 
 export async function webhookRoutes(app: FastifyInstance): Promise<void> {
   // Plugin-scoped JSON parser. Hands us the raw Buffer so HMAC verification
@@ -18,18 +19,13 @@ export async function webhookRoutes(app: FastifyInstance): Promise<void> {
     throw notImplemented("POST /v1/webhooks/stripe");
   });
 
-  // Orchestrator callback for completed photo-enhance jobs.
   app.post("/orchestrator/photo-enhanced", async (request, reply) => {
     const buffer = request.body as Buffer | undefined;
-    if (!buffer || !Buffer.isBuffer(buffer)) {
-      throw unauthorised();
-    }
+    if (!buffer || !Buffer.isBuffer(buffer)) throw unauthorised();
     const raw = buffer.toString("utf-8");
     const sig = request.headers["x-orchestrator-signature"];
     const sigStr = Array.isArray(sig) ? sig[0] : sig;
-    if (!verifySignature(raw, sigStr)) {
-      throw unauthorised();
-    }
+    if (!verifySignature(raw, sigStr)) throw unauthorised();
     let json: unknown;
     try {
       json = JSON.parse(raw);
@@ -38,6 +34,25 @@ export async function webhookRoutes(app: FastifyInstance): Promise<void> {
     }
     const payload = photoEnhancedCallbackSchema.parse(json);
     await applyEnhanceCallback(payload);
+    reply.code(204);
+    return null;
+  });
+
+  app.post("/orchestrator/photo-staged", async (request, reply) => {
+    const buffer = request.body as Buffer | undefined;
+    if (!buffer || !Buffer.isBuffer(buffer)) throw unauthorised();
+    const raw = buffer.toString("utf-8");
+    const sig = request.headers["x-orchestrator-signature"];
+    const sigStr = Array.isArray(sig) ? sig[0] : sig;
+    if (!verifySignature(raw, sigStr)) throw unauthorised();
+    let json: unknown;
+    try {
+      json = JSON.parse(raw);
+    } catch {
+      throw unauthorised();
+    }
+    const payload = photoStagedCallbackSchema.parse(json);
+    await applyStagingCallback(payload);
     reply.code(204);
     return null;
   });

@@ -4,12 +4,20 @@ import {
   enhancePhotoRequestSchema,
   enhancePhotoResponseSchema,
   photoSchema,
+  selectStagingVariationSchema,
   stagePhotoRequestSchema,
+  stagePhotoResponseSchema,
+  suggestStyleResponseSchema,
   updatePhotoSchema,
 } from "@app/shared/schemas";
-import { notImplemented } from "../errors.js";
 import { deletePhoto, updatePhoto } from "../services/photos.js";
 import { enqueuePhotoEnhance } from "../services/photo-enhancements.js";
+import {
+  clearStagingVariations,
+  enqueueStaging,
+  selectStagingVariation,
+} from "../services/staging.js";
+import { suggestStyleForPhoto } from "../services/style-suggest.js";
 
 const photoParams = z.object({ id: z.string().uuid() });
 
@@ -50,9 +58,52 @@ export const photoRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/photos/:id/stage",
-    { schema: { params: photoParams, body: stagePhotoRequestSchema } },
-    async () => {
-      throw notImplemented("POST /v1/photos/:id/stage");
+    {
+      schema: {
+        params: photoParams,
+        body: stagePhotoRequestSchema,
+        response: { 202: stagePhotoResponseSchema },
+      },
     },
+    async (request, reply) => {
+      const result = await enqueueStaging(request, request.params.id, request.body);
+      reply.code(202);
+      return result;
+    },
+  );
+
+  app.post(
+    "/photos/:id/staging/select",
+    {
+      schema: {
+        params: photoParams,
+        body: selectStagingVariationSchema,
+        response: {
+          200: z.object({
+            photo_id: z.string().uuid(),
+            selected_variation_id: z.string().uuid(),
+            staged_url: z.string().url(),
+          }),
+        },
+      },
+    },
+    async (request) =>
+      selectStagingVariation(request, request.params.id, request.body.variation_id),
+  );
+
+  app.delete(
+    "/photos/:id/staging",
+    { schema: { params: photoParams, response: { 204: z.null() } } },
+    async (request, reply) => {
+      await clearStagingVariations(request, request.params.id);
+      reply.code(204);
+      return null;
+    },
+  );
+
+  app.post(
+    "/photos/:id/suggest-style",
+    { schema: { params: photoParams, response: { 200: suggestStyleResponseSchema } } },
+    async (request) => suggestStyleForPhoto(request, request.params.id),
   );
 };

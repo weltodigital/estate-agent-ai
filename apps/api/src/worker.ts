@@ -5,7 +5,7 @@ import { getServiceClient } from "./integrations/supabase.js";
 import { getRedisConnection } from "./queues/connection.js";
 import { floorPlanParseJobSchema } from "./queues/floor-plan-parse.js";
 import { photoEnhanceJobSchema, type PhotoEnhanceJob } from "./queues/photo-enhance.js";
-import { stagingGenerateJobSchema } from "./queues/staging-generate.js";
+import { stagingGenerateJobSchema, type StagingGenerateJob } from "./queues/staging-generate.js";
 import { videoRenderJobSchema } from "./queues/video-render.js";
 
 const env = loadEnv();
@@ -13,7 +13,9 @@ const log = pino({ level: env.LOG_LEVEL });
 
 const connection = getRedisConnection();
 const ORCHESTRATOR_BASE = env.AI_ORCHESTRATOR_URL.replace(/\/$/, "");
-const CALLBACK_URL = `${env.API_PUBLIC_BASE_URL.replace(/\/$/, "")}/v1/webhooks/orchestrator/photo-enhanced`;
+const API_BASE = env.API_PUBLIC_BASE_URL.replace(/\/$/, "");
+const ENHANCE_CALLBACK = `${API_BASE}/v1/webhooks/orchestrator/photo-enhanced`;
+const STAGE_CALLBACK = `${API_BASE}/v1/webhooks/orchestrator/photo-staged`;
 
 async function fetchPhotoOriginal(photoId: string): Promise<string> {
   const supabase = getServiceClient();
@@ -42,7 +44,7 @@ new Worker<PhotoEnhanceJob>(
         property_id: parsed.property_id,
         photo_url: photoUrl,
         enhancements: parsed.enhancements,
-        callback_url: CALLBACK_URL,
+        callback_url: ENHANCE_CALLBACK,
       }),
     });
     if (!res.ok) {
@@ -54,12 +56,28 @@ new Worker<PhotoEnhanceJob>(
   { connection },
 );
 
-new Worker(
+new Worker<StagingGenerateJob>(
   "staging-generate",
   async (job) => {
     const parsed = stagingGenerateJobSchema.parse(job.data);
-    log.info({ jobId: job.id, parsed }, "staging-generate: stub");
-    // TODO(phase-1/6): callOrchestrator("/jobs/staging/generate", parsed);
+    const photoUrl = await fetchPhotoOriginal(parsed.photo_id);
+    const res = await fetch(`${ORCHESTRATOR_BASE}/jobs/staging/generate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        photo_id: parsed.photo_id,
+        agency_id: parsed.agency_id,
+        photo_url: photoUrl,
+        style: parsed.style,
+        variations: parsed.variations,
+        callback_url: STAGE_CALLBACK,
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`orchestrator /jobs/staging/generate failed: ${res.status} ${detail}`);
+    }
+    log.info({ jobId: job.id, photoId: parsed.photo_id }, "staging-generate dispatched");
   },
   { connection },
 );
