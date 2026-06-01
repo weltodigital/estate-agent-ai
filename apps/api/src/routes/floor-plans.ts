@@ -2,12 +2,17 @@ import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
   finaliseFloorPlanRequestSchema,
+  finaliseFloorPlanResponseSchema,
   floorPlanSchema,
   parseFloorPlanResponseSchema,
   updateFloorPlanRequestSchema,
 } from "@app/shared/schemas";
-import { notImplemented } from "../errors.js";
-import { enqueueFloorPlanParse, getFloorPlan } from "../services/floor-plans.js";
+import {
+  enqueueFloorPlanParse,
+  finaliseFloorPlan,
+  getFloorPlan,
+  updateEditorState,
+} from "../services/floor-plans.js";
 
 const idParams = z.object({ id: z.string().uuid() });
 
@@ -20,10 +25,14 @@ export const floorPlanRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.patch(
     "/floor-plans/:id",
-    { schema: { params: idParams, body: updateFloorPlanRequestSchema } },
-    async () => {
-      throw notImplemented("PATCH /v1/floor-plans/:id");
+    {
+      schema: {
+        params: idParams,
+        body: updateFloorPlanRequestSchema,
+        response: { 200: floorPlanSchema },
+      },
     },
+    async (request) => updateEditorState(request, request.params.id, request.body),
   );
 
   app.post(
@@ -38,9 +47,13 @@ export const floorPlanRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/floor-plans/:id/finalise",
-    { schema: { params: idParams, body: finaliseFloorPlanRequestSchema } },
-    async () => {
-      throw notImplemented("POST /v1/floor-plans/:id/finalise");
+    {
+      schema: {
+        params: idParams,
+        body: finaliseFloorPlanRequestSchema,
+        response: { 200: finaliseFloorPlanResponseSchema },
+      },
     },
+    async (request) => finaliseFloorPlan(request, request.params.id),
   );
 };

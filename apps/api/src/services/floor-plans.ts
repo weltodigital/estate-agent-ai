@@ -3,10 +3,14 @@ import type { FastifyRequest } from "fastify";
 import type {
   CreateFloorPlanRequest,
   CreateFloorPlanResponse,
+  FinaliseFloorPlanResponse,
   FloorPlan,
+  FloorPlanParsed,
   FloorPlanParsedCallback,
   ParseFloorPlanResponse,
+  UpdateFloorPlanRequest,
 } from "@app/shared/schemas";
+import { loadEnv } from "../env.js";
 import { AppError, notFound, unauthorised } from "../errors.js";
 import {
   buildPhotoKey,
@@ -223,4 +227,162 @@ export async function applyParseCallback(payload: FloorPlanParsedCallback): Prom
     eventType: "floor_plan_created",
     billable: true,
   });
+}
+
+/**
+ * Updates the editor_state for a floor plan. If the plan is still in
+ * 'parsed' state when the user starts editing, advance to 'editing'.
+ */
+export async function updateEditorState(
+  request: FastifyRequest,
+  id: string,
+  payload: UpdateFloorPlanRequest,
+): Promise<FloorPlan> {
+  if (!request.user || !request.agencyId) throw unauthorised();
+  const supabase = getUserClient(request.user.accessToken);
+
+  const { data: existing, error: lookupError } = await supabase
+    .from("floor_plans")
+    .select("status")
+    .eq("id", id)
+    .maybeSingle<{ status: string }>();
+  if (lookupError) {
+    throw new AppError({
+      status: 500,
+      code: "lookup_floor_plan_failed",
+      message: "Could not load floor plan.",
+    });
+  }
+  if (!existing) throw notFound("Floor plan");
+
+  const nextStatus = existing.status === "parsed" ? "editing" : existing.status;
+
+  const { data, error } = await supabase
+    .from("floor_plans")
+    .update({ editor_state: payload.editor_state, status: nextStatus })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle<FloorPlan>();
+  if (error) {
+    throw new AppError({
+      status: 500,
+      code: "update_floor_plan_failed",
+      message: "Could not save edits.",
+    });
+  }
+  if (!data) throw notFound("Floor plan");
+  return data;
+}
+
+/**
+ * Finalises a floor plan: takes the current editor_state (or parsed_json if
+ * the user never edited), pulls the agency's branding, and calls the
+ * orchestrator synchronously to render the branded SVG + PNG + PDF. Persists
+ * the resulting URLs, sets status='finalised', stamps finalised_at.
+ *
+ * Synchronous because finalise latency is bounded — a few seconds at most.
+ * If we ever need to render larger documents we'll switch to a queue.
+ */
+export async function finaliseFloorPlan(
+  request: FastifyRequest,
+  id: string,
+): Promise<FinaliseFloorPlanResponse> {
+  if (!request.user || !request.agencyId) throw unauthorised();
+  const supabase = getUserClient(request.user.accessToken);
+
+  const { data: plan, error: planError } = await supabase
+    .from("floor_plans")
+    .select("id, property_id, editor_state, parsed_json, floor_label")
+    .eq("id", id)
+    .maybeSingle<{
+      id: string;
+      property_id: string;
+      editor_state: FloorPlanParsed | null;
+      parsed_json: FloorPlanParsed | null;
+      floor_label: string;
+    }>();
+  if (planError) {
+    throw new AppError({
+      status: 500,
+      code: "lookup_floor_plan_failed",
+      message: "Could not load floor plan.",
+    });
+  }
+  if (!plan) throw notFound("Floor plan");
+
+  const source = plan.editor_state ?? plan.parsed_json;
+  if (!source) {
+    throw new AppError({
+      status: 400,
+      code: "floor_plan_not_parsed",
+      message: "This floor plan hasn't been parsed yet.",
+    });
+  }
+
+  // Pull the caller's agency for branding. Service-role: the agencies row's
+  // own RLS already enforces own-agency reads, but the same user-scoped
+  // client is fine — we just need the row.
+  const { data: agency, error: agencyError } = await supabase
+    .from("agencies")
+    .select("name, logo_url, brand_colour_primary, brand_colour_secondary, floor_plan_template")
+    .eq("id", request.agencyId)
+    .maybeSingle<{
+      name: string;
+      logo_url: string | null;
+      brand_colour_primary: string | null;
+      brand_colour_secondary: string | null;
+      floor_plan_template: string;
+    }>();
+  if (agencyError || !agency) {
+    throw new AppError({
+      status: 500,
+      code: "lookup_agency_failed",
+      message: "Could not load agency branding.",
+    });
+  }
+
+  const env = loadEnv();
+  const res = await fetch(
+    `${env.AI_ORCHESTRATOR_URL.replace(/\/$/, "")}/jobs/floor-plan/finalise`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        floor_plan_id: id,
+        floor_label: plan.floor_label,
+        plan: source,
+        branding: {
+          agency_name: agency.name,
+          logo_url: agency.logo_url,
+          brand_colour_primary: agency.brand_colour_primary,
+          brand_colour_secondary: agency.brand_colour_secondary,
+          template: agency.floor_plan_template,
+        },
+      }),
+    },
+  );
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new AppError({
+      status: 502,
+      code: "finalise_failed",
+      message: `Renderer failed: ${res.status} ${detail.slice(0, 200)}`,
+    });
+  }
+  const orchestratorResult = (await res.json()) as FinaliseFloorPlanResponse;
+
+  const service = getServiceClient();
+  await service
+    .from("floor_plans")
+    .update({
+      status: "finalised",
+      output_svg_url: orchestratorResult.output_svg_url,
+      output_png_url: orchestratorResult.output_png_url,
+      output_pdf_url: orchestratorResult.output_pdf_url,
+      total_area_sqm: orchestratorResult.total_area_sqm,
+      finalised_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  return orchestratorResult;
 }

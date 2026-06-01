@@ -2,6 +2,7 @@ from fastapi import APIRouter, BackgroundTasks
 
 from app.models import FloorPlanParseRequest, JobAccepted, JobStatusResponse
 from app.services.floor_plan import run_parse_job
+from app.services.floor_plan_finalise import FinaliseRequest, FinaliseResponse, run_finalise
 
 router = APIRouter()
 
@@ -23,6 +24,14 @@ async def parse(
         callback_url=str(request.callback_url),
     )
     return JobAccepted(job_id=job_id)
+
+
+@router.post("/finalise", response_model=FinaliseResponse)
+async def finalise(request: FinaliseRequest) -> FinaliseResponse:
+    """Synchronously renders the branded SVG + PNG + PDF and uploads to R2.
+    Returns the resulting URLs. The API caller is expected to be the API
+    server, not the browser."""
+    return await run_finalise(request)
 
 
 @router.get("/{job_id}", response_model=JobStatusResponse)

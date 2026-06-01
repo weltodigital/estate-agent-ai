@@ -12,6 +12,12 @@ const nextConfig = {
       { protocol: "https", hostname: "**.cloudflarestorage.com" },
     ],
   },
+  // Konva's Node entry tries to `require('canvas')` even though react-konva is
+  // browser-only. Mark canvas external so webpack stops complaining.
+  webpack: (config) => {
+    config.externals = [...(config.externals || []), { canvas: "commonjs canvas" }];
+    return config;
+  },
 };
 
 export default nextConfig;

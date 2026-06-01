@@ -13,6 +13,10 @@ dependencies = [
   "python-multipart>=0.0.10",
   "pillow>=10.4.0",
   "boto3>=1.35.0",
+  # Pin <1.6: 1.6 introduced an rlPyCairo dep which pulls libcairo and breaks
+  # builds on minimal Linux/macOS dev envs. renderPM (Pillow) is enough for PNG.
+  "svglib>=1.5.1,<1.6",
+  "reportlab>=4.2.5",
 ]
 
 [tool.uv]
@@ -53,7 +57,7 @@ plugins = ["pydantic.mypy"]
 warn_unused_configs = true
 
 [[tool.mypy.overrides]]
-module = ["anthropic.*", "boto3.*", "botocore.*"]
+module = ["anthropic.*", "boto3.*", "botocore.*", "svglib.*", "reportlab.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

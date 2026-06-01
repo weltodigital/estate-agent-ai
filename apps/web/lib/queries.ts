@@ -7,7 +7,9 @@ import type {
   EnhancePhotoRequest,
   EnhancePhotoResponse,
   EpcLookupResponse,
+  FinaliseFloorPlanResponse,
   FloorPlan,
+  FloorPlanParsed,
   FloorPlansListResponse,
   ParseFloorPlanResponse,
   PhotosListResponse,
@@ -104,6 +106,16 @@ export const floorPlanApi = {
   parse: (id: string) =>
     callApi<ParseFloorPlanResponse>(`/v1/floor-plans/${id}/parse`, { method: "POST" }),
   get: (id: string) => callApi<FloorPlan>(`/v1/floor-plans/${id}`),
+  saveEditor: (id: string, editor_state: FloorPlanParsed) =>
+    callApi<FloorPlan>(`/v1/floor-plans/${id}`, {
+      method: "PATCH",
+      body: { editor_state },
+    }),
+  finalise: (id: string) =>
+    callApi<FinaliseFloorPlanResponse>(`/v1/floor-plans/${id}/finalise`, {
+      method: "POST",
+      body: {},
+    }),
 };
 
 export { streamApi } from "./streaming";

@@ -6,6 +6,8 @@ import type { FloorPlan } from "@app/shared/schemas";
 import { Button, Input, Label } from "@app/ui";
 import { floorPlanApi, queryKeys } from "@/lib/queries";
 
+const EDITABLE_STATUSES = new Set(["parsed", "editing", "finalised"]);
+
 const STATUS_LABELS: Record<FloorPlan["status"], string> = {
   uploaded: "Uploaded",
   parsing: "Parsing…",
@@ -16,6 +18,7 @@ const STATUS_LABELS: Record<FloorPlan["status"], string> = {
 };
 
 export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
+  void EDITABLE_STATUSES; // referenced below in JSX
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [floorLabel, setFloorLabel] = useState("Ground floor");
@@ -120,7 +123,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
                     {plan.total_area_sqm ? ` · ${plan.total_area_sqm.toFixed(1)} m² total` : ""}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {plan.status === "failed" ? (
                     <Button
                       variant="outline"
@@ -129,6 +132,24 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
                     >
                       {retry.isPending ? "Re-parsing…" : "Retry parse"}
                     </Button>
+                  ) : null}
+                  {EDITABLE_STATUSES.has(plan.status) ? (
+                    <a
+                      href={`/properties/${propertyId}/floor-plan/${plan.id}/edit`}
+                      className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                    >
+                      Edit
+                    </a>
+                  ) : null}
+                  {plan.output_pdf_url ? (
+                    <a
+                      href={plan.output_pdf_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                    >
+                      PDF
+                    </a>
                   ) : null}
                   {plan.output_svg_url ? (
                     <a

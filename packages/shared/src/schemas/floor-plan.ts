@@ -49,15 +49,18 @@ export const floorPlansListResponseSchema = z.object({
 });
 export type FloorPlansListResponse = z.infer<typeof floorPlansListResponseSchema>;
 
-export const updateFloorPlanRequestSchema = z.object({
-  editor_state: z.unknown(),
-});
-export type UpdateFloorPlanRequest = z.infer<typeof updateFloorPlanRequestSchema>;
-
 export const finaliseFloorPlanRequestSchema = z.object({
   include_furniture: z.boolean().optional(),
 });
 export type FinaliseFloorPlanRequest = z.infer<typeof finaliseFloorPlanRequestSchema>;
+
+export const finaliseFloorPlanResponseSchema = z.object({
+  output_svg_url: z.string().url(),
+  output_png_url: z.string().url().nullable(),
+  output_pdf_url: z.string().url().nullable(),
+  total_area_sqm: z.number().nonnegative(),
+});
+export type FinaliseFloorPlanResponse = z.infer<typeof finaliseFloorPlanResponseSchema>;
 
 // ---------------------------------------------------------------------------
 // Parsed floor plan JSON — mirrors the orchestrator's Pydantic schema.
@@ -85,6 +88,15 @@ export const floorPlanParsedSchema = z.object({
   openings: z.array(floorPlanParsedOpeningSchema),
 });
 export type FloorPlanParsed = z.infer<typeof floorPlanParsedSchema>;
+
+/**
+ * The editor mutates a structure of the same shape as the parsed JSON. PATCH
+ * /v1/floor-plans/:id accepts an editor_state matching this schema.
+ */
+export const updateFloorPlanRequestSchema = z.object({
+  editor_state: floorPlanParsedSchema,
+});
+export type UpdateFloorPlanRequest = z.infer<typeof updateFloorPlanRequestSchema>;
 
 // ---------------------------------------------------------------------------
 // Orchestrator -> API callback after parsing completes (success or failure).
