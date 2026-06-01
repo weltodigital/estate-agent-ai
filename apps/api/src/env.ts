@@ -25,6 +25,10 @@ const envSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().min(1),
   R2_BUCKET_NAME: z.string().min(1),
   R2_PUBLIC_BASE_URL: z.string().url(),
+
+  // GOV.UK EPC Register
+  EPC_API_EMAIL: z.string().email().optional(),
+  EPC_API_KEY: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

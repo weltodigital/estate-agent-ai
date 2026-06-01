@@ -55,6 +55,9 @@ export const updatePropertySchema = createPropertySchema
     status: z.enum(PROPERTY_STATUSES),
     description: z.string().nullable(),
     description_tone: z.enum(TONE_OPTIONS).nullable(),
+    epc_current_rating: z.enum(EPC_RATINGS).nullable(),
+    epc_potential_rating: z.enum(EPC_RATINGS).nullable(),
+    epc_expiry_date: z.string().date().nullable(),
   })
   .partial();
 export type UpdatePropertyRequest = z.infer<typeof updatePropertySchema>;

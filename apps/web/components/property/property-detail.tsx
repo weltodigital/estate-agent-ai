@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PropertyStatus } from "@app/shared/constants";
 import { Button } from "@app/ui";
 import { propertyApi, queryKeys } from "@/lib/queries";
+import { EpcPanel } from "./epc-panel";
 import { PhotoManager } from "./photo-manager";
 
 const TABS = [
@@ -124,7 +125,7 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
         {tab === "floor_plan" ? (
           <Placeholder>Floor plan editor lands in feature prompt 7.</Placeholder>
         ) : null}
-        {tab === "epc" ? <Placeholder>EPC lookup lands in feature prompt 3.</Placeholder> : null}
+        {tab === "epc" ? <EpcPanel property={property} /> : null}
         {tab === "activity" ? <Placeholder>Activity log lands later.</Placeholder> : null}
       </div>
     </section>

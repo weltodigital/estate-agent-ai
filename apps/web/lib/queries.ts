@@ -2,6 +2,7 @@
 
 import type {
   CreatePropertyRequest,
+  EpcLookupResponse,
   PhotosListResponse,
   Photo,
   Property,
@@ -19,6 +20,7 @@ export const queryKeys = {
   properties: (query: PropertyListQuery | Record<string, never>) => ["properties", query] as const,
   property: (id: string) => ["property", id] as const,
   photos: (propertyId: string) => ["property", propertyId, "photos"] as const,
+  epc: (postcode: string) => ["epc", postcode.replace(/\s+/g, "").toUpperCase()] as const,
 };
 
 export const propertyApi = {
@@ -58,4 +60,11 @@ export const photoApi = {
       method: "PATCH",
       body,
     }),
+};
+
+export const epcApi = {
+  lookup: (postcode: string) => {
+    const params = new URLSearchParams({ postcode });
+    return callApi<EpcLookupResponse>(`/v1/epc/lookup?${params.toString()}`);
+  },
 };

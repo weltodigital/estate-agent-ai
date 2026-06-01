@@ -8,6 +8,7 @@ import type {
 } from "@app/shared/schemas";
 import { AppError, badRequest, notFound, unauthorised } from "../errors.js";
 import { getUserClient } from "../integrations/supabase.js";
+import { lookupEpcByPostcode } from "./epc.js";
 import { recordUsageEvent } from "./usage.js";
 
 export async function listProperties(
@@ -96,6 +97,13 @@ export async function createProperty(
     propertyId: data.id,
     eventType: "listing_created",
     billable: false,
+  });
+
+  // Warm the EPC cache for the property's postcode in the background. We
+  // don't auto-apply a certificate — the user picks the right address — but
+  // having the cache primed makes the EPC tab feel instant.
+  void lookupEpcByPostcode(request, data.postcode).catch((err: unknown) => {
+    request.log.warn({ err, propertyId: data.id }, "epc warm-cache failed");
   });
 
   return data as Property;

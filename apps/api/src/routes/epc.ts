@@ -1,13 +1,16 @@
-import type { FastifyInstance } from "fastify";
-import { epcLookupRequestSchema } from "@app/shared/schemas";
-import { notImplemented } from "../errors.js";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import { epcLookupRequestSchema, epcLookupResponseSchema } from "@app/shared/schemas";
+import { lookupEpcByPostcode } from "../services/epc.js";
 
-export async function epcRoutes(app: FastifyInstance): Promise<void> {
+export const epcRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     "/lookup",
-    { schema: { querystring: epcLookupRequestSchema } },
-    async () => {
-      throw notImplemented("GET /v1/epc/lookup");
+    {
+      schema: {
+        querystring: epcLookupRequestSchema,
+        response: { 200: epcLookupResponseSchema },
+      },
     },
+    async (request) => lookupEpcByPostcode(request, request.query.postcode),
   );
-}
+};
