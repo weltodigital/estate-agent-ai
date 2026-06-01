@@ -1,0 +1,214 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  createPropertySchema,
+  type CreatePropertyRequest,
+  type Property,
+} from "@app/shared/schemas";
+import {
+  LISTING_TYPES,
+  UK_PROPERTY_TYPES,
+  type ListingType,
+  type UkPropertyType,
+} from "@app/shared/constants";
+import { Button, Input, Label } from "@app/ui";
+import { propertyApi } from "@/lib/queries";
+
+type Mode = { kind: "create" } | { kind: "edit"; property: Property };
+
+type FormValues = CreatePropertyRequest;
+
+const PROPERTY_TYPE_LABELS: Record<UkPropertyType, string> = {
+  detached: "Detached",
+  "semi-detached": "Semi-detached",
+  terraced: "Terraced",
+  flat: "Flat",
+  bungalow: "Bungalow",
+  other: "Other",
+};
+
+const LISTING_LABELS: Record<ListingType, string> = {
+  sale: "For sale",
+  rent: "To let",
+};
+
+export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string }) {
+  const router = useRouter();
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const defaults: FormValues =
+    mode.kind === "edit"
+      ? {
+          branch_id: mode.property.branch_id,
+          address_line_1: mode.property.address_line_1,
+          address_line_2: mode.property.address_line_2 ?? undefined,
+          town: mode.property.town,
+          postcode: mode.property.postcode,
+          property_type: mode.property.property_type,
+          listing_type: mode.property.listing_type,
+          bedrooms: mode.property.bedrooms,
+          bathrooms: mode.property.bathrooms,
+          price_pence: mode.property.price_pence,
+          notes: mode.property.notes ?? undefined,
+        }
+      : {
+          branch_id: branchId,
+          address_line_1: "",
+          town: "",
+          postcode: "",
+          property_type: "detached",
+          listing_type: "sale",
+          bedrooms: 0,
+          bathrooms: 0,
+          price_pence: 0,
+        };
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<FormValues>({
+    resolver: zodResolver(createPropertySchema),
+    defaultValues: defaults,
+  });
+
+  const propertyKey = mode.kind === "edit" ? mode.property.id : "create";
+  useEffect(() => {
+    reset(defaults);
+  }, [propertyKey, reset, defaults]);
+
+  async function onSubmit(values: FormValues) {
+    setServerError(null);
+    try {
+      const property =
+        mode.kind === "edit"
+          ? await propertyApi.update(mode.property.id, values)
+          : await propertyApi.create(values);
+      router.push(`/properties/${property.id}`);
+      router.refresh();
+    } catch (err) {
+      setServerError(err instanceof Error ? err.message : "Could not save.");
+    }
+  }
+
+  return (
+    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field label="Address line 1" id="address_line_1" error={errors.address_line_1?.message}>
+          <Input id="address_line_1" {...register("address_line_1")} />
+        </Field>
+        <Field
+          label="Address line 2 (optional)"
+          id="address_line_2"
+          error={errors.address_line_2?.message}
+        >
+          <Input id="address_line_2" {...register("address_line_2")} />
+        </Field>
+        <Field label="Town" id="town" error={errors.town?.message}>
+          <Input id="town" {...register("town")} />
+        </Field>
+        <Field label="Postcode" id="postcode" error={errors.postcode?.message}>
+          <Input id="postcode" {...register("postcode")} />
+        </Field>
+        <Field label="Property type" id="property_type" error={errors.property_type?.message}>
+          <select
+            id="property_type"
+            className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            {...register("property_type")}
+          >
+            {UK_PROPERTY_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {PROPERTY_TYPE_LABELS[t]}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Listing type" id="listing_type" error={errors.listing_type?.message}>
+          <select
+            id="listing_type"
+            className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            {...register("listing_type")}
+          >
+            {LISTING_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {LISTING_LABELS[t]}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Bedrooms" id="bedrooms" error={errors.bedrooms?.message}>
+          <Input
+            id="bedrooms"
+            type="number"
+            min={0}
+            {...register("bedrooms", { valueAsNumber: true })}
+          />
+        </Field>
+        <Field label="Bathrooms" id="bathrooms" error={errors.bathrooms?.message}>
+          <Input
+            id="bathrooms"
+            type="number"
+            min={0}
+            {...register("bathrooms", { valueAsNumber: true })}
+          />
+        </Field>
+        <Field label="Price (pence)" id="price_pence" error={errors.price_pence?.message}>
+          <Input
+            id="price_pence"
+            type="number"
+            min={0}
+            {...register("price_pence", { valueAsNumber: true })}
+          />
+        </Field>
+        <div className="md:col-span-2">
+          <Field label="Notes (optional)" id="notes" error={errors.notes?.message}>
+            <textarea
+              id="notes"
+              className="min-h-[6rem] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              {...register("notes")}
+            />
+          </Field>
+        </div>
+      </div>
+
+      {serverError ? (
+        <p role="alert" className="text-sm text-red-600">
+          {serverError}
+        </p>
+      ) : null}
+
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Saving…" : mode.kind === "edit" ? "Save changes" : "Create property"}
+      </Button>
+    </form>
+  );
+}
+
+function Field({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={id}>{label}</Label>
+      {children}
+      {error ? (
+        <p role="alert" className="text-sm text-red-600">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}

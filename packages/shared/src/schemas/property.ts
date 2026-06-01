@@ -64,3 +64,18 @@ export const generateDescriptionRequestSchema = z.object({
   highlights: z.array(z.string()).max(20).optional(),
 });
 export type GenerateDescriptionRequest = z.infer<typeof generateDescriptionRequestSchema>;
+
+export const propertyListQuerySchema = z.object({
+  status: z.enum(PROPERTY_STATUSES).optional(),
+  branch_id: z.string().uuid().optional(),
+  q: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+export type PropertyListQuery = z.infer<typeof propertyListQuerySchema>;
+
+export const propertyListResponseSchema = z.object({
+  items: z.array(propertySchema),
+  total: z.number().int().min(0),
+});
+export type PropertyListResponse = z.infer<typeof propertyListResponseSchema>;

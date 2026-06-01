@@ -20,15 +20,25 @@ export type Photo = z.infer<typeof photoSchema>;
 export const uploadPhotoSignedRequestSchema = z.object({
   filename: z.string().min(1).max(200),
   content_type: z.string().regex(/^image\//),
+  room_type: z.enum(ROOM_TYPES).optional(),
 });
 export type UploadPhotoSignedRequest = z.infer<typeof uploadPhotoSignedRequestSchema>;
 
 export const uploadPhotoSignedResponseSchema = z.object({
-  photo_id: z.string().uuid(),
+  photo: photoSchema,
   upload_url: z.string().url(),
-  fields: z.record(z.string()).optional(),
 });
 export type UploadPhotoSignedResponse = z.infer<typeof uploadPhotoSignedResponseSchema>;
+
+export const reorderPhotosRequestSchema = z.object({
+  photo_ids: z.array(z.string().uuid()).min(1).max(100),
+});
+export type ReorderPhotosRequest = z.infer<typeof reorderPhotosRequestSchema>;
+
+export const photosListResponseSchema = z.object({
+  items: z.array(photoSchema),
+});
+export type PhotosListResponse = z.infer<typeof photosListResponseSchema>;
 
 export const updatePhotoSchema = z
   .object({

@@ -18,6 +18,13 @@ const envSchema = z.object({
 
   CLAUDE_DEFAULT_MODEL: z.string().default("claude-sonnet-4-6"),
   CLAUDE_VISION_MODEL: z.string().default("claude-sonnet-4-6"),
+
+  // Cloudflare R2 (S3-compatible)
+  R2_ACCOUNT_ID: z.string().min(1),
+  R2_ACCESS_KEY_ID: z.string().min(1),
+  R2_SECRET_ACCESS_KEY: z.string().min(1),
+  R2_BUCKET_NAME: z.string().min(1),
+  R2_PUBLIC_BASE_URL: z.string().url(),
 });
 
 export type Env = z.infer<typeof envSchema>;
