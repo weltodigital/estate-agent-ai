@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { VIDEO_FORMATS, VIDEO_STATUSES, VIDEO_TEMPLATES } from "../constants.js";
+import { VIDEO_FORMATS, VIDEO_STATUSES, VIDEO_TEMPLATES } from "../constants";
 
 export const videoCampaignSchema = z.object({
   id: z.string().uuid(),

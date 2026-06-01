@@ -1,1 +1,4 @@
-pnpm exec lint-staged
+#!/usr/bin/env sh
+# Use local node_modules so a global pnpm install isn't required.
+PATH="$PWD/node_modules/.bin:$PATH"
+lint-staged

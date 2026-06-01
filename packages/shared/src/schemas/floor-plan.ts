@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FLOOR_PLAN_STATUSES } from "../constants.js";
+import { FLOOR_PLAN_STATUSES } from "../constants";
 
 export const floorPlanSchema = z.object({
   id: z.string().uuid(),

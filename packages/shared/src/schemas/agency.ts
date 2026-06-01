@@ -4,15 +4,21 @@ import {
   SUBSCRIPTION_TIERS,
   TONE_OPTIONS,
   WATERMARK_POSITIONS,
-} from "../constants.js";
+} from "../constants";
 
 export const agencySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(120),
   slug: z.string().min(1).max(120),
   logo_url: z.string().url().nullable(),
-  brand_colour_primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable(),
-  brand_colour_secondary: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable(),
+  brand_colour_primary: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .nullable(),
+  brand_colour_secondary: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .nullable(),
   default_tone: z.enum(TONE_OPTIONS),
   default_watermark_position: z.enum(WATERMARK_POSITIONS),
   floor_plan_template: z.enum(FLOOR_PLAN_TEMPLATES),

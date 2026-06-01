@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { USER_ROLES } from "../constants.js";
+import { USER_ROLES } from "../constants";
 
 export const userSchema = z.object({
   id: z.string().uuid(),

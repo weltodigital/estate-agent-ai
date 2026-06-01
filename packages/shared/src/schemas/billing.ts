@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SUBSCRIPTION_TIERS } from "../constants.js";
+import { SUBSCRIPTION_TIERS } from "../constants";
 
 export const checkoutSessionRequestSchema = z.object({
   tier: z.enum(SUBSCRIPTION_TIERS),

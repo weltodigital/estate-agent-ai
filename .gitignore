@@ -59,3 +59,4 @@ supabase/.temp/
 # Playwright
 playwright-report/
 test-results/
+/apps/web/playwright/.cache/

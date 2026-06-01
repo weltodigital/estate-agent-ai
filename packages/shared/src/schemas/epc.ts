@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EPC_RATINGS } from "../constants.js";
+import { EPC_RATINGS } from "../constants";
 
 export const epcLookupRequestSchema = z.object({
   postcode: z

@@ -1,7 +1,7 @@
 import { createServerClient as createSsrServerClient } from "@supabase/ssr";
 import { createBrowserClient as createSsrBrowserClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./types.js";
+import type { Database } from "./types";
 
 type CookieAdapter = {
   get(name: string): string | undefined;
@@ -9,10 +9,7 @@ type CookieAdapter = {
   remove(name: string, options?: Record<string, unknown>): void;
 };
 
-export function createBrowserClient(
-  supabaseUrl: string,
-  supabaseAnonKey: string,
-) {
+export function createBrowserClient(supabaseUrl: string, supabaseAnonKey: string) {
   return createSsrBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 }
 

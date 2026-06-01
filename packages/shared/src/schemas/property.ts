@@ -5,7 +5,7 @@ import {
   PROPERTY_STATUSES,
   TONE_OPTIONS,
   UK_PROPERTY_TYPES,
-} from "../constants.js";
+} from "../constants";
 
 export const propertySchema = z.object({
   id: z.string().uuid(),

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { USAGE_EVENT_TYPES } from "../constants.js";
+import { USAGE_EVENT_TYPES } from "../constants";
 
 export const usageEventSchema = z.object({
   id: z.string().uuid(),

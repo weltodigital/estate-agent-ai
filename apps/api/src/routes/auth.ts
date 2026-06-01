@@ -1,13 +1,23 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import {
   acceptInviteRequestSchema,
   acceptInviteResponseSchema,
   bootstrapAgencyRequestSchema,
   bootstrapAgencyResponseSchema,
+  createInviteRequestSchema,
+  createInviteResponseSchema,
+  inviteSchema,
 } from "@app/shared/schemas";
-import { notImplemented } from "../errors.js";
+import { z } from "zod";
+import {
+  bootstrapNewAgency,
+  consumeInvite,
+  createInvite,
+  listInvites,
+  startTrialSubscription,
+} from "../services/auth.js";
 
-export async function authRoutes(app: FastifyInstance): Promise<void> {
+export const authRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post(
     "/bootstrap-agency",
     {
@@ -16,8 +26,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         response: { 200: bootstrapAgencyResponseSchema },
       },
     },
-    async () => {
-      throw notImplemented("POST /v1/auth/bootstrap-agency");
+    async (request) => {
+      const result = await bootstrapNewAgency(request, request.body);
+      await startTrialSubscription(result.agency_id);
+      return result;
     },
   );
 
@@ -29,8 +41,25 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         response: { 200: acceptInviteResponseSchema },
       },
     },
-    async () => {
-      throw notImplemented("POST /v1/auth/accept-invite");
-    },
+    async (request) => consumeInvite(request, request.body),
   );
-}
+
+  app.post(
+    "/invites",
+    {
+      schema: {
+        body: createInviteRequestSchema,
+        response: { 200: createInviteResponseSchema },
+      },
+    },
+    async (request) => createInvite(request, request.body),
+  );
+
+  app.get(
+    "/invites",
+    {
+      schema: { response: { 200: z.object({ items: z.array(inviteSchema) }) } },
+    },
+    async (request) => ({ items: await listInvites(request) }),
+  );
+};

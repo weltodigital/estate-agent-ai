@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ROOM_TYPES, STAGING_STYLES } from "../constants.js";
+import { ROOM_TYPES, STAGING_STYLES } from "../constants";
 
 export const photoSchema = z.object({
   id: z.string().uuid(),
