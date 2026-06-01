@@ -11,7 +11,7 @@ import type {
 } from "@app/shared/schemas";
 import { loadEnv } from "../env.js";
 import { AppError, badRequest, forbidden, unauthorised } from "../errors.js";
-import { getServiceClient, getUserClient } from "../integrations/supabase.js";
+import { getUserClient } from "../integrations/supabase.js";
 
 /**
  * Calls bootstrap_new_agency RPC on behalf of the caller. The RPC runs as
@@ -198,14 +198,6 @@ export async function consumeInvite(
   return { user_id: data.user_id, agency_id: data.agency_id };
 }
 
-/**
- * Stub-only — Stripe trial creation lands with feature prompt 8 (Billing).
- * We call this from `bootstrapNewAgency` so the wiring is in place.
- */
-export async function startTrialSubscription(_agencyId: string): Promise<void> {
-  // TODO(phase-1/8): Stripe createCustomer + createSubscription with
-  // trial_period_days = 7 on the starter tier. Persist stripe_customer_id +
-  // stripe_subscription_id + trial_ends_at onto the agency row.
-  // Use the service-role client because this runs after RLS-restricted code.
-  void getServiceClient;
-}
+// Re-export for the auth route to call once the bootstrap RPC has succeeded.
+// The real implementation lives in services/billing.ts.
+export { startTrialSubscription } from "./billing.js";

@@ -208,6 +208,19 @@ type AgencyInviteRow = {
   created_at: IsoString;
 };
 
+type EpcCacheRow = {
+  postcode_normalised: string;
+  results: Json;
+  fetched_at: IsoString;
+  expires_at: IsoString;
+};
+
+type StripeProcessedEventRow = {
+  event_id: string;
+  type: string;
+  processed_at: IsoString;
+};
+
 type Table<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row;
   Insert: Insert;
@@ -227,6 +240,8 @@ export interface Database {
       video_campaigns: Table<VideoCampaignRow>;
       usage_events: Table<UsageEventRow>;
       agency_invites: Table<AgencyInviteRow>;
+      epc_cache: Table<EpcCacheRow>;
+      stripe_processed_events: Table<StripeProcessedEventRow>;
     };
     Views: Record<string, never>;
     Functions: {
@@ -240,6 +255,7 @@ export interface Database {
       };
       current_agency_id: { Args: Record<string, never>; Returns: string };
       unique_agency_slug: { Args: { p_name: string }; Returns: string };
+      normalise_postcode: { Args: { p: string }; Returns: string };
     };
     Enums: {
       tone: Tone;

@@ -26,6 +26,7 @@
     "@fastify/sensible": "^6.0.1",
     "@supabase/supabase-js": "^2.45.4",
     "bullmq": "^5.21.2",
+    "stripe": "^17.3.0",
     "fastify": "^5.0.0",
     "fastify-type-provider-zod": "^4.0.2",
     "pino": "^9.4.0",

@@ -31,6 +31,15 @@ const envSchema = z.object({
   // GOV.UK EPC Register
   EPC_API_EMAIL: z.string().email().optional(),
   EPC_API_KEY: z.string().min(1).optional(),
+
+  // Stripe
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_TRIAL_DAYS: z.coerce.number().int().min(0).max(30).default(7),
+  STRIPE_PRICE_STARTER: z.string().min(1).optional(),
+  STRIPE_PRICE_PRO: z.string().min(1).optional(),
+  STRIPE_PRICE_BUSINESS: z.string().min(1).optional(),
+  STRIPE_PRICE_AGENCY: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

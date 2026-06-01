@@ -28,7 +28,14 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) => {
       const result = await bootstrapNewAgency(request, request.body);
-      await startTrialSubscription(result.agency_id);
+      if (request.user) {
+        await startTrialSubscription({
+          agencyId: result.agency_id,
+          agencyName: request.body.agency_name,
+          adminEmail: request.user.email,
+          adminFullName: request.body.full_name,
+        });
+      }
       return result;
     },
   );

@@ -1,6 +1,9 @@
 "use client";
 
 import type {
+  BillingStatusResponse,
+  CheckoutSessionRequest,
+  CheckoutSessionResponse,
   CreateFloorPlanRequest,
   CreateFloorPlanResponse,
   CreatePropertyRequest,
@@ -14,6 +17,8 @@ import type {
   ParseFloorPlanResponse,
   PhotosListResponse,
   Photo,
+  PortalSessionRequest,
+  PortalSessionResponse,
   Property,
   PropertyListQuery,
   PropertyListResponse,
@@ -86,6 +91,14 @@ export const photoApi = {
   clearStaging: (id: string) => callApi<null>(`/v1/photos/${id}/staging`, { method: "DELETE" }),
   suggestStyle: (id: string) =>
     callApi<SuggestStyleResponse>(`/v1/photos/${id}/suggest-style`, { method: "POST" }),
+};
+
+export const billingApi = {
+  status: () => callApi<BillingStatusResponse>("/v1/billing/status"),
+  checkout: (body: CheckoutSessionRequest) =>
+    callApi<CheckoutSessionResponse>("/v1/billing/checkout-session", { method: "POST", body }),
+  portal: (body: PortalSessionRequest) =>
+    callApi<PortalSessionResponse>("/v1/billing/portal-session", { method: "POST", body }),
 };
 
 export const epcApi = {

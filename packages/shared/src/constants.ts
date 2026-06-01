@@ -94,3 +94,47 @@ export type UsageEventType = (typeof USAGE_EVENT_TYPES)[number];
 
 export const EPC_RATINGS = ["A", "B", "C", "D", "E", "F", "G"] as const;
 export type EpcRating = (typeof EPC_RATINGS)[number];
+
+/**
+ * Monthly soft limits per tier per usage_event_type. The UI displays usage
+ * against these limits; the API does not (yet) hard-block past the limit —
+ * that's tracked in the "production hardening" pass.
+ */
+export const TIER_LIMITS: Record<SubscriptionTier, Record<UsageEventType, number>> = {
+  starter: {
+    listing_created: 5,
+    photo_enhanced: 50,
+    staging_generated: 5,
+    floor_plan_created: 3,
+    video_generated: 0,
+    description_generated: 20,
+    epc_lookup: 50,
+  },
+  pro: {
+    listing_created: 25,
+    photo_enhanced: 250,
+    staging_generated: 25,
+    floor_plan_created: 15,
+    video_generated: 0,
+    description_generated: 100,
+    epc_lookup: 250,
+  },
+  business: {
+    listing_created: 100,
+    photo_enhanced: 1000,
+    staging_generated: 100,
+    floor_plan_created: 60,
+    video_generated: 0,
+    description_generated: 500,
+    epc_lookup: 1000,
+  },
+  agency: {
+    listing_created: 100000,
+    photo_enhanced: 100000,
+    staging_generated: 100000,
+    floor_plan_created: 100000,
+    video_generated: 100000,
+    description_generated: 100000,
+    epc_lookup: 100000,
+  },
+};
