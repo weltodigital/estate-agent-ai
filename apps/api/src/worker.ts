@@ -3,7 +3,7 @@ import pino from "pino";
 import { loadEnv } from "./env.js";
 import { getServiceClient } from "./integrations/supabase.js";
 import { getRedisConnection } from "./queues/connection.js";
-import { floorPlanParseJobSchema } from "./queues/floor-plan-parse.js";
+import { floorPlanParseJobSchema, type FloorPlanParseJob } from "./queues/floor-plan-parse.js";
 import { photoEnhanceJobSchema, type PhotoEnhanceJob } from "./queues/photo-enhance.js";
 import { stagingGenerateJobSchema, type StagingGenerateJob } from "./queues/staging-generate.js";
 import { videoRenderJobSchema } from "./queues/video-render.js";
@@ -16,6 +16,7 @@ const ORCHESTRATOR_BASE = env.AI_ORCHESTRATOR_URL.replace(/\/$/, "");
 const API_BASE = env.API_PUBLIC_BASE_URL.replace(/\/$/, "");
 const ENHANCE_CALLBACK = `${API_BASE}/v1/webhooks/orchestrator/photo-enhanced`;
 const STAGE_CALLBACK = `${API_BASE}/v1/webhooks/orchestrator/photo-staged`;
+const FLOOR_PLAN_CALLBACK = `${API_BASE}/v1/webhooks/orchestrator/floor-plan-parsed`;
 
 async function fetchPhotoOriginal(photoId: string): Promise<string> {
   const supabase = getServiceClient();
@@ -82,12 +83,25 @@ new Worker<StagingGenerateJob>(
   { connection },
 );
 
-new Worker(
+new Worker<FloorPlanParseJob>(
   "floor-plan-parse",
   async (job) => {
     const parsed = floorPlanParseJobSchema.parse(job.data);
-    log.info({ jobId: job.id, parsed }, "floor-plan-parse: stub");
-    // TODO(phase-1/7): callOrchestrator("/jobs/floor-plan/parse", parsed);
+    const res = await fetch(`${ORCHESTRATOR_BASE}/jobs/floor-plan/parse`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        floor_plan_id: parsed.floor_plan_id,
+        agency_id: parsed.agency_id,
+        sketch_url: parsed.sketch_url,
+        callback_url: FLOOR_PLAN_CALLBACK,
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`orchestrator /jobs/floor-plan/parse failed: ${res.status} ${detail}`);
+    }
+    log.info({ jobId: job.id, floorPlanId: parsed.floor_plan_id }, "floor-plan-parse dispatched");
   },
   { connection },
 );

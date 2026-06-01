@@ -8,6 +8,7 @@ import { Button } from "@app/ui";
 import { propertyApi, queryKeys } from "@/lib/queries";
 import { DescriptionPanel } from "./description-panel";
 import { EpcPanel } from "./epc-panel";
+import { FloorPlanPanel } from "./floor-plan-panel";
 import { PhotoManager } from "./photo-manager";
 
 const TABS = [
@@ -121,9 +122,7 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
       <div className="pt-2">
         {tab === "photos" ? <PhotoManager propertyId={propertyId} /> : null}
         {tab === "description" ? <DescriptionPanel property={property} /> : null}
-        {tab === "floor_plan" ? (
-          <Placeholder>Floor plan editor lands in feature prompt 7.</Placeholder>
-        ) : null}
+        {tab === "floor_plan" ? <FloorPlanPanel propertyId={propertyId} /> : null}
         {tab === "epc" ? <EpcPanel property={property} /> : null}
         {tab === "activity" ? <Placeholder>Activity log lands later.</Placeholder> : null}
       </div>

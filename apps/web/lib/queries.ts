@@ -1,10 +1,15 @@
 "use client";
 
 import type {
+  CreateFloorPlanRequest,
+  CreateFloorPlanResponse,
   CreatePropertyRequest,
   EnhancePhotoRequest,
   EnhancePhotoResponse,
   EpcLookupResponse,
+  FloorPlan,
+  FloorPlansListResponse,
+  ParseFloorPlanResponse,
   PhotosListResponse,
   Photo,
   Property,
@@ -26,6 +31,8 @@ export const queryKeys = {
   property: (id: string) => ["property", id] as const,
   photos: (propertyId: string) => ["property", propertyId, "photos"] as const,
   epc: (postcode: string) => ["epc", postcode.replace(/\s+/g, "").toUpperCase()] as const,
+  floorPlans: (propertyId: string) => ["property", propertyId, "floor-plans"] as const,
+  floorPlan: (id: string) => ["floor-plan", id] as const,
 };
 
 export const propertyApi = {
@@ -84,6 +91,19 @@ export const epcApi = {
     const params = new URLSearchParams({ postcode });
     return callApi<EpcLookupResponse>(`/v1/epc/lookup?${params.toString()}`);
   },
+};
+
+export const floorPlanApi = {
+  list: (propertyId: string) =>
+    callApi<FloorPlansListResponse>(`/v1/properties/${propertyId}/floor-plans`),
+  create: (propertyId: string, body: CreateFloorPlanRequest) =>
+    callApi<CreateFloorPlanResponse>(`/v1/properties/${propertyId}/floor-plans`, {
+      method: "POST",
+      body,
+    }),
+  parse: (id: string) =>
+    callApi<ParseFloorPlanResponse>(`/v1/floor-plans/${id}/parse`, { method: "POST" }),
+  get: (id: string) => callApi<FloorPlan>(`/v1/floor-plans/${id}`),
 };
 
 export { streamApi } from "./streaming";

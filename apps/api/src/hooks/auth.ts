@@ -18,6 +18,7 @@ const PUBLIC_PATHS = new Set<string>([
   "/v1/webhooks/stripe",
   "/v1/webhooks/orchestrator/photo-enhanced",
   "/v1/webhooks/orchestrator/photo-staged",
+  "/v1/webhooks/orchestrator/floor-plan-parsed",
 ]);
 
 /**

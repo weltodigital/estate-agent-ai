@@ -16,6 +16,8 @@ class JobStatusResponse(BaseModel):
 
 
 class FloorPlanParseRequest(BaseModel):
+    floor_plan_id: str
+    agency_id: str
     sketch_url: HttpUrl
     callback_url: HttpUrl
 

@@ -1,7 +1,10 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
+  createFloorPlanRequestSchema,
+  createFloorPlanResponseSchema,
   createPropertySchema,
+  floorPlansListResponseSchema,
   generateDescriptionRequestSchema,
   photosListResponseSchema,
   propertyListQuerySchema,
@@ -12,7 +15,6 @@ import {
   uploadPhotoSignedRequestSchema,
   uploadPhotoSignedResponseSchema,
 } from "@app/shared/schemas";
-import { notImplemented } from "../errors.js";
 import {
   createProperty,
   deleteProperty,
@@ -22,6 +24,7 @@ import {
 } from "../services/properties.js";
 import { createPhotoUpload, listPropertyPhotos, reorderPhotos } from "../services/photos.js";
 import { streamDescription } from "../services/descriptions.js";
+import { createFloorPlan, listFloorPlans } from "../services/floor-plans.js";
 
 const idParams = z.object({ id: z.string().uuid() });
 
@@ -129,7 +132,23 @@ export const propertyRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
-  app.post("/:id/floor-plans", { schema: { params: idParams } }, async () => {
-    throw notImplemented("POST /v1/properties/:id/floor-plans");
-  });
+  app.get(
+    "/:id/floor-plans",
+    { schema: { params: idParams, response: { 200: floorPlansListResponseSchema } } },
+    async (request) => ({
+      items: await listFloorPlans(request, request.params.id),
+    }),
+  );
+
+  app.post(
+    "/:id/floor-plans",
+    {
+      schema: {
+        params: idParams,
+        body: createFloorPlanRequestSchema,
+        response: { 200: createFloorPlanResponseSchema },
+      },
+    },
+    async (request) => createFloorPlan(request, request.params.id, request.body),
+  );
 };
