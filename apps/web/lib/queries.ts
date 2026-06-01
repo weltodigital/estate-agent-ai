@@ -68,3 +68,5 @@ export const epcApi = {
     return callApi<EpcLookupResponse>(`/v1/epc/lookup?${params.toString()}`);
   },
 };
+
+export { streamApi } from "./streaming";

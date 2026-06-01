@@ -21,6 +21,7 @@ import {
   updateProperty,
 } from "../services/properties.js";
 import { createPhotoUpload, listPropertyPhotos, reorderPhotos } from "../services/photos.js";
+import { streamDescription } from "../services/descriptions.js";
 
 const idParams = z.object({ id: z.string().uuid() });
 
@@ -103,8 +104,28 @@ export const propertyRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post(
     "/:id/description",
     { schema: { params: idParams, body: generateDescriptionRequestSchema } },
-    async () => {
-      throw notImplemented("POST /v1/properties/:id/description");
+    async (request, reply) => {
+      // Stream plain UTF-8 text. We bypass Fastify's reply serialiser by
+      // writing to the underlying Node response — the Zod response schema is
+      // intentionally omitted for this route.
+      reply.hijack();
+      reply.raw.writeHead(200, {
+        "content-type": "text/plain; charset=utf-8",
+        "transfer-encoding": "chunked",
+        "cache-control": "no-store",
+      });
+      try {
+        await streamDescription(request, request.params.id, request.body, (chunk) => {
+          reply.raw.write(chunk);
+        });
+      } catch (err) {
+        request.log.error({ err }, "stream_description failed");
+        // We can't change the status mid-stream; send a marker so the client
+        // can detect failure and surface a message.
+        reply.raw.write(`\n\n[ERROR] ${err instanceof Error ? err.message : "stream failed"}`);
+      } finally {
+        reply.raw.end();
+      }
     },
   );
 

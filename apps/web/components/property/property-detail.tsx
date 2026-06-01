@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PropertyStatus } from "@app/shared/constants";
 import { Button } from "@app/ui";
 import { propertyApi, queryKeys } from "@/lib/queries";
+import { DescriptionPanel } from "./description-panel";
 import { EpcPanel } from "./epc-panel";
 import { PhotoManager } from "./photo-manager";
 
@@ -119,9 +120,7 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
 
       <div className="pt-2">
         {tab === "photos" ? <PhotoManager propertyId={propertyId} /> : null}
-        {tab === "description" ? (
-          <Placeholder>Description editor lands in feature prompt 4.</Placeholder>
-        ) : null}
+        {tab === "description" ? <DescriptionPanel property={property} /> : null}
         {tab === "floor_plan" ? (
           <Placeholder>Floor plan editor lands in feature prompt 7.</Placeholder>
         ) : null}
