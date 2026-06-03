@@ -52,6 +52,7 @@ export async function enqueuePhotoEnhance(
       property_id: photo.property_id,
       agency_id: request.agencyId,
       enhancements: payload.enhancements,
+      mask_url: payload.mask_url,
     },
     { jobId, removeOnComplete: 500, removeOnFail: 200 },
   );

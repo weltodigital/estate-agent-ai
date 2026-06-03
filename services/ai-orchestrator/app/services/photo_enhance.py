@@ -12,10 +12,8 @@ Implementations:
                          falls back to leaving the image unchanged
   - dusk_shot:           Replicate relighting model -> dusk_url; falls back to
                          a warm/darker PIL approximation
-  - object_removal:      requires a mask the current contract doesn't carry, so
-                         it's a no-op for now. The ClipDrop cleanup client is
-                         ready (app/integrations/clipdrop.cleanup) for when a
-                         mask-selection UI exists.
+  - object_removal:      ClipDrop cleanup using the painted mask (mask_url);
+                         a no-op if no mask was supplied or ClipDrop is unset
 
 Every provider call degrades gracefully: if the key is unset or the call
 fails, the pipeline falls back so a job never hard-fails on an upstream.
@@ -110,9 +108,23 @@ async def _apply_sky_replacement(raw: bytes) -> Image.Image | None:
     return None
 
 
+async def _apply_object_removal(image: Image.Image, mask: bytes) -> Image.Image | None:
+    """Erase the masked region via ClipDrop cleanup. Operates on the current
+    image so it composes with any prior step. Returns None when ClipDrop isn't
+    configured or the call fails."""
+    if clipdrop.is_configured():
+        try:
+            cleaned = await clipdrop.cleanup(_encode_jpeg(image), mask)
+            return Image.open(io.BytesIO(cleaned)).convert("RGB")
+        except Exception:
+            logger.warning("object_removal: ClipDrop cleanup failed; skipping", exc_info=True)
+    return None
+
+
 async def _process_enhanced(
     image: Image.Image,
     raw: bytes,
+    mask: bytes | None,
     enhancements: list[Enhancement],
 ) -> tuple[Image.Image, list[Enhancement]]:
     applied: list[Enhancement] = []
@@ -128,11 +140,11 @@ async def _process_enhanced(
             out = replaced
             applied.append("sky_replacement")
 
-    if "object_removal" in enhancements:
-        # No-op: ClipDrop cleanup needs a mask the current contract doesn't
-        # carry. Left out of `applied` so we don't claim work we didn't do.
-        # The clipdrop.cleanup client is ready for a future mask-drawing UI.
-        pass
+    if "object_removal" in enhancements and mask is not None:
+        cleaned = await _apply_object_removal(out, mask)
+        if cleaned is not None:
+            out = cleaned
+            applied.append("object_removal")
 
     if "exposure_correction" in enhancements:
         out = _apply_exposure_correction(out)
@@ -200,6 +212,7 @@ async def run_photo_enhance_job(
     photo_url: str,
     enhancements: list[Enhancement],
     callback_url: str,
+    mask_url: str | None = None,
 ) -> None:
     """Background-task entry point. Fetches the original, applies the
     enhancements, uploads outputs, and POSTs the callback. Any failure is
@@ -208,13 +221,18 @@ async def run_photo_enhance_job(
         raw = await _download(photo_url)
         original = Image.open(io.BytesIO(raw))
 
+        # The mask only matters for object_removal; fetch it when both are present.
+        mask: bytes | None = None
+        if mask_url and "object_removal" in enhancements:
+            mask = await _download(mask_url)
+
         enhanced_url: str | None = None
         dusk_url: str | None = None
         applied: list[Enhancement] = []
 
         non_dusk: list[Enhancement] = [e for e in enhancements if e != "dusk_shot"]
         if non_dusk:
-            processed, marks = await _process_enhanced(original, raw, non_dusk)
+            processed, marks = await _process_enhanced(original, raw, mask, non_dusk)
             enhanced_url = put_object(_key(photo_id, "enhanced"), _encode_jpeg(processed))
             applied.extend(marks)
 

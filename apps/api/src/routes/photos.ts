@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   enhancePhotoRequestSchema,
   enhancePhotoResponseSchema,
+  maskUploadRequestSchema,
+  maskUploadResponseSchema,
   photoSchema,
   selectStagingVariationSchema,
   stagePhotoRequestSchema,
@@ -10,7 +12,7 @@ import {
   suggestStyleResponseSchema,
   updatePhotoSchema,
 } from "@app/shared/schemas";
-import { deletePhoto, updatePhoto } from "../services/photos.js";
+import { createMaskUpload, deletePhoto, updatePhoto } from "../services/photos.js";
 import { enqueuePhotoEnhance } from "../services/photo-enhancements.js";
 import {
   clearStagingVariations,
@@ -38,6 +40,18 @@ export const photoRoutes: FastifyPluginAsyncZod = async (app) => {
       reply.code(204);
       return null;
     },
+  );
+
+  app.post(
+    "/photos/:id/mask-upload",
+    {
+      schema: {
+        params: photoParams,
+        body: maskUploadRequestSchema,
+        response: { 200: maskUploadResponseSchema },
+      },
+    },
+    async (request) => createMaskUpload(request, request.params.id, request.body),
   );
 
   app.post(

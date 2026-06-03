@@ -1,13 +1,21 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyRequest } from "fastify";
 import type {
+  MaskUploadRequest,
+  MaskUploadResponse,
   Photo,
   UpdatePhotoRequest,
   UploadPhotoSignedRequest,
   UploadPhotoSignedResponse,
 } from "@app/shared/schemas";
 import { AppError, badRequest, notFound, unauthorised } from "../errors.js";
-import { buildPhotoKey, createSignedPutUrl, deleteObject, publicUrl } from "../integrations/r2.js";
+import {
+  buildMaskKey,
+  buildPhotoKey,
+  createSignedPutUrl,
+  deleteObject,
+  publicUrl,
+} from "../integrations/r2.js";
 import { getServiceClient, getUserClient } from "../integrations/supabase.js";
 
 export async function listPropertyPhotos(
@@ -110,6 +118,44 @@ export async function createPhotoUpload(
   });
 
   return { photo, upload_url: uploadUrl };
+}
+
+/**
+ * Returns a presigned PUT URL for an object-removal mask plus the public URL
+ * it will live at. The browser paints the mask, PUTs it here, then calls
+ * /enhance with `mask_url`. The mask is a transient input to ClipDrop cleanup.
+ */
+export async function createMaskUpload(
+  request: FastifyRequest,
+  photoId: string,
+  payload: MaskUploadRequest,
+): Promise<MaskUploadResponse> {
+  if (!request.user || !request.agencyId) throw unauthorised();
+  const supabase = getUserClient(request.user.accessToken);
+
+  // Confirm the photo belongs to this agency (RLS hides foreign photos).
+  const { data: photo, error } = await supabase
+    .from("property_photos")
+    .select("id")
+    .eq("id", photoId)
+    .maybeSingle();
+  if (error) {
+    throw new AppError({
+      status: 500,
+      code: "lookup_photo_failed",
+      message: "Could not load photo.",
+    });
+  }
+  if (!photo) throw notFound("Photo");
+
+  const key = buildMaskKey({ agencyId: request.agencyId, photoId, maskId: randomUUID() });
+  const uploadUrl = await createSignedPutUrl({
+    key,
+    contentType: payload.content_type,
+    expiresInSeconds: 300,
+  });
+
+  return { upload_url: uploadUrl, mask_url: publicUrl(key) };
 }
 
 export async function updatePhoto(

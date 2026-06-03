@@ -69,10 +69,29 @@ export const PHOTO_ENHANCEMENTS = [
 ] as const;
 export type PhotoEnhancement = (typeof PHOTO_ENHANCEMENTS)[number];
 
-export const enhancePhotoRequestSchema = z.object({
-  enhancements: z.array(z.enum(PHOTO_ENHANCEMENTS)).min(1),
-});
+export const enhancePhotoRequestSchema = z
+  .object({
+    enhancements: z.array(z.enum(PHOTO_ENHANCEMENTS)).min(1),
+    // Object removal needs a mask (white = remove) uploaded via the
+    // mask-upload endpoint. Required whenever object_removal is requested.
+    mask_url: z.string().url().optional(),
+  })
+  .refine((value) => !value.enhancements.includes("object_removal") || Boolean(value.mask_url), {
+    message: "object_removal requires a mask_url",
+    path: ["mask_url"],
+  });
 export type EnhancePhotoRequest = z.infer<typeof enhancePhotoRequestSchema>;
+
+export const maskUploadRequestSchema = z.object({
+  content_type: z.string().regex(/^image\//),
+});
+export type MaskUploadRequest = z.infer<typeof maskUploadRequestSchema>;
+
+export const maskUploadResponseSchema = z.object({
+  upload_url: z.string().url(),
+  mask_url: z.string().url(),
+});
+export type MaskUploadResponse = z.infer<typeof maskUploadResponseSchema>;
 
 export const enhancePhotoResponseSchema = z.object({
   photo_id: z.string().uuid(),

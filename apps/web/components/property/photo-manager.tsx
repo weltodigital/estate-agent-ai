@@ -17,6 +17,11 @@ import { Button } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
 import { BeforeAfterSlider } from "./before-after-slider";
 import { StageDialog } from "./stage-dialog";
+import { ObjectRemovalDialog } from "./object-removal-dialog";
+
+// Object removal is per-photo (it needs a painted mask), so it's handled in its
+// own dialog rather than the batch enhance list.
+const BATCH_ENHANCEMENTS = PHOTO_ENHANCEMENTS.filter((e) => e !== "object_removal");
 
 const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
   sky_replacement: "Sky replacement",
@@ -37,6 +42,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
   const [enhanceError, setEnhanceError] = useState<string | null>(null);
   const [inFlight, setInFlight] = useState<Map<string, Set<PhotoEnhancement>>>(new Map());
   const [stageDialogPhotoId, setStageDialogPhotoId] = useState<string | null>(null);
+  const [objectRemovalPhotoId, setObjectRemovalPhotoId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.photos(propertyId),
@@ -50,6 +56,19 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
   const stageDialogPhoto = stageDialogPhotoId
     ? (photos.find((p) => p.id === stageDialogPhotoId) ?? null)
     : null;
+  const objectRemovalPhoto = objectRemovalPhotoId
+    ? (photos.find((p) => p.id === objectRemovalPhotoId) ?? null)
+    : null;
+
+  function markInFlight(photoId: string, enhancement: PhotoEnhancement) {
+    setInFlight((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(photoId) ?? new Set<PhotoEnhancement>();
+      existing.add(enhancement);
+      next.set(photoId, existing);
+      return next;
+    });
+  }
 
   // Clear in-flight markers once the photo row actually contains every
   // enhancement we asked for (the callback has landed).
@@ -244,6 +263,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
                     setSelected(new Set([photo.id]));
                   }}
                   onStage={() => setStageDialogPhotoId(photo.id)}
+                  onRemoveObjects={() => setObjectRemovalPhotoId(photo.id)}
                   onSetPrimary={() =>
                     update.mutate({ id: photo.id, payload: { is_primary: true } })
                   }
@@ -259,6 +279,14 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
 
       {stageDialogPhoto ? (
         <StageDialog photo={stageDialogPhoto} onClose={() => setStageDialogPhotoId(null)} />
+      ) : null}
+
+      {objectRemovalPhoto ? (
+        <ObjectRemovalDialog
+          photo={objectRemovalPhoto}
+          onClose={() => setObjectRemovalPhotoId(null)}
+          onQueued={() => markInFlight(objectRemovalPhoto.id, "object_removal")}
+        />
       ) : null}
     </section>
   );
@@ -284,7 +312,7 @@ function EnhanceDialog({
         </button>
       </header>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        {PHOTO_ENHANCEMENTS.map((value) => (
+        {BATCH_ENHANCEMENTS.map((value) => (
           <label
             key={value}
             className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
@@ -294,6 +322,9 @@ function EnhanceDialog({
           </label>
         ))}
       </div>
+      <p className="mt-2 text-xs text-slate-500">
+        Object removal is per-photo — use “Remove objects” on a photo to paint what to erase.
+      </p>
       <div className="mt-3 flex justify-end">
         <Button onClick={onSubmit}>Run enhancements</Button>
       </div>
@@ -308,6 +339,7 @@ function SortablePhoto({
   onToggleSelect,
   onEnhanceJustThis,
   onStage,
+  onRemoveObjects,
   onSetPrimary,
   onDelete,
 }: {
@@ -317,6 +349,7 @@ function SortablePhoto({
   onToggleSelect: () => void;
   onEnhanceJustThis: () => void;
   onStage: () => void;
+  onRemoveObjects: () => void;
   onSetPrimary: () => void;
   onDelete: () => void;
 }) {
@@ -387,6 +420,13 @@ function SortablePhoto({
             className="text-[color:var(--brand-primary)] underline"
           >
             Stage
+          </button>
+          <button
+            type="button"
+            onClick={onRemoveObjects}
+            className="text-[color:var(--brand-primary)] underline"
+          >
+            Remove objects
           </button>
           {!photo.is_primary ? (
             <button

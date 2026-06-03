@@ -45,6 +45,8 @@ class PhotoEnhanceRequest(BaseModel):
             "dusk_shot",
         ]
     ]
+    # Present only for object_removal — the painted mask (white = remove).
+    mask_url: HttpUrl | None = None
     callback_url: HttpUrl
 
 

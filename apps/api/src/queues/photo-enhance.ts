@@ -9,6 +9,8 @@ export const photoEnhanceJobSchema = z.object({
   enhancements: z.array(
     z.enum(["sky_replacement", "object_removal", "gdpr_blur", "exposure_correction", "dusk_shot"]),
   ),
+  // Present only for object_removal — the URL of the painted mask in R2.
+  mask_url: z.string().url().optional(),
 });
 export type PhotoEnhanceJob = z.infer<typeof photoEnhanceJobSchema>;
 

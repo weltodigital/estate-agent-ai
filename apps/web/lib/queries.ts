@@ -15,6 +15,8 @@ import type {
   EnhancePhotoRequest,
   EnhancePhotoResponse,
   EpcLookupResponse,
+  MaskUploadRequest,
+  MaskUploadResponse,
   FinaliseFloorPlanResponse,
   FloorPlan,
   FloorPlanParsed,
@@ -91,6 +93,8 @@ export const photoApi = {
     }),
   enhance: (id: string, body: EnhancePhotoRequest) =>
     callApi<EnhancePhotoResponse>(`/v1/photos/${id}/enhance`, { method: "POST", body }),
+  maskUpload: (id: string, body: MaskUploadRequest) =>
+    callApi<MaskUploadResponse>(`/v1/photos/${id}/mask-upload`, { method: "POST", body }),
   stage: (id: string, body: StagePhotoRequest) =>
     callApi<StagePhotoResponse>(`/v1/photos/${id}/stage`, { method: "POST", body }),
   selectStaging: (id: string, variationId: string) =>

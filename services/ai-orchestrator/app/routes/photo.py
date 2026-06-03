@@ -21,6 +21,7 @@ async def enhance(
         agency_id=request.agency_id,
         photo_url=str(request.photo_url),
         enhancements=list(request.enhancements),
+        mask_url=str(request.mask_url) if request.mask_url else None,
         callback_url=str(request.callback_url),
     )
     return JobAccepted(job_id=job_id)

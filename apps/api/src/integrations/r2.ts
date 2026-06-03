@@ -52,6 +52,14 @@ export function buildPhotoKey(args: {
   return `agencies/${args.agencyId}/properties/${args.propertyId}/photos/${args.photoId}/${sanitiseFilename(args.filename)}`;
 }
 
+/**
+ * Builds the key for an object-removal mask. Masks are throwaway inputs to the
+ * cleanup model, kept under a per-photo `masks/` prefix.
+ */
+export function buildMaskKey(args: { agencyId: string; photoId: string; maskId: string }): string {
+  return `agencies/${args.agencyId}/masks/${args.photoId}/${args.maskId}.png`;
+}
+
 export async function createSignedPutUrl(args: {
   key: string;
   contentType: string;

@@ -45,6 +45,7 @@ new Worker<PhotoEnhanceJob>(
         property_id: parsed.property_id,
         photo_url: photoUrl,
         enhancements: parsed.enhancements,
+        mask_url: parsed.mask_url,
         callback_url: ENHANCE_CALLBACK,
       }),
     });
