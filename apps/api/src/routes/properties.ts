@@ -111,12 +111,22 @@ export const propertyRoutes: FastifyPluginAsyncZod = async (app) => {
       // Stream plain UTF-8 text. We bypass Fastify's reply serialiser by
       // writing to the underlying Node response — the Zod response schema is
       // intentionally omitted for this route.
+      //
+      // Hijacking skips the @fastify/cors onSend hook too, so we have to
+      // write CORS headers manually or the browser refuses the response.
+      const origin = request.headers.origin;
       reply.hijack();
-      reply.raw.writeHead(200, {
+      const headers: Record<string, string> = {
         "content-type": "text/plain; charset=utf-8",
         "transfer-encoding": "chunked",
         "cache-control": "no-store",
-      });
+      };
+      if (typeof origin === "string") {
+        headers["access-control-allow-origin"] = origin;
+        headers["access-control-allow-credentials"] = "true";
+        headers["vary"] = "origin";
+      }
+      reply.raw.writeHead(200, headers);
       try {
         await streamDescription(request, request.params.id, request.body, (chunk) => {
           reply.raw.write(chunk);
