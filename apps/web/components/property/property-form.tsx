@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,32 +40,41 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const defaults: FormValues =
-    mode.kind === "edit"
-      ? {
-          branch_id: mode.property.branch_id,
-          address_line_1: mode.property.address_line_1,
-          address_line_2: mode.property.address_line_2 ?? undefined,
-          town: mode.property.town,
-          postcode: mode.property.postcode,
-          property_type: mode.property.property_type,
-          listing_type: mode.property.listing_type,
-          bedrooms: mode.property.bedrooms,
-          bathrooms: mode.property.bathrooms,
-          price_pence: mode.property.price_pence,
-          notes: mode.property.notes ?? undefined,
-        }
-      : {
-          branch_id: branchId,
-          address_line_1: "",
-          town: "",
-          postcode: "",
-          property_type: "detached",
-          listing_type: "sale",
-          bedrooms: 0,
-          bathrooms: 0,
-          price_pence: 0,
-        };
+  // Memoise so the defaults object reference is stable across renders;
+  // otherwise the reset() effect below loops and the inputs feel frozen.
+  const propertyKey = mode.kind === "edit" ? mode.property.id : "create";
+  const defaults = useMemo<FormValues>(
+    () =>
+      mode.kind === "edit"
+        ? {
+            branch_id: mode.property.branch_id,
+            address_line_1: mode.property.address_line_1,
+            address_line_2: mode.property.address_line_2 ?? undefined,
+            town: mode.property.town,
+            postcode: mode.property.postcode,
+            property_type: mode.property.property_type,
+            listing_type: mode.property.listing_type,
+            bedrooms: mode.property.bedrooms,
+            bathrooms: mode.property.bathrooms,
+            price_pence: mode.property.price_pence,
+            notes: mode.property.notes ?? undefined,
+          }
+        : {
+            branch_id: branchId,
+            address_line_1: "",
+            town: "",
+            postcode: "",
+            property_type: "detached",
+            listing_type: "sale",
+            bedrooms: 0,
+            bathrooms: 0,
+            price_pence: 0,
+          },
+    // propertyKey changes when we switch between create/edit or between two
+    // different properties — that's the only time defaults need to flip.
+    // (Intentionally not depending on every form default; see comment above.)
+    [propertyKey, branchId],
+  );
 
   const {
     register,
@@ -77,10 +86,9 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
     defaultValues: defaults,
   });
 
-  const propertyKey = mode.kind === "edit" ? mode.property.id : "create";
   useEffect(() => {
     reset(defaults);
-  }, [propertyKey, reset, defaults]);
+  }, [reset, defaults]);
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
