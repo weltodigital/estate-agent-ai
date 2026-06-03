@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+// .env files often have keys present but blank (`FOO=`) — Node hands those
+// to us as the empty string, which then trips Zod's `.email()` / `.url()` /
+// `.min(1)` validators on otherwise-optional fields. Strip empty strings
+// before validation so a blank value is treated as "not set".
+const stripBlanks = (input: Record<string, unknown>): Record<string, unknown> => {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(input)) {
+    out[k] = v === "" ? undefined : v;
+  }
+  return out;
+};
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
@@ -28,9 +40,9 @@ const envSchema = z.object({
   R2_BUCKET_NAME: z.string().min(1),
   R2_PUBLIC_BASE_URL: z.string().url(),
 
-  // GOV.UK EPC Register
-  EPC_API_EMAIL: z.string().email().optional(),
-  EPC_API_KEY: z.string().min(1).optional(),
+  // GOV.UK EPC API (the new service — bearer token from the My Account page
+  // after GOV.UK One Login at get-energy-performance-data.communities.gov.uk)
+  EPC_API_TOKEN: z.string().min(1).optional(),
 
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
@@ -53,7 +65,7 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export function loadEnv(): Env {
-  const parsed = envSchema.safeParse(process.env);
+  const parsed = envSchema.safeParse(stripBlanks(process.env));
   if (!parsed.success) {
     console.error("Invalid environment configuration:");
     console.error(parsed.error.flatten().fieldErrors);
