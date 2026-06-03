@@ -10,8 +10,8 @@ export const userSchema = z.object({
   role: z.enum(USER_ROLES),
   avatar_url: z.string().url().nullable(),
   invited_by: z.string().uuid().nullable(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
 });
 export type User = z.infer<typeof userSchema>;
 

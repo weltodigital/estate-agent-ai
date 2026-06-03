@@ -15,9 +15,9 @@ export const floorPlanSchema = z.object({
   output_png_url: z.string().url().nullable(),
   total_area_sqm: z.number().nonnegative().nullable(),
   include_furniture: z.boolean(),
-  finalised_at: z.string().datetime().nullable(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  finalised_at: z.string().datetime({ offset: true }).nullable(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
 });
 export type FloorPlan = z.infer<typeof floorPlanSchema>;
 

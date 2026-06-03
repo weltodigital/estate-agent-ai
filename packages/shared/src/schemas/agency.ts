@@ -25,9 +25,9 @@ export const agencySchema = z.object({
   subscription_tier: z.enum(SUBSCRIPTION_TIERS),
   stripe_customer_id: z.string().nullable(),
   stripe_subscription_id: z.string().nullable(),
-  trial_ends_at: z.string().datetime().nullable(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  trial_ends_at: z.string().datetime({ offset: true }).nullable(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
 });
 export type Agency = z.infer<typeof agencySchema>;
 

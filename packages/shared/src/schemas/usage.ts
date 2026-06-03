@@ -10,6 +10,6 @@ export const usageEventSchema = z.object({
   event_type: z.enum(USAGE_EVENT_TYPES),
   units_consumed: z.number().int().min(0),
   billable: z.boolean(),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
 });
 export type UsageEvent = z.infer<typeof usageEventSchema>;

@@ -72,9 +72,9 @@ export const inviteSchema = z.object({
   role: z.enum(USER_ROLES),
   token: z.string(),
   invited_by: z.string().uuid(),
-  expires_at: z.string().datetime(),
-  accepted_at: z.string().datetime().nullable(),
-  created_at: z.string().datetime(),
+  expires_at: z.string().datetime({ offset: true }),
+  accepted_at: z.string().datetime({ offset: true }).nullable(),
+  created_at: z.string().datetime({ offset: true }),
 });
 export type Invite = z.infer<typeof inviteSchema>;
 

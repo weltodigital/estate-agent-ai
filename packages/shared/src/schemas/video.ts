@@ -9,7 +9,7 @@ export const videoCampaignSchema = z.object({
   format: z.enum(VIDEO_FORMATS),
   video_url: z.string().url().nullable(),
   status: z.enum(VIDEO_STATUSES),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
 });
 export type VideoCampaign = z.infer<typeof videoCampaignSchema>;
 

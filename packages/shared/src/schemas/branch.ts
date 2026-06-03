@@ -9,8 +9,8 @@ export const branchSchema = z.object({
   phone: z.string().nullable(),
   listings_this_month: z.number().int().min(0),
   monthly_listing_limit: z.number().int().min(0).nullable(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
 });
 export type Branch = z.infer<typeof branchSchema>;
 

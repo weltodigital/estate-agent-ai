@@ -24,7 +24,7 @@ export const photoSchema = z.object({
   staging_variations: z.array(stagingVariationSchema).default([]),
   suggested_style: z.enum(STAGING_STYLES).nullable(),
   is_primary: z.boolean(),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
 });
 export type Photo = z.infer<typeof photoSchema>;
 

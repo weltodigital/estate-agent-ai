@@ -28,8 +28,8 @@ export const propertySchema = z.object({
   epc_potential_rating: z.enum(EPC_RATINGS).nullable(),
   epc_expiry_date: z.string().date().nullable(),
   notes: z.string().nullable(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
 });
 export type Property = z.infer<typeof propertySchema>;
 
