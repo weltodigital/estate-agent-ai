@@ -1,17 +1,23 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Fraunces, Inter } from "next/font/google";
+import { Newsreader, Inter } from "next/font/google";
 import { PRODUCT_NAME, PRODUCT_TAGLINE_DESCRIPTION } from "@/lib/copy";
 import "./globals.css";
 
 // Display / headings / wordmark. Loaded as a variable font so we can drive the
-// opsz axis via font-variation-settings (see globals.css / BRANDING.md). The
-// wght axis is included by default; we only ever use 400 and 500 in CSS.
-const fraunces = Fraunces({
+// opsz axis (range 6–72) via font-variation-settings (see globals.css /
+// BRANDING.md). The wght axis is included by default; we only ever use 400 and
+// 500 in CSS.
+const newsreader = Newsreader({
   subsets: ["latin"],
   axes: ["opsz"],
   display: "swap",
-  variable: "--font-fraunces",
+  variable: "--font-newsreader",
+  // Next has no fallback-metric data for Newsreader, so the automatic
+  // size-adjust fallback can't run; disable it explicitly to avoid the
+  // build-time "Failed to find font override values" warning.
+  adjustFontFallback: false,
+  fallback: ["Georgia", "serif"],
 });
 
 // Body, UI labels, navigation, numbers. Variable wght; we use 400 and 500 only.
@@ -33,7 +39,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en-GB" className={`${fraunces.variable} ${inter.variable}`}>
+    <html lang="en-GB" className={`${newsreader.variable} ${inter.variable}`}>
       <body>{children}</body>
     </html>
   );

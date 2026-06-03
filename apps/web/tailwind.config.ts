@@ -33,7 +33,7 @@ const config: Config = {
         foreground: "var(--brand-foreground)",
       },
       fontFamily: {
-        serif: ["var(--font-fraunces)", "Fraunces", "Georgia", "serif"],
+        serif: ["var(--font-newsreader)", "Newsreader", "Georgia", "serif"],
         sans: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
       },
     },

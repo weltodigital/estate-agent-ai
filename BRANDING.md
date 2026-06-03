@@ -2,7 +2,7 @@
 
 This is the canonical brand reference for Privett. Other `CLAUDE.md` files refer here. When you write or change any user-facing copy, colour, or type decision, this file is the source of truth.
 
-> **Note on the logo:** the wordmark in the app is a code-rendered placeholder (Fraunces "Privett"). A proper logo is being designed separately and will replace it. Build everything so that swap is a one-file change.
+> **Note on the logo:** the wordmark in the app is a code-rendered placeholder (Newsreader "Privett"). A proper logo is being designed separately and will replace it. Build everything so that swap is a one-file change.
 
 ---
 
@@ -75,23 +75,23 @@ The semantic tokens (`bg-primary`, `text-foreground`, `--brand-primary`, etc.) p
 
 ## Type system
 
-Two faces, both from Google Fonts, wired via `next/font/google` in `apps/web/app/layout.tsx` with `display: 'swap'` and CSS variables `--font-fraunces` and `--font-inter`. Tailwind's `fontFamily.serif` is Fraunces, `fontFamily.sans` is Inter.
+Two faces, both from Google Fonts, wired via `next/font/google` in `apps/web/app/layout.tsx` with `display: 'swap'` and CSS variables `--font-newsreader` and `--font-inter`. Tailwind's `fontFamily.serif` is Newsreader, `fontFamily.sans` is Inter.
 
-**Fraunces** — display, headings, the wordmark. Weight 400 (occasionally 500 for h3/h4 in app UI). Variable `opsz` axis: use `font-variation-settings: 'opsz' 144` at large display sizes (32px+) for the soft round shapes. **Never use Fraunces below 18px.**
+**Newsreader** — display, headings, the wordmark. Weight 400 (occasionally 500 for h3/h4 in app UI). Variable `opsz` axis ranges 6–72: use `font-variation-settings: 'opsz' 72` at display sizes (32px+) and `'opsz' 24` for medium headings (h3/h4 in-app). Tracking runs tighter than a typical serif. **Never use Newsreader below 18px.**
 
 **Inter** — body, UI labels, navigation, numbers. Weights **400 and 500 only**. Never 600 or 700.
 
-| Element                   | Face         | Spec                                 |
-| ------------------------- | ------------ | ------------------------------------ |
-| h1                        | Fraunces 400 | opsz 144, tracking -0.02em           |
-| h2                        | Fraunces 400 | opsz 144, tracking -0.015em          |
-| h3                        | Fraunces 500 | opsz 96                              |
-| h4–h6                     | Inter 500    | —                                    |
-| body                      | Inter 400    | line-height 1.6                      |
-| UI labels & buttons       | Inter 500    | —                                    |
-| Numbers (metrics/billing) | Inter 500    | `font-variant-numeric: tabular-nums` |
+| Element                   | Face           | Spec                                 |
+| ------------------------- | -------------- | ------------------------------------ |
+| h1                        | Newsreader 400 | opsz 72, tracking -0.02em            |
+| h2                        | Newsreader 400 | opsz 72, tracking -0.015em           |
+| h3                        | Newsreader 500 | opsz 24, tracking -0.01em            |
+| h4–h6                     | Inter 500      | —                                    |
+| body                      | Inter 400      | line-height 1.6                      |
+| UI labels & buttons       | Inter 500      | —                                    |
+| Numbers (metrics/billing) | Inter 500      | `font-variant-numeric: tabular-nums` |
 
-**Serif vs sans:** Fraunces for anything expressive and large (headings, the wordmark, hero display, proof-point single words). Inter for everything functional (body copy, navigation, form fields, buttons, tables, numbers).
+**Serif vs sans:** Newsreader for anything expressive and large (headings, the wordmark, hero display, proof-point single words). Inter for everything functional (body copy, navigation, form fields, buttons, tables, numbers).
 
 ---
 
@@ -99,8 +99,8 @@ Two faces, both from Google Fonts, wired via `next/font/google` in `apps/web/app
 
 The current wordmark is a **placeholder** rendered in code (`apps/web/components/brand/wordmark.tsx`). A real logo is being designed separately.
 
-- **Wordmark:** "Privett" in Fraunces 400, `font-variation-settings: 'opsz' 144`, `letter-spacing: -0.015em`. Default `text-brand-hedge`; Bone variant on dark backgrounds.
-- **Minimum size:** 18px (Fraunces is never used below 18px). Default 24px in the header, 64px on the landing hero.
+- **Wordmark:** "Privett" in Newsreader 400, `font-variation-settings: 'opsz' 72`, `letter-spacing: -0.015em`. Default `text-brand-hedge`; Bone variant on dark backgrounds.
+- **Minimum size:** 18px (Newsreader is never used below 18px). Default 24px in the header, 64px on the landing hero.
 - **Clear space:** keep at least the height of the "P" clear on all sides.
 - **On-light** (Bone / Cream / white): Hedge Green wordmark.
 - **On-dark** (Hedge Green / Ink): Bone wordmark.

@@ -53,32 +53,33 @@ body {
 }
 
 /*
- * Heading defaults — Fraunces for h1–h3, Inter for h4–h6. See BRANDING.md.
- * Fraunces is never used below 18px; the opsz axis is pushed high at display
- * sizes for the soft round shapes.
+ * Heading defaults — Newsreader for h1–h3, Inter for h4–h6. See BRANDING.md.
+ * Newsreader is never used below 18px; the opsz axis (range 6–72) is pushed
+ * to 72 at display sizes and 24 for medium headings.
  */
 @layer base {
   h1,
   h2,
   h3 {
-    font-family: var(--font-fraunces), Fraunces, Georgia, serif;
+    font-family: var(--font-newsreader), Newsreader, Georgia, serif;
   }
 
   h1 {
     font-weight: 400;
-    font-variation-settings: "opsz" 144;
+    font-variation-settings: "opsz" 72;
     letter-spacing: -0.02em;
   }
 
   h2 {
     font-weight: 400;
-    font-variation-settings: "opsz" 144;
+    font-variation-settings: "opsz" 72;
     letter-spacing: -0.015em;
   }
 
   h3 {
     font-weight: 500;
-    font-variation-settings: "opsz" 96;
+    font-variation-settings: "opsz" 24;
+    letter-spacing: -0.01em;
   }
 
   h4,

@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 /**
  * Privett wordmark — PLACEHOLDER.
  *
- * Renders "Privett" in Fraunces 400 with the brand opsz/tracking. A proper
+ * Renders "Privett" in Newsreader 400 with the brand opsz/tracking. A proper
  * logo is being designed separately and will replace this component; keep it
  * self-contained so that swap is a one-file change. See BRANDING.md.
  */
@@ -19,11 +19,11 @@ export function Wordmark({
   className?: string;
 }) {
   const style: CSSProperties = {
-    fontFamily: "var(--font-fraunces), Fraunces, Georgia, serif",
+    fontFamily: "var(--font-newsreader), Newsreader, Georgia, serif",
     fontWeight: 400,
     fontSize: size,
     lineHeight: 1,
-    fontVariationSettings: "'opsz' 144",
+    fontVariationSettings: "'opsz' 72",
     letterSpacing: "-0.015em",
   };
 

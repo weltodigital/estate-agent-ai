@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 // TODO(logo): PLACEHOLDER OG image — Bone wordmark + tagline on Hedge Green,
 // rendered via ImageResponse with the bundled font. Swap in a static asset or
-// load the real Fraunces font file once the logo/brand assets are finalised.
+// load the real Newsreader font file once the logo/brand assets are finalised.
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

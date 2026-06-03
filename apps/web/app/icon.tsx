@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-// TODO(logo): PLACEHOLDER favicon — a Fraunces-ish "P" in Bone on a Hedge
+// TODO(logo): PLACEHOLDER favicon — a Newsreader-ish "P" in Bone on a Hedge
 // Green rounded square, rendered via ImageResponse. When the real logo lands,
 // delete this file and drop a static `favicon.ico` into app/ — a one-file swap.
 // (ImageResponse uses its bundled font; the brand serif is approximated here.)
