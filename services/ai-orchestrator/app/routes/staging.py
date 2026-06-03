@@ -11,9 +11,9 @@ async def generate(
     request: StagingGenerateRequest,
     background: BackgroundTasks,
 ) -> JobAccepted:
-    """Queues a virtual-staging job. The work runs in a background task and
-    POSTs the resulting variation URLs back to `callback_url` signed with
-    HMAC. Replicate inpainting replaces the PIL placeholder later."""
+    """Queues a virtual-staging job. The work runs in a background task
+    (Replicate staging, with a PIL fallback) and POSTs the resulting variation
+    URLs back to `callback_url` signed with HMAC."""
     job_id = f"staging-generate:{request.photo_id}"
     background.add_task(
         run_staging_job,

@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     claude_vision_model: str = "claude-sonnet-4-6"
 
     replicate_api_token: str = ""
+    # Replicate model slugs (owner/name; the latest version is used). Overridable
+    # so models can be pinned/rotated without a code change.
+    replicate_staging_model: str = "adirik/interior-design"
+    replicate_relight_model: str = "zsxkib/ic-light"
+
     clipdrop_api_key: str = ""
 
     aws_access_key_id: str = ""

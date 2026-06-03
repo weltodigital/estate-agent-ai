@@ -1,29 +1,56 @@
 """Virtual staging pipeline.
 
-Phase-1 placeholder: produces N visibly-distinct variations via PIL colour /
-contrast / saturation tweaks. This proves the queue + callback flow against
-real images without burning Replicate credits during dev.
+Stages an empty room into a furnished interior with Replicate (the model slug
+is `replicate_staging_model`), producing N variations by varying the seed.
+Each variation is uploaded to R2 and the URLs are POSTed back to the API,
+signed with HMAC.
 
-Production: replace `_render_variation` with Replicate inpainting (model is
-picked per style — modern/minimal use a different prompt + reference than
-luxury/classic). Keep the same callback contract.
+When Replicate isn't configured — or a call fails — we fall back to a local
+PIL approximation (colour / contrast / saturation tweaks) so the queue and
+callback flow still works end to end during dev without burning credits.
 """
 
 from __future__ import annotations
 
 import io
 import json
+import logging
 import uuid
 from typing import Literal
 
 import httpx
 from PIL import Image, ImageEnhance, ImageFilter
 
+from app.integrations import replicate
 from app.integrations.hmac_sign import sign
 from app.integrations.r2 import put_object
 
+logger = logging.getLogger(__name__)
+
 Style = Literal["modern", "scandi", "classic", "minimal", "luxury", "family"]
 
+# Prompts tuned for the UK market — understated, John Lewis not Restoration
+# Hardware. Geometry (walls, windows, floor) is preserved by the model.
+STYLE_PROMPTS: dict[Style, str] = {
+    "modern": "a modern British interior, contemporary furniture, clean lines, neutral palette",
+    "scandi": "a Scandinavian interior, light oak, soft textiles, white walls, uncluttered",
+    "classic": "a classic British interior, elegant traditional furniture, warm tones",
+    "minimal": "a minimalist interior, uncluttered, neutral palette, generous space",
+    "luxury": "a refined luxury British interior, high-end furnishings, rich textures",
+    "family": "a comfortable family British interior, practical furniture, warm and inviting",
+}
+_PROMPT_SUFFIX = (
+    ", interior design photography, photorealistic, natural daylight, tasteful staging, "
+    "estate agent quality"
+)
+_NEGATIVE_PROMPT = (
+    "cluttered, distorted architecture, warped walls, low quality, blurry, watermark, text, "
+    "people, deformed furniture"
+)
+# Base seed; each variation offsets it so outputs differ but stay reproducible.
+_SEED_BASE = 1000
+
+# Fallback (PIL) tuning, used only when Replicate is unavailable.
 STYLE_TUNING: dict[Style, tuple[float, float, float, float]] = {
     # (saturation, contrast, brightness, sharpness)
     "modern": (0.95, 1.15, 1.02, 1.10),
@@ -33,9 +60,6 @@ STYLE_TUNING: dict[Style, tuple[float, float, float, float]] = {
     "luxury": (1.15, 1.15, 1.00, 1.10),
     "family": (1.10, 1.00, 1.05, 1.00),
 }
-
-# Three variations per style nudge the tuning differently so the user sees
-# meaningfully different outputs.
 VARIATION_OFFSETS: list[tuple[float, float, float, float]] = [
     (1.00, 1.00, 1.00, 1.00),
     (0.92, 1.05, 1.02, 1.08),
@@ -56,11 +80,12 @@ async def _download(url: str) -> bytes:
         return response.content
 
 
-def _render_variation(
+def _render_variation_fallback(
     image: Image.Image,
     style: Style,
     variation_index: int,
 ) -> Image.Image:
+    """Local PIL approximation used when Replicate isn't available."""
     base = STYLE_TUNING[style]
     offset = VARIATION_OFFSETS[variation_index % len(VARIATION_OFFSETS)]
     sat, con, bri, sha = (base[i] * offset[i] for i in range(4))
@@ -74,6 +99,32 @@ def _render_variation(
     if style == "minimal":
         out = out.filter(ImageFilter.SMOOTH)
     return out
+
+
+async def _staged_jpeg(
+    raw: bytes,
+    original: Image.Image,
+    style: Style,
+    variation_index: int,
+) -> bytes:
+    """Produce one staged variation as JPEG bytes — Replicate if configured,
+    otherwise the PIL fallback. A Replicate failure degrades to the fallback
+    rather than failing the whole job."""
+    if replicate.is_configured():
+        prompt = STYLE_PROMPTS[style] + _PROMPT_SUFFIX
+        try:
+            staged = await replicate.stage_room(
+                raw, prompt, _NEGATIVE_PROMPT, seed=_SEED_BASE + variation_index
+            )
+            return _encode_jpeg(Image.open(io.BytesIO(staged)))
+        except Exception:
+            logger.warning(
+                "staging: Replicate failed for style=%s var=%d; using PIL fallback",
+                style,
+                variation_index,
+                exc_info=True,
+            )
+    return _encode_jpeg(_render_variation_fallback(original, style, variation_index))
 
 
 def _key(photo_id: str, variation_id: str) -> str:
@@ -108,15 +159,9 @@ async def run_staging_job(
         outputs: list[dict[str, object]] = []
         for i in range(max(1, min(variations, 4))):
             variation_id = str(uuid.uuid4())
-            rendered = _render_variation(original, style, i)
-            url = put_object(_key(photo_id, variation_id), _encode_jpeg(rendered))
-            outputs.append(
-                {
-                    "id": variation_id,
-                    "url": url,
-                    "sort_order": i,
-                }
-            )
+            jpeg = await _staged_jpeg(raw, original, style, i)
+            url = put_object(_key(photo_id, variation_id), jpeg)
+            outputs.append({"id": variation_id, "url": url, "sort_order": i})
 
         await _post_callback(
             callback_url,
