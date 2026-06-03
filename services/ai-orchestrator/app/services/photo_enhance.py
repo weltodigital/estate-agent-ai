@@ -55,7 +55,11 @@ def _process_enhanced(
     enhancements: list[Enhancement],
 ) -> tuple[Image.Image, list[Enhancement]]:
     applied: list[Enhancement] = []
-    out = image.copy()
+    # PIL.ImageOps.autocontrast (and several other ops) doesn't accept RGBA.
+    # PNG sources can land here with an alpha channel; flatten to RGB up front
+    # so every downstream op is happy and the JPEG encode at the end is
+    # consistent.
+    out = image.convert("RGB") if image.mode != "RGB" else image.copy()
     if "exposure_correction" in enhancements:
         out = _apply_exposure_correction(out)
         applied.append("exposure_correction")
@@ -75,7 +79,8 @@ def _process_enhanced(
 def _process_dusk(image: Image.Image) -> Image.Image:
     # TODO(phase-1/5): Replicate relighting. For now: warm + slightly darker
     # so the pipeline produces a distinct output URL.
-    out = ImageEnhance.Color(image).enhance(0.85)
+    base = image.convert("RGB") if image.mode != "RGB" else image
+    out = ImageEnhance.Color(base).enhance(0.85)
     out = ImageEnhance.Brightness(out).enhance(0.75)
     return out
 
@@ -157,16 +162,20 @@ async def run_photo_enhance_job(
         )
     except Exception as exc:
         # Any failure is reported via the callback rather than raised, so the
-        # API can mark the photo failed and the user can retry.
-        await _post_callback(
-            callback_url,
-            {
-                "photo_id": photo_id,
-                "agency_id": agency_id,
-                "enhancements_applied": [],
-                "enhanced_url": None,
-                "dusk_url": None,
-                "status": "failed",
-                "error": str(exc),
-            },
-        )
+        # API can mark the photo failed and the user can retry. Guard the
+        # callback itself — if even that throws, there's nothing more to do.
+        try:
+            await _post_callback(
+                callback_url,
+                {
+                    "photo_id": photo_id,
+                    "agency_id": agency_id,
+                    "enhancements_applied": [],
+                    "enhanced_url": None,
+                    "dusk_url": None,
+                    "status": "failed",
+                    "error": str(exc),
+                },
+            )
+        except Exception:
+            pass

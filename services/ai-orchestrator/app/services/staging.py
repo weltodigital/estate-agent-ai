@@ -65,7 +65,8 @@ def _render_variation(
     offset = VARIATION_OFFSETS[variation_index % len(VARIATION_OFFSETS)]
     sat, con, bri, sha = (base[i] * offset[i] for i in range(4))
 
-    out = image.copy()
+    # Flatten alpha; downstream ops + JPEG output need RGB.
+    out = image.convert("RGB") if image.mode != "RGB" else image.copy()
     out = ImageEnhance.Color(out).enhance(sat)
     out = ImageEnhance.Contrast(out).enhance(con)
     out = ImageEnhance.Brightness(out).enhance(bri)
