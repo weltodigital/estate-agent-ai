@@ -19,9 +19,12 @@ import { BeforeAfterSlider } from "./before-after-slider";
 import { StageDialog } from "./stage-dialog";
 import { ObjectRemovalDialog } from "./object-removal-dialog";
 
-// Object removal is per-photo (it needs a painted mask), so it's handled in its
-// own dialog rather than the batch enhance list.
-const BATCH_ENHANCEMENTS = PHOTO_ENHANCEMENTS.filter((e) => e !== "object_removal");
+// Enhancements offered in the batch dialog. Object removal is per-photo (it
+// needs a painted mask), so it lives in its own dialog. Sky replacement is
+// hidden until a sky provider is wired (it had no good fit after ClipDrop).
+const BATCH_ENHANCEMENTS = PHOTO_ENHANCEMENTS.filter(
+  (e) => e !== "object_removal" && e !== "sky_replacement",
+);
 
 const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
   sky_replacement: "Sky replacement",

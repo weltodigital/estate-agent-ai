@@ -16,8 +16,6 @@ class Settings(BaseSettings):
     # LaMa object removal: image + mask (white = remove). See replicate.remove_object.
     replicate_inpaint_model: str = "zylim0702/remove-object"
 
-    clipdrop_api_key: str = ""
-
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     aws_region: str = "eu-west-2"

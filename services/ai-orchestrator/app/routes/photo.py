@@ -12,7 +12,7 @@ async def enhance(
     background: BackgroundTasks,
 ) -> JobAccepted:
     """Queues a photo-enhancement job. The work runs in a background task
-    (PIL exposure, Rekognition GDPR blur, ClipDrop sky, Replicate dusk) and
+    (PIL exposure, Rekognition GDPR blur, Replicate dusk + object removal) and
     POSTs the resulting URLs back to `callback_url` signed with HMAC."""
     job_id = f"photo-enhance:{request.photo_id}"
     background.add_task(

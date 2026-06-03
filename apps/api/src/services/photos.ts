@@ -123,7 +123,7 @@ export async function createPhotoUpload(
 /**
  * Returns a presigned PUT URL for an object-removal mask plus the public URL
  * it will live at. The browser paints the mask, PUTs it here, then calls
- * /enhance with `mask_url`. The mask is a transient input to ClipDrop cleanup.
+ * /enhance with `mask_url`. The mask is a transient input to the object-removal model.
  */
 export async function createMaskUpload(
   request: FastifyRequest,

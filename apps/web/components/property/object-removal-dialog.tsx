@@ -9,7 +9,7 @@ import { photoApi } from "@/lib/queries";
  * Object-removal dialog. The user paints over the things to remove; the strokes
  * become a black/white mask (white = remove) that's uploaded to R2 and sent to
  * the enhance endpoint with `object_removal`, which the orchestrator hands to
- * ClipDrop cleanup.
+ * Replicate LaMa inpainting.
  *
  * The photo is shown as a plain <img>; only the brush strokes are drawn into
  * the canvas, so exporting the mask never taints the canvas with cross-origin
@@ -100,8 +100,8 @@ export function ObjectRemovalDialog({
     return new Promise((resolve, reject) => {
       const paint = canvasRef.current;
       if (!paint) return reject(new Error("Canvas not ready."));
-      // Composite the white strokes over a black background — ClipDrop expects
-      // a black/white mask where white marks what to remove.
+      // Composite the white strokes over a black background — the inpaint
+      // model expects a black/white mask where white marks what to remove.
       const out = document.createElement("canvas");
       out.width = paint.width;
       out.height = paint.height;

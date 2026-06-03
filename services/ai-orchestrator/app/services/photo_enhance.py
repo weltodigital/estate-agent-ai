@@ -8,12 +8,12 @@ Implementations:
   - gdpr_blur:           AWS Rekognition face/text (number-plate) detection +
                          targeted blur; falls back to a full-image blur when
                          AWS isn't configured
-  - sky_replacement:     ClipDrop replace-background with a clear-sky prompt;
-                         falls back to leaving the image unchanged
   - dusk_shot:           Replicate relighting model -> dusk_url; falls back to
                          a warm/darker PIL approximation
   - object_removal:      Replicate LaMa inpainting using the painted mask
                          (mask_url); a no-op if no mask or Replicate is unset
+  - sky_replacement:     no provider — hidden in the UI. Kept in the enum so a
+                         future sky provider can be wired back in cleanly.
 
 Every provider call degrades gracefully: if the key is unset or the call
 fails, the pipeline falls back so a job never hard-fails on an upstream.
@@ -30,7 +30,7 @@ from typing import Literal
 import httpx
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
-from app.integrations import clipdrop, rekognition, replicate
+from app.integrations import rekognition, replicate
 from app.integrations.hmac_sign import sign
 from app.integrations.r2 import put_object
 
@@ -44,7 +44,6 @@ Enhancement = Literal[
     "dusk_shot",
 ]
 
-_SKY_PROMPT = "a bright clear blue sky with soft natural clouds, sunny day"
 _DUSK_PROMPT = "warm golden-hour dusk lighting, sunset glow, soft warm tones, twilight sky"
 
 
@@ -94,20 +93,6 @@ async def _apply_gdpr_blur(image: Image.Image) -> Image.Image:
     return image.filter(ImageFilter.GaussianBlur(radius=2))
 
 
-async def _apply_sky_replacement(raw: bytes) -> Image.Image | None:
-    """Replace the sky/background via ClipDrop. Returns None (caller keeps the
-    current image) when ClipDrop isn't configured or the call fails."""
-    if clipdrop.is_configured():
-        try:
-            replaced = await clipdrop.replace_background(raw, _SKY_PROMPT)
-            return Image.open(io.BytesIO(replaced)).convert("RGB")
-        except Exception:
-            logger.warning(
-                "sky_replacement: ClipDrop failed; leaving image unchanged", exc_info=True
-            )
-    return None
-
-
 async def _apply_object_removal(image: Image.Image, mask: bytes) -> Image.Image | None:
     """Erase the masked region via Replicate LaMa inpainting. Operates on the
     current image so it composes with any prior step. Returns None when
@@ -123,7 +108,6 @@ async def _apply_object_removal(image: Image.Image, mask: bytes) -> Image.Image 
 
 async def _process_enhanced(
     image: Image.Image,
-    raw: bytes,
     mask: bytes | None,
     enhancements: list[Enhancement],
 ) -> tuple[Image.Image, list[Enhancement]]:
@@ -134,11 +118,8 @@ async def _process_enhanced(
     # consistent.
     out = image.convert("RGB") if image.mode != "RGB" else image.copy()
 
-    if "sky_replacement" in enhancements:
-        replaced = await _apply_sky_replacement(raw)
-        if replaced is not None:
-            out = replaced
-            applied.append("sky_replacement")
+    # sky_replacement: no provider currently (hidden in the UI), so it's a
+    # no-op here and never marked applied.
 
     if "object_removal" in enhancements and mask is not None:
         cleaned = await _apply_object_removal(out, mask)
@@ -232,7 +213,7 @@ async def run_photo_enhance_job(
 
         non_dusk: list[Enhancement] = [e for e in enhancements if e != "dusk_shot"]
         if non_dusk:
-            processed, marks = await _process_enhanced(original, raw, mask, non_dusk)
+            processed, marks = await _process_enhanced(original, mask, non_dusk)
             enhanced_url = put_object(_key(photo_id, "enhanced"), _encode_jpeg(processed))
             applied.extend(marks)
 
