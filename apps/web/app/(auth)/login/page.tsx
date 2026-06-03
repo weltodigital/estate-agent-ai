@@ -1,7 +1,7 @@
 import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata = {
-  title: "Log in — Estate Agent AI",
+  title: "Log in",
 };
 
 export default function LoginPage() {

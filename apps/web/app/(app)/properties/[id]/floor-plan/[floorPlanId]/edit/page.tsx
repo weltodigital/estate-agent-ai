@@ -1,6 +1,6 @@
 import { FloorPlanEditor } from "@/components/floor-plan/editor";
 
-export const metadata = { title: "Floor plan editor — Estate Agent AI" };
+export const metadata = { title: "Floor plan editor" };
 
 export default function FloorPlanEditorPage({
   params,

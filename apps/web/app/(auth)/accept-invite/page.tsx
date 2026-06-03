@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { AcceptInviteForm } from "@/components/auth/accept-invite-form";
 
 export const metadata = {
-  title: "Accept invite — Estate Agent AI",
+  title: "Accept invite",
 };
 
 export default function AcceptInvitePage() {

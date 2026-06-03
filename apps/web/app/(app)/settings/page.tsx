@@ -1,6 +1,6 @@
 import { SettingsTabs } from "@/components/settings/settings-tabs";
 
-export const metadata = { title: "Settings — Estate Agent AI" };
+export const metadata = { title: "Settings" };
 
 export default function SettingsPage() {
   return (

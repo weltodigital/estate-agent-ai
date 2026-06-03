@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AppProviders } from "@/components/providers";
 import { Protected } from "@/components/protected";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { Wordmark } from "@/components/brand/wordmark";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -16,8 +17,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex min-h-screen">
           <aside className="flex w-60 flex-col justify-between border-r border-slate-200 bg-white px-4 py-6">
             <div>
-              <a href="/dashboard" className="mb-8 block px-2 text-sm font-semibold">
-                Estate Agent AI
+              <a href="/dashboard" className="mb-8 block px-2">
+                <Wordmark size={22} />
               </a>
               <nav className="space-y-1">
                 {NAV_ITEMS.map((item) => (

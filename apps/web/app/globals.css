@@ -2,9 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Privett brand defaults — see BRANDING.md.
+ *
+ * These are DEFAULTS only. The authenticated app overrides --brand-primary
+ * (and friends) inline per-agency from agencies.brand_colour_primary. Those
+ * runtime overrides always take precedence; Privett just provides the
+ * fallback values here.
+ */
 :root {
-  --brand-primary: #0f172a;
-  --brand-secondary: #e2e8f0;
+  --brand-primary: #2e3b36; /* Hedge Green */
+  --brand-secondary: #c9b8a0; /* Sand */
+  --brand-background: #f5f1e8; /* Bone */
+  --brand-foreground: #1a1f1c; /* Ink */
+
+  /* Full palette, exposed as custom properties for inline/dynamic use. */
+  --brand-hedge: #2e3b36;
+  --brand-bone: #f5f1e8;
+  --brand-terracotta: #b5663d;
+  --brand-sand: #c9b8a0;
+  --brand-ink: #1a1f1c;
+  --brand-cream: #faf7f0;
+  --brand-stone: #e4dfd0;
+  --brand-slate: #9a968a;
+  --brand-walnut: #4a453a;
 }
 
 html,
@@ -13,10 +34,62 @@ body {
 }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--brand-background);
+  color: var(--brand-foreground);
   font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    var(--font-inter),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * Heading defaults — Fraunces for h1–h3, Inter for h4–h6. See BRANDING.md.
+ * Fraunces is never used below 18px; the opsz axis is pushed high at display
+ * sizes for the soft round shapes.
+ */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-fraunces), Fraunces, Georgia, serif;
+  }
+
+  h1 {
+    font-weight: 400;
+    font-variation-settings: "opsz" 144;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    font-weight: 400;
+    font-variation-settings: "opsz" 144;
+    letter-spacing: -0.015em;
+  }
+
+  h3 {
+    font-weight: 500;
+    font-variation-settings: "opsz" 96;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 500;
+  }
+}
+
+/* Tabular numerals for metrics, billing, and pricing. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

@@ -1,7 +1,7 @@
 import { SignupForm } from "@/components/auth/signup-form";
 
 export const metadata = {
-  title: "Sign up — Estate Agent AI",
+  title: "Sign up",
 };
 
 export default function SignupPage() {

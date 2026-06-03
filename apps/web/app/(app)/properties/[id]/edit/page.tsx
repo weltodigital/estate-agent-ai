@@ -3,7 +3,7 @@ import type { Property } from "@app/shared/schemas";
 import { PropertyForm } from "@/components/property/property-form";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "Edit property — Estate Agent AI" };
+export const metadata = { title: "Edit property" };
 
 export default async function EditPropertyPage({ params }: { params: { id: string } }) {
   const supabase = getSupabaseServerClient();

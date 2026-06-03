@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PROPERTY_STATUSES, type PropertyStatus } from "@app/shared/constants";
 import { queryKeys, propertyApi } from "@/lib/queries";
+import { EMPTY_STATES } from "@/lib/copy";
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
   draft: "Draft",
@@ -78,7 +79,7 @@ export function PropertyList() {
       {query.isLoading ? (
         <p className="text-sm text-slate-500">Loading…</p>
       ) : query.data && query.data.items.length === 0 ? (
-        <p className="text-sm text-slate-500">No properties yet.</p>
+        <p className="text-sm text-slate-500">{EMPTY_STATES.properties}</p>
       ) : (
         <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
           {query.data?.items.map((p) => (

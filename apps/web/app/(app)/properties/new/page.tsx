@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { PropertyForm } from "@/components/property/property-form";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "New property — Estate Agent AI" };
+export const metadata = { title: "New property" };
 
 type ProfileRow = { branch_id: string | null; agency_id: string };
 type BranchRow = { id: string };
