@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     # so models can be pinned/rotated without a code change.
     replicate_staging_model: str = "adirik/interior-design"
     replicate_relight_model: str = "zsxkib/ic-light"
+    # LaMa object removal: image + mask (white = remove). See replicate.remove_object.
+    replicate_inpaint_model: str = "zylim0702/remove-object"
 
     clipdrop_api_key: str = ""
 

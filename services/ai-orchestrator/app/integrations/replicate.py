@@ -121,3 +121,16 @@ async def relight_dusk(image_bytes: bytes, prompt: str) -> bytes:
     if not outputs:
         raise ReplicateError("Relight model returned no image.")
     return await _download(outputs[0])
+
+
+async def remove_object(image_bytes: bytes, mask_bytes: bytes) -> bytes:
+    """Erase the masked region (object removal) with LaMa inpainting. The mask
+    is a PNG the same size as the image where white = remove. Returns the
+    inpainted image bytes."""
+    outputs = await run_model(
+        get_settings().replicate_inpaint_model,
+        {"image": _data_uri(image_bytes), "mask": _data_uri(mask_bytes, "image/png")},
+    )
+    if not outputs:
+        raise ReplicateError("Inpaint model returned no image.")
+    return await _download(outputs[0])

@@ -12,8 +12,8 @@ Implementations:
                          falls back to leaving the image unchanged
   - dusk_shot:           Replicate relighting model -> dusk_url; falls back to
                          a warm/darker PIL approximation
-  - object_removal:      ClipDrop cleanup using the painted mask (mask_url);
-                         a no-op if no mask was supplied or ClipDrop is unset
+  - object_removal:      Replicate LaMa inpainting using the painted mask
+                         (mask_url); a no-op if no mask or Replicate is unset
 
 Every provider call degrades gracefully: if the key is unset or the call
 fails, the pipeline falls back so a job never hard-fails on an upstream.
@@ -109,15 +109,15 @@ async def _apply_sky_replacement(raw: bytes) -> Image.Image | None:
 
 
 async def _apply_object_removal(image: Image.Image, mask: bytes) -> Image.Image | None:
-    """Erase the masked region via ClipDrop cleanup. Operates on the current
-    image so it composes with any prior step. Returns None when ClipDrop isn't
-    configured or the call fails."""
-    if clipdrop.is_configured():
+    """Erase the masked region via Replicate LaMa inpainting. Operates on the
+    current image so it composes with any prior step. Returns None when
+    Replicate isn't configured or the call fails."""
+    if replicate.is_configured():
         try:
-            cleaned = await clipdrop.cleanup(_encode_jpeg(image), mask)
+            cleaned = await replicate.remove_object(_encode_jpeg(image), mask)
             return Image.open(io.BytesIO(cleaned)).convert("RGB")
         except Exception:
-            logger.warning("object_removal: ClipDrop cleanup failed; skipping", exc_info=True)
+            logger.warning("object_removal: Replicate inpaint failed; skipping", exc_info=True)
     return None
 
 
