@@ -1,0 +1,17 @@
+# Keep build context lean and secrets out of the image (Railway injects env
+# at runtime). Applies to the repo-root build context (the Node API/worker).
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/.venv
+**/__pycache__
+**/.env
+**/.env.local
+**/.env.*.local
+.git
+.github
+**/*.log
+playwright-report
+test-results
+**/coverage

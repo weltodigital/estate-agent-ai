@@ -1,0 +1,28 @@
+# Dockerfile for the @app/api server AND worker (one image, two start commands).
+#
+# Build context is the REPO ROOT — on Railway set:
+#   Root Directory   = /                (repo root)
+#   Dockerfile Path  = apps/api/Dockerfile
+#
+# Why tsx and not `node dist`: the workspace packages @app/shared and @app/db
+# export TypeScript source (no compiled dist), so the API is run with tsx,
+# which transpiles the app and the workspace .ts on the fly. Railway injects
+# PORT; the server binds 0.0.0.0:$PORT (see apps/api/src/server.ts).
+
+FROM node:20-slim
+
+# pnpm via corepack — version is pinned by the root package.json "packageManager".
+RUN corepack enable
+WORKDIR /repo
+
+# Install the whole workspace from the committed lockfile. The repo is copied
+# in full; .dockerignore keeps node_modules / .next / dist / .venv / .env out.
+COPY . .
+RUN pnpm install --frozen-lockfile
+
+WORKDIR /repo/apps/api
+EXPOSE 3001
+
+# Default = API server. The WORKER service reuses this image and overrides the
+# Railway start command with:  pnpm exec tsx src/worker.ts
+CMD ["pnpm", "exec", "tsx", "src/server.ts"]
