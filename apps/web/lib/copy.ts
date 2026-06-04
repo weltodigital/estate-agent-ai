@@ -18,7 +18,7 @@ export const PRODUCT_TAGLINE = "Marketing for property, done properly.";
 export const TEAM_SIGN_OFF = "— The Privett team";
 
 /** Contact address used in marketing + transactional copy. */
-export const CONTACT_EMAIL = "hello@privett.ai";
+export const CONTACT_EMAIL = "hello@useprivett.com";
 
 /**
  * Empty states — Privett voice. Warm, short, points at the next action.

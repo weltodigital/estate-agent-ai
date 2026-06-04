@@ -12,7 +12,7 @@ export default function ContactPage() {
         </p>
 
         {/* TODO: wire to Resend or a form service. Suggested path: a Resend
-            transactional email to hello@privett.ai. Form is a placeholder — it
+            transactional email to hello@useprivett.com. Form is a placeholder — it
             does not submit anywhere yet. */}
         <form className="mt-10 space-y-4">
           <div className="space-y-1.5">

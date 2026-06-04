@@ -8,7 +8,7 @@ This is the canonical brand reference for Privett. Other `CLAUDE.md` files refer
 
 ## Name and pronunciation
 
-**Privett.** Always sentence case — never `PRIVETT`, never `privett`. `Privett.ai` appears only in the wordmark/URL context, never in body copy.
+**Privett.** Always sentence case — never `PRIVETT`, never `privett`. The domain is `useprivett.com`; in body copy always write the name as "Privett", never the URL.
 
 Pronounced **PRIH-vett**. Two syllables, soft.
 
