@@ -39,4 +39,6 @@ ENV PATH="/app/.venv/bin:${PATH}"
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Bind :: (IPv6, dual-stack) so Railway's private network can reach the
+# service internally — the worker calls it at <service>.railway.internal:8000.
+CMD ["uvicorn", "app.main:app", "--host", "::", "--port", "8000"]
