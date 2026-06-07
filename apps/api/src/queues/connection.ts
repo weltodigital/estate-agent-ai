@@ -15,5 +15,9 @@ export function getRedisConnection(): ConnectionOptions {
     username: url.username || undefined,
     password: url.password || undefined,
     tls: url.protocol === "rediss:" ? {} : undefined,
+    // family: 0 lets DNS resolve both IPv4 and IPv6. Required on Railway, whose
+    // private network (and managed Redis) is IPv6-only — ioredis otherwise
+    // defaults to IPv4 lookups and can't reach the internal Redis host.
+    family: 0,
   };
 }
