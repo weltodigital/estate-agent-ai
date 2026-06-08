@@ -2,7 +2,7 @@
 
 This is the canonical brand reference for Privett. Other `CLAUDE.md` files refer here. When you write or change any user-facing copy, colour, or type decision, this file is the source of truth.
 
-> **Note on the logo:** the wordmark in the app is a code-rendered placeholder (Newsreader "Privett"). A proper logo is being designed separately and will replace it. Build everything so that swap is a one-file change.
+> **Note on the logo:** the real Privett wordmark is in place — a Hedge Green serif logo (`apps/web/public/privett-logo.png`) with a Bone variant for dark backgrounds (`privett-logo-bone.png`). Both are rendered through the `<Wordmark />` component, so any future asset swap stays a one-file change.
 
 ---
 
@@ -97,14 +97,15 @@ Two faces, both from Google Fonts, wired via `next/font/google` in `apps/web/app
 
 ## Logo usage rules
 
-The current wordmark is a **placeholder** rendered in code (`apps/web/components/brand/wordmark.tsx`). A real logo is being designed separately.
+The wordmark is the real Privett logo, rendered through `<Wordmark />` (`apps/web/components/brand/wordmark.tsx`) from two PNG assets in `apps/web/public/`.
 
-- **Wordmark:** "Privett" in Newsreader 400, `font-variation-settings: 'opsz' 72`, `letter-spacing: -0.015em`. Default `text-brand-hedge`; Bone variant on dark backgrounds.
-- **Minimum size:** 18px (Newsreader is never used below 18px). Default 24px in the header, 64px on the landing hero.
+- **Wordmark:** a Hedge Green serif "Privett" logo (`privett-logo.png`), with a Bone variant (`privett-logo-bone.png`) for dark backgrounds. Pick via the `variant` prop; `size` sets the rendered height in px.
+- **Default size:** 24px in the header / footer / auth; 22px in the app sidebar.
 - **Clear space:** keep at least the height of the "P" clear on all sides.
-- **On-light** (Bone / Cream / white): Hedge Green wordmark.
-- **On-dark** (Hedge Green / Ink): Bone wordmark.
-- **Swapping in the real logo** should be a one-file change — favicons are generated via `ImageResponse` in `icon.tsx` / `apple-icon.tsx`; replacing them with a static `favicon.ico` is the intended path.
+- **On-light** (Bone / Cream / white): Hedge Green logo (`variant="hedge"`, the default).
+- **On-dark** (Hedge Green / Ink): Bone logo (`variant="bone"`).
+- **Favicon / app icon** are still generated via `ImageResponse` in `icon.tsx` / `apple-icon.tsx` as a Bone "P" on a Hedge Green square — a wordmark doesn't suit a small square icon, so the "P" mark stays. Replace with a static `favicon.ico` if a dedicated icon mark is designed.
+- **Swapping the logo asset** is a one-file change: replace the PNGs in `public/` (keep the filenames) — every placement updates at once.
 
 ---
 
