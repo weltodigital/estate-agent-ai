@@ -9,7 +9,9 @@
 # which transpiles the app and the workspace .ts on the fly. Railway injects
 # PORT; the server binds 0.0.0.0:$PORT (see apps/api/src/server.ts).
 
-FROM node:20-slim
+# Node 22: required for native WebSocket, which @supabase/supabase-js needs at
+# runtime (Node 20 throws "Node.js 20 detected without native WebSocket support").
+FROM node:22-slim
 
 # pnpm via corepack — version is pinned by the root package.json "packageManager".
 RUN corepack enable
