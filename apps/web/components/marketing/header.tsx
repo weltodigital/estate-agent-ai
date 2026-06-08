@@ -18,7 +18,7 @@ export function MarketingHeader() {
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <a href="/" aria-label="Privett home">
-          <Wordmark size={24} />
+          <Wordmark size={40} />
         </a>
         <nav className="flex items-center gap-6">
           {NAV_LINKS.map((link) => (

@@ -41,7 +41,7 @@ export function MarketingFooter() {
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
           <div className="col-span-2 md:col-span-1">
-            <Wordmark size={24} variant="bone" />
+            <Wordmark size={40} variant="bone" />
           </div>
           {COLUMNS.map((column) => (
             <div key={column.heading}>
