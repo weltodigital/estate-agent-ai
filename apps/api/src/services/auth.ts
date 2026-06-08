@@ -12,6 +12,7 @@ import type {
 import { loadEnv } from "../env.js";
 import { AppError, badRequest, forbidden, unauthorised } from "../errors.js";
 import { getUserClient } from "../integrations/supabase.js";
+import { sendInviteEmail } from "./email.js";
 
 /**
  * Calls bootstrap_new_agency RPC on behalf of the caller. The RPC runs as
@@ -104,9 +105,30 @@ export async function createInvite(
   }
 
   const env = loadEnv();
+  const inviteUrl = `${env.APP_BASE_URL}/accept-invite?token=${token}`;
+
+  // Send the invite email, best-effort. A send failure must not fail the
+  // request — the admin still gets invite_url to share manually.
+  try {
+    const { data: agency } = await supabase
+      .from("agencies")
+      .select("name")
+      .eq("id", request.agencyId)
+      .maybeSingle<{ name: string }>();
+    await sendInviteEmail({
+      to: payload.email,
+      agencyName: agency?.name ?? "your agency",
+      inviterEmail: request.user.email,
+      role: payload.role,
+      inviteUrl,
+    });
+  } catch (err) {
+    request.log.error({ err }, "invite email send failed");
+  }
+
   return {
     invite: data,
-    invite_url: `${env.APP_BASE_URL}/accept-invite?token=${token}`,
+    invite_url: inviteUrl,
   };
 }
 

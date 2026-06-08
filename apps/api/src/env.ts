@@ -44,6 +44,11 @@ const envSchema = z.object({
   // after GOV.UK One Login at get-energy-performance-data.communities.gov.uk)
   EPC_API_TOKEN: z.string().min(1).optional(),
 
+  // Email (Resend). Optional: when unset, invite emails are skipped and the
+  // admin shares the returned invite_url manually.
+  RESEND_API_KEY: z.string().min(1).optional(),
+  EMAIL_FROM: z.string().min(1).default("Privett <hello@useprivett.com>"),
+
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
