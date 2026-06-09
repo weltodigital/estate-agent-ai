@@ -8,6 +8,7 @@ import { epcRoutes } from "./epc.js";
 import { billingRoutes } from "./billing.js";
 import { userRoutes } from "./users.js";
 import { webhookRoutes } from "./webhooks.js";
+import { contactRoutes } from "./contact.js";
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await app.register(authRoutes, { prefix: "/v1/auth" });
@@ -19,4 +20,5 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await app.register(epcRoutes, { prefix: "/v1/epc" });
   await app.register(billingRoutes, { prefix: "/v1/billing" });
   await app.register(webhookRoutes, { prefix: "/v1/webhooks" });
+  await app.register(contactRoutes, { prefix: "/v1" });
 }

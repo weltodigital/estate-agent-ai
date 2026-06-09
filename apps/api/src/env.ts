@@ -48,6 +48,8 @@ const envSchema = z.object({
   // admin shares the returned invite_url manually.
   RESEND_API_KEY: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(1).default("Privett <hello@useprivett.com>"),
+  // Where marketing contact-form submissions are emailed.
+  CONTACT_INBOX: z.string().email().default("hello@useprivett.com"),
 
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1).optional(),

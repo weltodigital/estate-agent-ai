@@ -16,6 +16,8 @@ export async function sendEmail(args: {
   to: string;
   subject: string;
   html: string;
+  /** Optional Reply-To, e.g. so a contact-form notification replies to the sender. */
+  replyTo?: string;
 }): Promise<void> {
   const env = loadEnv();
   if (!env.RESEND_API_KEY) return;
@@ -31,6 +33,7 @@ export async function sendEmail(args: {
       to: args.to,
       subject: args.subject,
       html: args.html,
+      ...(args.replyTo ? { reply_to: args.replyTo } : {}),
     }),
   });
 

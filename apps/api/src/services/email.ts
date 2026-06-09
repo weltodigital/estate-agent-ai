@@ -90,6 +90,48 @@ export async function sendInviteEmail(args: {
   });
 }
 
+/**
+ * Notifies the Privett inbox of a marketing contact-form submission. Reply-To
+ * is set to the sender so the team can reply straight from the notification.
+ */
+export async function sendContactEmail(args: {
+  to: string;
+  name: string;
+  email: string;
+  message: string;
+}): Promise<void> {
+  const messageHtml = escapeHtml(args.message).replace(/\n/g, "<br>");
+  const body = `
+    <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:24px;color:${INK};letter-spacing:-0.01em;">
+      New enquiry from ${escapeHtml(args.name)}
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:${WALNUT};">
+      Someone got in touch via the Privett website.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:15px;line-height:1.6;color:${WALNUT};">
+      <tr>
+        <td style="padding:0 16px 8px 0;color:${SLATE};">Name</td>
+        <td style="padding:0 0 8px;">${escapeHtml(args.name)}</td>
+      </tr>
+      <tr>
+        <td style="padding:0 16px 8px 0;color:${SLATE};">Email</td>
+        <td style="padding:0 0 8px;"><a href="mailto:${escapeHtml(args.email)}" style="color:${TERRACOTTA};">${escapeHtml(args.email)}</a></td>
+      </tr>
+    </table>
+    <p style="margin:0 0 8px;font-size:13px;color:${SLATE};">Message</p>
+    <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:${INK};">${messageHtml}</p>
+    <p style="margin:0;font-size:13px;line-height:1.6;color:${SLATE};">
+      Reply to this email to respond to ${escapeHtml(args.name)} directly.
+    </p>`;
+
+  await sendEmail({
+    to: args.to,
+    subject: `New enquiry from ${args.name}`,
+    html: shell(body),
+    replyTo: args.email,
+  });
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
