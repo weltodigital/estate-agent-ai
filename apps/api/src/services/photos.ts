@@ -16,7 +16,7 @@ import {
   deleteObject,
   publicUrl,
 } from "../integrations/r2.js";
-import { getServiceClient, getUserClient } from "../integrations/supabase.js";
+import { getUserClient } from "../integrations/supabase.js";
 
 export async function listPropertyPhotos(
   request: FastifyRequest,
@@ -266,46 +266,57 @@ export async function deletePhoto(request: FastifyRequest, id: string): Promise<
   if (!request.user || !request.agencyId) throw unauthorised();
   const supabase = getUserClient(request.user.accessToken);
 
-  const { data: photo, error: lookupError } = await supabase
-    .from("property_photos")
-    .select("id, original_url")
-    .eq("id", id)
-    .maybeSingle();
-  if (lookupError) {
-    request.log.error({ err: lookupError, photoId: id }, "delete photo: lookup failed");
-    throw new AppError({
-      status: 500,
-      code: "delete_photo_failed",
-      message: "Could not load photo.",
-      details: { db: lookupError.message },
-    });
-  }
-  if (!photo) throw notFound("Photo");
+  try {
+    const { data: photo, error: lookupError } = await supabase
+      .from("property_photos")
+      .select("id, original_url")
+      .eq("id", id)
+      .maybeSingle();
+    if (lookupError) {
+      request.log.error({ err: lookupError, photoId: id }, "delete photo: lookup failed");
+      throw new AppError({
+        status: 500,
+        code: "delete_photo_failed",
+        message: "Could not load photo.",
+        details: { db: lookupError.message },
+      });
+    }
+    if (!photo) throw notFound("Photo");
 
-  const { error } = await supabase.from("property_photos").delete().eq("id", id);
-  if (error) {
-    request.log.error({ err: error, photoId: id }, "delete photo: delete failed");
+    const { error } = await supabase.from("property_photos").delete().eq("id", id);
+    if (error) {
+      request.log.error({ err: error, photoId: id }, "delete photo: delete failed");
+      throw new AppError({
+        status: 500,
+        code: "delete_photo_failed",
+        message: "Could not delete photo.",
+        details: { db: error.message },
+      });
+    }
+
+    // Best-effort R2 cleanup. We swallow errors so the DB row is gone either way.
+    const url = photo.original_url as string;
+    const r2Key = keyFromPublicUrl(url);
+    if (r2Key) {
+      try {
+        await deleteObject(r2Key);
+      } catch (err) {
+        request.log.warn({ err, r2Key }, "r2 deleteObject failed");
+      }
+    }
+  } catch (err) {
+    // Re-throw our own AppErrors untouched; wrap anything unexpected (e.g. a
+    // rejected Supabase call) so the real cause reaches the logs and the API
+    // response instead of a generic 500.
+    if (err instanceof AppError) throw err;
+    request.log.error({ err, photoId: id }, "delete photo: unhandled");
     throw new AppError({
       status: 500,
       code: "delete_photo_failed",
       message: "Could not delete photo.",
-      details: { db: error.message },
+      details: { cause: err instanceof Error ? err.message : String(err) },
     });
   }
-
-  // Best-effort R2 cleanup. We swallow errors so the DB row is gone either way.
-  const url = photo.original_url as string;
-  const r2Key = keyFromPublicUrl(url);
-  if (r2Key) {
-    try {
-      await deleteObject(r2Key);
-    } catch (err) {
-      request.log.warn({ err, r2Key }, "r2 deleteObject failed");
-    }
-  }
-
-  // The DB row is gone; nothing else to do here.
-  void getServiceClient;
 }
 
 function keyFromPublicUrl(url: string): string | null {
