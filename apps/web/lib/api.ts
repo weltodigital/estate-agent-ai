@@ -25,9 +25,15 @@ function apiBaseUrl(): string {
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const url = `${apiBaseUrl()}${path}`;
   const headers: Record<string, string> = {
-    "content-type": "application/json",
     ...(options.headers ?? {}),
   };
+  // Only declare a JSON content-type when we actually send a body. Sending
+  // `content-type: application/json` with an empty body makes Fastify reject
+  // the request with FST_ERR_CTP_EMPTY_JSON_BODY — which broke every bodyless
+  // request (DELETE photo/property, POST suggest-style, etc.).
+  if (options.body !== undefined) {
+    headers["content-type"] = "application/json";
+  }
   if (options.accessToken) {
     headers.authorization = `Bearer ${options.accessToken}`;
   }
