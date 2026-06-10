@@ -1,4 +1,5 @@
 import { Wordmark } from "@/components/brand/wordmark";
+import { CONTACT_EMAIL } from "@/lib/copy";
 
 const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
   {
@@ -19,15 +20,15 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
   {
     heading: "Resources",
     links: [
-      { label: "Help", href: "#" },
-      { label: "Privacy", href: "#" },
-      { label: "Terms", href: "#" },
+      { label: "Help", href: "/contact" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
     ],
   },
   {
     heading: "Connect",
     links: [
-      { label: "Email", href: "#" },
+      { label: "Email", href: `mailto:${CONTACT_EMAIL}` },
       { label: "X", href: "#" },
       { label: "LinkedIn", href: "#" },
     ],
