@@ -272,20 +272,24 @@ export async function deletePhoto(request: FastifyRequest, id: string): Promise<
     .eq("id", id)
     .maybeSingle();
   if (lookupError) {
+    request.log.error({ err: lookupError, photoId: id }, "delete photo: lookup failed");
     throw new AppError({
       status: 500,
       code: "delete_photo_failed",
       message: "Could not load photo.",
+      details: { db: lookupError.message },
     });
   }
   if (!photo) throw notFound("Photo");
 
   const { error } = await supabase.from("property_photos").delete().eq("id", id);
   if (error) {
+    request.log.error({ err: error, photoId: id }, "delete photo: delete failed");
     throw new AppError({
       status: 500,
       code: "delete_photo_failed",
       message: "Could not delete photo.",
+      details: { db: error.message },
     });
   }
 
