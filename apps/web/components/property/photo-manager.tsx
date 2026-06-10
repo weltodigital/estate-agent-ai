@@ -110,6 +110,17 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId) }),
   });
 
+  const removeSelected = useMutation({
+    mutationFn: (ids: string[]) => Promise.all(ids.map((id) => photoApi.remove(id))),
+    onSuccess: () => {
+      setSelected(new Set());
+      queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId) });
+    },
+    // On a partial failure some photos may already be gone — refresh so the
+    // grid reflects the real state rather than the optimistic selection.
+    onError: () => queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId) }),
+  });
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   function onDragEnd(event: DragEndEvent) {
@@ -224,6 +235,19 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
           <span className="text-sm">{selected.size} selected</span>
           <div className="flex gap-2">
             <Button onClick={() => setDialogOpen(true)}>Enhance selected</Button>
+            <Button
+              variant="destructive"
+              disabled={removeSelected.isPending}
+              onClick={() => {
+                const ids = Array.from(selected);
+                if (ids.length === 0) return;
+                if (confirm(`Delete ${ids.length} photo${ids.length === 1 ? "" : "s"}?`)) {
+                  removeSelected.mutate(ids);
+                }
+              }}
+            >
+              {removeSelected.isPending ? "Deleting…" : "Delete selected"}
+            </Button>
             <Button variant="outline" onClick={() => setSelected(new Set())}>
               Clear
             </Button>
