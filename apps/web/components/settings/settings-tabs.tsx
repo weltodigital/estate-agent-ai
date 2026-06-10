@@ -13,10 +13,10 @@ const TABS = [
   { key: "billing", label: "Billing" },
 ] as const;
 
-type TabKey = (typeof TABS)[number]["key"];
+export type SettingsTabKey = (typeof TABS)[number]["key"];
 
-export function SettingsTabs() {
-  const [tab, setTab] = useState<TabKey>("agency");
+export function SettingsTabs({ initialTab = "agency" }: { initialTab?: SettingsTabKey }) {
+  const [tab, setTab] = useState<SettingsTabKey>(initialTab);
 
   return (
     <div className="space-y-4">
