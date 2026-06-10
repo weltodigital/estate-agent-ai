@@ -22,13 +22,8 @@ export const userRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => updateUser(request, request.params.id, request.body),
   );
 
-  app.delete(
-    "/:id",
-    { schema: { params: idParams, response: { 204: z.null() } } },
-    async (request, reply) => {
-      await removeUser(request, request.params.id);
-      reply.code(204);
-      return null;
-    },
-  );
+  app.delete("/:id", { schema: { params: idParams } }, async (request, reply) => {
+    await removeUser(request, request.params.id);
+    return reply.code(204).send();
+  });
 };

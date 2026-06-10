@@ -60,15 +60,10 @@ export const propertyRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => updateProperty(request, request.params.id, request.body),
   );
 
-  app.delete(
-    "/:id",
-    { schema: { params: idParams, response: { 204: z.null() } } },
-    async (request, reply) => {
-      await deleteProperty(request, request.params.id);
-      reply.code(204);
-      return null;
-    },
-  );
+  app.delete("/:id", { schema: { params: idParams } }, async (request, reply) => {
+    await deleteProperty(request, request.params.id);
+    return reply.code(204).send();
+  });
 
   app.get(
     "/:id/photos",

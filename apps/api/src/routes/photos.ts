@@ -32,15 +32,10 @@ export const photoRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => updatePhoto(request, request.params.id, request.body),
   );
 
-  app.delete(
-    "/photos/:id",
-    { schema: { params: photoParams, response: { 204: z.null() } } },
-    async (request, reply) => {
-      await deletePhoto(request, request.params.id);
-      reply.code(204);
-      return null;
-    },
-  );
+  app.delete("/photos/:id", { schema: { params: photoParams } }, async (request, reply) => {
+    await deletePhoto(request, request.params.id);
+    return reply.code(204).send();
+  });
 
   app.post(
     "/photos/:id/mask-upload",
@@ -105,15 +100,10 @@ export const photoRoutes: FastifyPluginAsyncZod = async (app) => {
       selectStagingVariation(request, request.params.id, request.body.variation_id),
   );
 
-  app.delete(
-    "/photos/:id/staging",
-    { schema: { params: photoParams, response: { 204: z.null() } } },
-    async (request, reply) => {
-      await clearStagingVariations(request, request.params.id);
-      reply.code(204);
-      return null;
-    },
-  );
+  app.delete("/photos/:id/staging", { schema: { params: photoParams } }, async (request, reply) => {
+    await clearStagingVariations(request, request.params.id);
+    return reply.code(204).send();
+  });
 
   app.post(
     "/photos/:id/suggest-style",
