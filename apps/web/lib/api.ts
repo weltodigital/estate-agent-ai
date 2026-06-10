@@ -41,5 +41,11 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     const errorBody = (await res.json().catch(() => undefined)) as ApiError | undefined;
     throw new Error(errorBody?.error?.message ?? `API ${path} failed: ${res.status}`);
   }
+  // 204 No Content (e.g. DELETE endpoints) has an empty body — calling
+  // res.json() on it throws, which would surface as a failed mutation even
+  // though the request succeeded. Return null for empty responses.
+  if (res.status === 204 || res.headers.get("content-length") === "0") {
+    return null as T;
+  }
   return (await res.json()) as T;
 }
