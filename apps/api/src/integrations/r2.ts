@@ -14,6 +14,13 @@ function getClient(): S3Client {
         accessKeyId: env.R2_ACCESS_KEY_ID,
         secretAccessKey: env.R2_SECRET_ACCESS_KEY,
       },
+      // AWS SDK v3 (>=3.729) adds a default CRC32 checksum to every PutObject.
+      // For presigned URLs that bakes an `x-amz-checksum-crc32` requirement
+      // into the URL that a browser PUT never satisfies — R2 then rejects the
+      // upload (403). R2 doesn't need these; only add checksums when an
+      // operation strictly requires them so presigned PUTs stay header-clean.
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED",
     });
   }
   return client;
