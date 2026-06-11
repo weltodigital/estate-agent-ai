@@ -119,8 +119,22 @@ async def run_model(model: str, model_input: dict[str, Any]) -> list[str]:
         raise ReplicateError(f"Unexpected Replicate output shape: {type(output)!r}")
 
 
-async def stage_room(image_bytes: bytes, prompt: str, negative_prompt: str, seed: int) -> bytes:
-    """Virtually stage an empty room. Returns the generated JPEG/PNG bytes."""
+async def stage_room(
+    image_bytes: bytes,
+    prompt: str,
+    negative_prompt: str,
+    seed: int,
+    prompt_strength: float,
+    guidance_scale: float,
+) -> bytes:
+    """Virtually stage an empty room. Returns the generated JPEG/PNG bytes.
+
+    `prompt_strength` is the img2img denoising strength (1.0 = full destruction
+    of the source image); keep it low to preserve the room's architecture and
+    only add furnishings. `guidance_scale` trades prompt-adherence against
+    fidelity to the photo. Both override the model's aggressive defaults
+    (0.8 / 15), which redesign floors, doors and windows.
+    """
     outputs = await run_model(
         get_settings().replicate_staging_model,
         {
@@ -128,6 +142,8 @@ async def stage_room(image_bytes: bytes, prompt: str, negative_prompt: str, seed
             "prompt": prompt,
             "negative_prompt": negative_prompt,
             "seed": seed,
+            "prompt_strength": prompt_strength,
+            "guidance_scale": guidance_scale,
         },
     )
     if not outputs:

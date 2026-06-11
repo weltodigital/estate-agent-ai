@@ -45,10 +45,23 @@ _PROMPT_SUFFIX = (
 )
 _NEGATIVE_PROMPT = (
     "cluttered, distorted architecture, warped walls, low quality, blurry, watermark, text, "
-    "people, deformed furniture"
+    "people, deformed furniture, "
+    # Forbid structural edits — the model otherwise reworks the shell, not just
+    # the furnishings (the bug we're tuning against).
+    "extra door, additional doors, new doorway, extra window, additional windows, "
+    "changed flooring, different floor, replaced floor, altered walls, moved walls, "
+    "new ceiling, added ceiling lights, structural changes, room layout change"
 )
 # Base seed; each variation offsets it so outputs differ but stay reproducible.
 _SEED_BASE = 1000
+
+# Generation fidelity knobs (override the model's room-redesigning defaults of
+# prompt_strength=0.8 / guidance_scale=15). Lower prompt_strength keeps the
+# existing architecture and mainly inpaints furniture; lower guidance biases
+# toward the photo over the text prompt. Tune here if rooms come back
+# under-furnished (raise strength) or still structurally altered (lower it).
+_PROMPT_STRENGTH = 0.5
+_GUIDANCE_SCALE = 10.0
 
 # Fallback (PIL) tuning, used only when Replicate is unavailable.
 STYLE_TUNING: dict[Style, tuple[float, float, float, float]] = {
@@ -119,7 +132,12 @@ async def _staged_jpeg(
     if replicate.is_configured():
         prompt = STYLE_PROMPTS[style] + _PROMPT_SUFFIX
         staged = await replicate.stage_room(
-            raw, prompt, _NEGATIVE_PROMPT, seed=_SEED_BASE + variation_index
+            raw,
+            prompt,
+            _NEGATIVE_PROMPT,
+            seed=_SEED_BASE + variation_index,
+            prompt_strength=_PROMPT_STRENGTH,
+            guidance_scale=_GUIDANCE_SCALE,
         )
         return _encode_jpeg(Image.open(io.BytesIO(staged)))
     logger.info("staging: Replicate not configured; using PIL fallback (dev)")
