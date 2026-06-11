@@ -21,13 +21,17 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
   const [style, setStyle] = useState<StagingStyle>(
     photo.staging_style ?? photo.suggested_style ?? "modern",
   );
+  // Each variation costs one staging credit, so default to a single image and
+  // let the agent spend more deliberately (up to the schema's max of 4; we cap
+  // the picker at 3 to match the results grid).
+  const [variationCount, setVariationCount] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
   const variations = photo.staging_variations ?? [];
   const isGenerating = variations.length === 0 && photo.staged_url === null;
 
   const generate = useMutation({
-    mutationFn: () => photoApi.stage(photo.id, { style, variations: 3 }),
+    mutationFn: () => photoApi.stage(photo.id, { style, variations: variationCount }),
     onSuccess: () => {
       // Trigger a poll loop — the photos query will pick up the new variations
       // once the callback lands. We don't optimistically write anything here.
@@ -95,11 +99,27 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
             ) : null}
           </label>
           <div className="flex flex-wrap items-end gap-2">
+            <label className="space-y-1 text-sm">
+              <span className="block font-medium">Variations</span>
+              <select
+                value={variationCount}
+                onChange={(e) => setVariationCount(Number(e.target.value))}
+                className="h-10 w-24 rounded-md border border-slate-300 bg-white px-3 text-sm"
+              >
+                {[1, 2, 3].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
             <Button variant="outline" onClick={() => suggest.mutate()} disabled={suggest.isPending}>
               {suggest.isPending ? "Asking Claude…" : "Suggest style"}
             </Button>
             <Button onClick={() => generate.mutate()} disabled={generate.isPending}>
-              {generate.isPending ? "Queuing…" : "Generate 3 variations"}
+              {generate.isPending
+                ? "Queuing…"
+                : `Generate (${variationCount} credit${variationCount > 1 ? "s" : ""})`}
             </Button>
             {variations.length > 0 ? (
               <Button variant="outline" onClick={() => clear.mutate()} disabled={clear.isPending}>
@@ -117,9 +137,13 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
 
         {variations.length === 0 ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <Slot label="Variation 1" pending={generate.isPending || isGenerating} />
-            <Slot label="Variation 2" pending={generate.isPending || isGenerating} />
-            <Slot label="Variation 3" pending={generate.isPending || isGenerating} />
+            {Array.from({ length: variationCount }, (_, i) => (
+              <Slot
+                key={i}
+                label={`Variation ${i + 1}`}
+                pending={generate.isPending || isGenerating}
+              />
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
