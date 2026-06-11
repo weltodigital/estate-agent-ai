@@ -11,10 +11,16 @@ class Settings(BaseSettings):
     replicate_api_token: str = ""
     # Replicate model slugs (owner/name; the latest version is used). Overridable
     # so models can be pinned/rotated without a code change.
-    replicate_staging_model: str = "adirik/interior-design"
     replicate_relight_model: str = "zsxkib/ic-light"
     # LaMa object removal: image + mask (white = remove). See replicate.remove_object.
     replicate_inpaint_model: str = "zylim0702/remove-object"
+
+    # fal.ai — virtual staging via the FLUX.2 apartment-staging model. Auth is
+    # the FAL_KEY env var (see app/integrations/fal.py). The model furnishes an
+    # empty room while preserving its architecture, which the previous SD-based
+    # Replicate model could not do reliably.
+    fal_key: str = ""
+    fal_staging_model: str = "fal-ai/flux-2-lora-gallery/apartment-staging"
 
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""

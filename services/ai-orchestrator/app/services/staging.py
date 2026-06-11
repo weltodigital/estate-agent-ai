@@ -1,13 +1,17 @@
 """Virtual staging pipeline.
 
-Stages an empty room into a furnished interior with Replicate (the model slug
-is `replicate_staging_model`), producing N variations by varying the seed.
-Each variation is uploaded to R2 and the URLs are POSTed back to the API,
-signed with HMAC.
+Stages an empty room into a furnished interior with the fal.ai FLUX.2
+apartment-staging model (`fal_staging_model`), producing N variations by varying
+the seed. Each variation is uploaded to R2 and the URLs are POSTed back to the
+API, signed with HMAC. FLUX.2 follows natural-language edits, so we instruct it
+to furnish the room while holding the architecture fixed — the
+structure-preservation the previous SD-based Replicate model could not manage.
 
-When Replicate isn't configured — or a call fails — we fall back to a local
-PIL approximation (colour / contrast / saturation tweaks) so the queue and
-callback flow still works end to end during dev without burning credits.
+When fal isn't configured — i.e. local dev with no FAL_KEY — we fall back to a
+local PIL approximation (colour / contrast / saturation tweaks) so the queue and
+callback flow still works end to end without burning credits. A configured-but-
+failed call propagates so the job reports ``failed`` rather than silently
+shipping an un-staged image as if it were staged (and billing for it).
 """
 
 from __future__ import annotations
@@ -21,7 +25,7 @@ from typing import Literal
 import httpx
 from PIL import Image, ImageEnhance, ImageFilter
 
-from app.integrations import replicate
+from app.integrations import fal
 from app.integrations.hmac_sign import sign
 from app.integrations.r2 import put_object
 
@@ -29,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 Style = Literal["modern", "scandi", "classic", "minimal", "luxury", "family"]
 
-# Prompts tuned for the UK market — understated, John Lewis not Restoration
-# Hardware. Geometry (walls, windows, floor) is preserved by the model.
+# Per-style descriptions, tuned for the UK market — understated, John Lewis not
+# Restoration Hardware. Folded into the instruction below.
 STYLE_PROMPTS: dict[Style, str] = {
     "modern": "a modern British interior, contemporary furniture, clean lines, neutral palette",
     "scandi": "a Scandinavian interior, light oak, soft textiles, white walls, uncluttered",
@@ -39,31 +43,26 @@ STYLE_PROMPTS: dict[Style, str] = {
     "luxury": "a refined luxury British interior, high-end furnishings, rich textures",
     "family": "a comfortable family British interior, practical furniture, warm and inviting",
 }
-_PROMPT_SUFFIX = (
-    ", interior design photography, photorealistic, natural daylight, tasteful staging, "
-    "estate agent quality"
+# FLUX.2 follows natural-language edits, so we instruct it to furnish the room
+# AND explicitly hold the architecture fixed — this is what keeps the staging
+# honest (no fabricated windows/doors/flooring) for an estate-agent listing.
+_STAGING_INSTRUCTION = (
+    "Furnish this empty room as {style}. Add tasteful, photorealistic furniture "
+    "and decor suitable for a UK estate-agent listing photo, with natural "
+    "daylight and realistic shadows. Keep the existing walls, windows, doors, "
+    "flooring, ceiling and room dimensions exactly as they are — do not alter, "
+    "add or remove any architectural features."
 )
-_NEGATIVE_PROMPT = (
-    "cluttered, distorted architecture, warped walls, low quality, blurry, watermark, text, "
-    "people, deformed furniture, "
-    # Forbid structural edits — the model otherwise reworks the shell, not just
-    # the furnishings (the bug we're tuning against).
-    "extra door, additional doors, new doorway, extra window, additional windows, "
-    "changed flooring, different floor, replaced floor, altered walls, moved walls, "
-    "new ceiling, added ceiling lights, structural changes, room layout change"
-)
+
+
+def _staging_prompt(style: Style) -> str:
+    return _STAGING_INSTRUCTION.format(style=STYLE_PROMPTS[style])
+
+
 # Base seed; each variation offsets it so outputs differ but stay reproducible.
 _SEED_BASE = 1000
 
-# Generation fidelity knobs (override the model's room-redesigning defaults of
-# prompt_strength=0.8 / guidance_scale=15). Lower prompt_strength keeps the
-# existing architecture and mainly inpaints furniture; lower guidance biases
-# toward the photo over the text prompt. Tune here if rooms come back
-# under-furnished (raise strength) or still structurally altered (lower it).
-_PROMPT_STRENGTH = 0.5
-_GUIDANCE_SCALE = 10.0
-
-# Fallback (PIL) tuning, used only when Replicate is unavailable.
+# Fallback (PIL) tuning, used only when fal is unavailable (dev, no FAL_KEY).
 STYLE_TUNING: dict[Style, tuple[float, float, float, float]] = {
     # (saturation, contrast, brightness, sharpness)
     "modern": (0.95, 1.15, 1.02, 1.10),
@@ -86,6 +85,20 @@ def _encode_jpeg(image: Image.Image) -> bytes:
     return buf.getvalue()
 
 
+def _fal_image_size(image: Image.Image) -> dict[str, int]:
+    """Output size matching the input's aspect ratio so the room isn't cropped
+    or stretched. Longest side scaled to ~1024px, dimensions snapped to a
+    multiple of 32 (a FLUX requirement)."""
+    w, h = image.size
+    longest = max(w, h)
+    scale = 1024 / longest if longest > 1024 else 1.0
+
+    def snap(value: float) -> int:
+        return max(512, round(value * scale / 32) * 32)
+
+    return {"width": snap(w), "height": snap(h)}
+
+
 async def _download(url: str) -> bytes:
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(url)
@@ -98,7 +111,7 @@ def _render_variation_fallback(
     style: Style,
     variation_index: int,
 ) -> Image.Image:
-    """Local PIL approximation used when Replicate isn't available."""
+    """Local PIL approximation used when fal isn't configured (dev)."""
     base = STYLE_TUNING[style]
     offset = VARIATION_OFFSETS[variation_index % len(VARIATION_OFFSETS)]
     sat, con, bri, sha = (base[i] * offset[i] for i in range(4))
@@ -115,32 +128,29 @@ def _render_variation_fallback(
 
 
 async def _staged_jpeg(
-    raw: bytes,
+    photo_url: str,
     original: Image.Image,
     style: Style,
     variation_index: int,
 ) -> bytes:
     """Produce one staged variation as JPEG bytes.
 
-    When Replicate is configured we use it and let any failure propagate so the
-    job reports ``failed`` — the PIL fallback only adjusts colour/contrast and
+    When fal is configured we use it and let any failure propagate so the job
+    reports ``failed`` — the PIL fallback only adjusts colour/contrast and
     cannot furnish a room, so silently substituting it would ship un-staged
     images as if they were staged (and bill the user for them). The fallback is
-    reserved for local dev where no token is set, keeping the queue/callback
+    reserved for local dev where no FAL_KEY is set, keeping the queue/callback
     flow working without burning credits.
     """
-    if replicate.is_configured():
-        prompt = STYLE_PROMPTS[style] + _PROMPT_SUFFIX
-        staged = await replicate.stage_room(
-            raw,
-            prompt,
-            _NEGATIVE_PROMPT,
+    if fal.is_configured():
+        staged = await fal.stage_room(
+            photo_url,
+            _staging_prompt(style),
             seed=_SEED_BASE + variation_index,
-            prompt_strength=_PROMPT_STRENGTH,
-            guidance_scale=_GUIDANCE_SCALE,
+            image_size=_fal_image_size(original),
         )
         return _encode_jpeg(Image.open(io.BytesIO(staged)))
-    logger.info("staging: Replicate not configured; using PIL fallback (dev)")
+    logger.info("staging: fal not configured; using PIL fallback (dev)")
     return _encode_jpeg(_render_variation_fallback(original, style, variation_index))
 
 
@@ -176,7 +186,7 @@ async def run_staging_job(
         outputs: list[dict[str, object]] = []
         for i in range(max(1, min(variations, 4))):
             variation_id = str(uuid.uuid4())
-            jpeg = await _staged_jpeg(raw, original, style, i)
+            jpeg = await _staged_jpeg(photo_url, original, style, i)
             url = put_object(_key(photo_id, variation_id), jpeg)
             outputs.append({"id": variation_id, "url": url, "sort_order": i})
 

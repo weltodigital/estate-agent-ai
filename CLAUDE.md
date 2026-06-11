@@ -14,7 +14,7 @@ Turborepo + pnpm monorepo. Three runtimes:
 
 - `apps/web` — Next.js 14 (App Router), agent-facing UI
 - `apps/api` — Fastify REST API, queue producer
-- `services/ai-orchestrator` — Python FastAPI, calls Claude Vision / Replicate / ClipDrop
+- `services/ai-orchestrator` — Python FastAPI, calls Claude Vision / fal.ai (virtual staging) / Replicate / ClipDrop
   Workers run from `apps/api/src/worker.ts` consuming BullMQ queues.
 
 ## CORE CONVENTIONS

@@ -5,14 +5,16 @@ package — it keeps the dependency set unchanged and matches the async-httpx
 convention used elsewhere in the orchestrator.
 
 Two helpers are exposed:
-  - `stage_room`   — virtual staging (empty room + style prompt -> furnished)
-  - `relight_dusk` — golden-hour / dusk relighting
+  - `relight_dusk`  — golden-hour / dusk relighting
+  - `remove_object` — LaMa inpainting (erase a masked region)
 
 Both take raw image bytes, hand the model a data URI, run the prediction to
 completion, and return the generated image bytes. Model slugs come from config
-(`replicate_staging_model` / `replicate_relight_model`) so they can be pinned
+(`replicate_relight_model` / `replicate_inpaint_model`) so they can be pinned
 or swapped without a code change. Callers guard on `is_configured()` and fall
 back to a local PIL approximation when the token is unset or a call fails.
+
+(Virtual staging moved to the fal.ai FLUX.2 model — see app/integrations/fal.py.)
 """
 
 from __future__ import annotations
@@ -117,38 +119,6 @@ async def run_model(model: str, model_input: dict[str, Any]) -> list[str]:
         if isinstance(output, list):
             return [item for item in output if isinstance(item, str)]
         raise ReplicateError(f"Unexpected Replicate output shape: {type(output)!r}")
-
-
-async def stage_room(
-    image_bytes: bytes,
-    prompt: str,
-    negative_prompt: str,
-    seed: int,
-    prompt_strength: float,
-    guidance_scale: float,
-) -> bytes:
-    """Virtually stage an empty room. Returns the generated JPEG/PNG bytes.
-
-    `prompt_strength` is the img2img denoising strength (1.0 = full destruction
-    of the source image); keep it low to preserve the room's architecture and
-    only add furnishings. `guidance_scale` trades prompt-adherence against
-    fidelity to the photo. Both override the model's aggressive defaults
-    (0.8 / 15), which redesign floors, doors and windows.
-    """
-    outputs = await run_model(
-        get_settings().replicate_staging_model,
-        {
-            "image": _data_uri(image_bytes),
-            "prompt": prompt,
-            "negative_prompt": negative_prompt,
-            "seed": seed,
-            "prompt_strength": prompt_strength,
-            "guidance_scale": guidance_scale,
-        },
-    )
-    if not outputs:
-        raise ReplicateError("Staging model returned no image.")
-    return await _download(outputs[0])
 
 
 async def relight_dusk(image_bytes: bytes, prompt: str) -> bytes:
