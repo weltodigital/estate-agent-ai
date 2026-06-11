@@ -15,7 +15,7 @@ export const PRODUCT_TAGLINE_DESCRIPTION = "Marketing software for UK estate age
 export const PRODUCT_TAGLINE = "Marketing for property, done properly.";
 
 /** Email and product sign-off. */
-export const TEAM_SIGN_OFF = "— The Privett team";
+export const TEAM_SIGN_OFF = "The Privett team";
 
 /** Contact address used in marketing + transactional copy. */
 export const CONTACT_EMAIL = "hello@useprivett.com";

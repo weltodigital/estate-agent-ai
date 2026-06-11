@@ -110,7 +110,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
       {isLoading ? (
         <p className="text-sm text-slate-500">Loading floor plans…</p>
       ) : plans.length === 0 ? (
-        <p className="text-sm text-slate-500">No floor plans yet — upload a sketch above.</p>
+        <p className="text-sm text-slate-500">No floor plans yet. Upload a sketch above.</p>
       ) : (
         <ul className="space-y-4">
           {plans.map((plan) => (

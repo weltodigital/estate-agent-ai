@@ -10,7 +10,7 @@ const FAQ = [
   },
   {
     q: "What happens if I go over my allowance?",
-    a: "We let you know before you hit it. Overages are charged at the per-unit rate listed above — no surprises.",
+    a: "We let you know before you hit it. Overages are charged at the per-unit rate listed above. No surprises.",
   },
   {
     q: "Is there a free trial?",
@@ -18,7 +18,7 @@ const FAQ = [
   },
   {
     q: "Do you do annual billing?",
-    a: "Yes — 10% off on every tier. Ask us when you're ready.",
+    a: "Yes, 10% off on every tier. Ask us when you're ready.",
   },
   {
     q: "Can my whole agency use one account?",

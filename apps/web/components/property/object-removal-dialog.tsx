@@ -147,7 +147,7 @@ export function ObjectRemovalDialog({
           <div>
             <h2 className="text-lg font-semibold">Remove objects</h2>
             <p className="text-sm text-slate-500">
-              Paint over the things you want gone — a bin, a car, clutter — then remove them.
+              Paint over the things you want gone, like a bin, a car, or clutter, then remove them.
             </p>
           </div>
           <button type="button" onClick={onClose} className="text-sm text-slate-500">

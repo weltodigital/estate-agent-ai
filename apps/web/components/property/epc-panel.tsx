@@ -75,11 +75,11 @@ export function EpcPanel({ property }: { property: Property }) {
               {property.epc_potential_rating ? (
                 <RatingBadge rating={property.epc_potential_rating} />
               ) : (
-                <span className="text-slate-400">—</span>
+                <span className="text-slate-400">N/A</span>
               )}
             </Stat>
             <Stat label="Valid until">
-              <span>{property.epc_expiry_date ?? "—"}</span>
+              <span>{property.epc_expiry_date ?? "N/A"}</span>
             </Stat>
           </dl>
         ) : (
@@ -114,7 +114,7 @@ export function EpcPanel({ property }: { property: Property }) {
                   <div className="space-y-1">
                     <p className="text-sm font-medium">{record.address}</p>
                     <p className="text-xs text-slate-500">
-                      Valid until {record.expiry_date ?? "—"}
+                      Valid until {record.expiry_date ?? "N/A"}
                       {record.inspection_date ? ` · inspected ${record.inspection_date}` : ""}
                     </p>
                   </div>

@@ -12,9 +12,9 @@ const TONE_GUIDANCE: Record<GenerateDescriptionRequest["tone"], string> = {
   friendly:
     "Tone: friendly. Warm and welcoming, conversational without being casual. Aimed at first-time buyers and families.",
   luxury:
-    "Tone: luxury. Refined and evocative, drawing attention to craft, finishes, and lifestyle. Restrained — no overclaiming.",
+    "Tone: luxury. Refined and evocative, drawing attention to craft, finishes, and lifestyle. Restrained, no overclaiming.",
   lettings:
-    "Tone: lettings. Focused on suitability for tenants — space, condition, transport, council tax band where relevant. Practical, not lyrical.",
+    "Tone: lettings. Focused on suitability for tenants: space, condition, transport, council tax band where relevant. Practical, not lyrical.",
 };
 
 const SYSTEM_PROMPT = `You write property listings for UK estate agents. Strict rules:
@@ -25,8 +25,9 @@ const SYSTEM_PROMPT = `You write property listings for UK estate agents. Strict 
 - Reference the EPC rating if one is provided, briefly and matter-of-factly.
 - Produce three or four paragraphs separated by a single blank line. No headings, no bullet lists, no markdown.
 - Match the requested tone exactly.
-- Do not include the property's full postal address in the body — the address is shown above the listing already. You may reference the town or street name.
+- Do not include the property's full postal address in the body. The address is shown above the listing already. You may reference the town or street name.
 - Do not add a sign-off, a call-to-action ("Call us today"), or contact details.
+- Do not use em-dashes; use commas, colons, or full stops instead.
 - Output the description text only. No preamble, no closing remarks, no quote marks.`;
 
 function buildUserPrompt(property: Property, payload: GenerateDescriptionRequest): string {

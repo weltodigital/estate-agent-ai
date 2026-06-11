@@ -18,13 +18,14 @@ Pronounced **PRIH-vett**. Two syllables, soft.
 
 ## Voice & tone
 
-Warm, considered, quietly confident. The voice of a thoughtful senior colleague who happens to be brilliant at marketing — not a salesperson, not a robot.
+Warm, considered, quietly confident. The voice of a thoughtful senior colleague who happens to be brilliant at marketing, not a salesperson, not a robot.
 
-- **UK English throughout** — colour, centre, kerbside, organisation, lounge, garden, lift.
+- **UK English throughout:** colour, centre, kerbside, organisation, lounge, garden, lift.
 - **Short sentences.** Understatement is a confidence signal.
 - **Never shouty, never tech-jargony, never twee.**
 - **No exclamation marks** except in error/success toasts.
-- **Never "AI-powered"** — say what the thing actually does.
+- **No em-dashes.** Use commas, colons, or full stops instead.
+- **Never "AI-powered":** say what the thing actually does.
 - Avoid over-explanation. If a sentence runs past 20 words, cut it.
 
 **Tagline (primary):** Marketing for property, done properly.

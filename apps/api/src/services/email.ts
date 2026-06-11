@@ -81,7 +81,7 @@ export async function sendInviteEmail(args: {
     <p style="margin:0 0 4px;font-size:13px;line-height:1.6;color:${SLATE};">
       This invitation expires in 7 days.
     </p>
-    <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:${WALNUT};">— The Privett team</p>`;
+    <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:${WALNUT};">The Privett team</p>`;
 
   await sendEmail({
     to: args.to,

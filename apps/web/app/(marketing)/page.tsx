@@ -19,7 +19,7 @@ const PROOF_POINTS = [
 const FEATURES = [
   {
     title: "AI virtual staging.",
-    body: "Upload a photo of an empty room. Pick a style. Get three furnished variations in a minute. Tuned for UK interiors — John Lewis, not Restoration Hardware.",
+    body: "Upload a photo of an empty room. Pick a style. Get three furnished variations in a minute. Tuned for UK interiors: John Lewis, not Restoration Hardware.",
   },
   {
     title: "Floor plans from a sketch.",
@@ -88,9 +88,9 @@ export default function HomePage() {
           <h2 className="text-brand-ink text-[36px]">Independent agents deserve better tools.</h2>
           <p className="text-brand-walnut mt-6 text-[17px] leading-[1.6]">
             Estate agents spend hours on listing marketing that should take minutes. Privett gives
-            you the tools the big chains have built in-house — virtual staging, branded floor plans,
-            polished descriptions — without the cost or the wait. Upload your photos and sketch on
-            Monday. Listing live by Tuesday.
+            you the tools the big chains have built in-house, like virtual staging, branded floor
+            plans, polished descriptions, without the cost or the wait. Upload your photos and
+            sketch on Monday. Listing live by Tuesday.
           </p>
         </div>
       </section>

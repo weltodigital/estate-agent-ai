@@ -273,7 +273,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
       {isLoading ? (
         <p className="text-sm text-slate-500">Loading photos…</p>
       ) : photos.length === 0 ? (
-        <p className="text-sm text-slate-500">No photos yet — upload to get started.</p>
+        <p className="text-sm text-slate-500">No photos yet. Upload to get started.</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
@@ -350,7 +350,7 @@ function EnhanceDialog({
         ))}
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        Object removal is per-photo — use “Remove objects” on a photo to paint what to erase.
+        Object removal is per-photo. Use “Remove objects” on a photo to paint what to erase.
       </p>
       <div className="mt-3 flex justify-end">
         <Button onClick={onSubmit}>Run enhancements</Button>

@@ -82,7 +82,7 @@ export function LoginForm() {
         </p>
       ) : null}
       {magicLinkSent ? (
-        <p className="text-sm text-emerald-700">Magic link sent — check your inbox.</p>
+        <p className="text-sm text-emerald-700">Magic link sent. Check your inbox.</p>
       ) : null}
       <div className="space-y-2">
         <Button type="submit" disabled={isSubmitting} className="w-full">

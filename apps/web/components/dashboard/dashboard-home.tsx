@@ -219,7 +219,7 @@ function StatCard({
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value === null ? "—" : value}</p>
+      <p className="mt-1 text-2xl font-semibold">{value === null ? "…" : value}</p>
       {hint ? <p className="text-xs text-slate-400">{hint}</p> : null}
     </div>
   );
@@ -231,7 +231,7 @@ function usageLabel(
 ): string | null {
   if (!data) return null;
   const row = data.usage.find((u) => u.event_type === eventType);
-  if (!row) return "—";
+  if (!row) return "N/A";
   return `${row.used} / ${row.limit}`;
 }
 

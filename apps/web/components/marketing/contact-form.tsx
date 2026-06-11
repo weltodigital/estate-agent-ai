@@ -44,7 +44,7 @@ export function ContactForm() {
         style={fieldBorder}
         role="status"
       >
-        <p className="text-brand-ink text-base font-medium">Thanks — message received.</p>
+        <p className="text-brand-ink text-base font-medium">Thanks, message received.</p>
         <p className="text-brand-walnut mt-2">
           We&rsquo;ll be in touch shortly. Keep an eye on your inbox.
         </p>

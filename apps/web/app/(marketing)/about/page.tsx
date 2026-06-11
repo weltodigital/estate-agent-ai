@@ -3,7 +3,7 @@ export const metadata = { title: "About" };
 const SECTIONS = [
   {
     heading: "Built for independent agents.",
-    body: "The big chains have entire marketing teams behind every listing. Independent agents don't — but their clients still expect the same quality of presentation. Privett closes that gap with software.",
+    body: "The big chains have entire marketing teams behind every listing. Independent agents don't, but their clients still expect the same quality of presentation. Privett closes that gap with software.",
   },
   {
     heading: "Made in the UK, for UK property.",
