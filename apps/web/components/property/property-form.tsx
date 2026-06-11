@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   createPropertySchema,
   type CreatePropertyRequest,
@@ -20,7 +21,19 @@ import { propertyApi } from "@/lib/queries";
 
 type Mode = { kind: "create" } | { kind: "edit"; property: Property };
 
-type FormValues = CreatePropertyRequest;
+// Agents think in pounds, not pence — the form collects a pounds value and we
+// convert to pence (the DB/API contract) on submit. Everything else in
+// createPropertySchema is reused as-is so the contract stays the source of truth.
+const propertyFormSchema = createPropertySchema.omit({ price_pence: true }).extend({
+  price_pounds: z
+    .number({ invalid_type_error: "Enter a price in pounds" })
+    .min(0, "Price cannot be negative"),
+});
+
+type FormValues = z.infer<typeof propertyFormSchema>;
+
+const poundsToPence = (pounds: number) => Math.round(pounds * 100);
+const penceToPounds = (pence: number) => pence / 100;
 
 const PROPERTY_TYPE_LABELS: Record<UkPropertyType, string> = {
   detached: "Detached",
@@ -56,7 +69,7 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
             listing_type: mode.property.listing_type,
             bedrooms: mode.property.bedrooms,
             bathrooms: mode.property.bathrooms,
-            price_pence: mode.property.price_pence,
+            price_pounds: penceToPounds(mode.property.price_pence),
             notes: mode.property.notes ?? undefined,
           }
         : {
@@ -68,7 +81,7 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
             listing_type: "sale",
             bedrooms: 0,
             bathrooms: 0,
-            price_pence: 0,
+            price_pounds: 0,
           },
     // propertyKey changes when we switch between create/edit or between two
     // different properties — that's the only time defaults need to flip.
@@ -82,7 +95,7 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
     formState: { errors, isSubmitting },
     reset,
   } = useForm<FormValues>({
-    resolver: zodResolver(createPropertySchema),
+    resolver: zodResolver(propertyFormSchema),
     defaultValues: defaults,
   });
 
@@ -92,11 +105,16 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
+    const { price_pounds, ...rest } = values;
+    const payload: CreatePropertyRequest = {
+      ...rest,
+      price_pence: poundsToPence(price_pounds),
+    };
     try {
       const property =
         mode.kind === "edit"
-          ? await propertyApi.update(mode.property.id, values)
-          : await propertyApi.create(values);
+          ? await propertyApi.update(mode.property.id, payload)
+          : await propertyApi.create(payload);
       router.push(`/properties/${property.id}`);
       router.refresh();
     } catch (err) {
@@ -165,12 +183,13 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
             {...register("bathrooms", { valueAsNumber: true })}
           />
         </Field>
-        <Field label="Price (pence)" id="price_pence" error={errors.price_pence?.message}>
+        <Field label="Price (£)" id="price_pounds" error={errors.price_pounds?.message}>
           <Input
-            id="price_pence"
+            id="price_pounds"
             type="number"
             min={0}
-            {...register("price_pence", { valueAsNumber: true })}
+            step="0.01"
+            {...register("price_pounds", { valueAsNumber: true })}
           />
         </Field>
         <div className="md:col-span-2">
