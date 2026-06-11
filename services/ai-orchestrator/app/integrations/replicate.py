@@ -28,6 +28,10 @@ from app.config import get_settings
 _API_BASE = "https://api.replicate.com/v1"
 # Terminal Replicate prediction states.
 _PENDING = ("starting", "processing")
+# Cache each model's latest-version id for the process lifetime. Resolving it
+# costs an extra round-trip per prediction, and it changes only when the model
+# owner publishes a new version (rare; a redeploy clears the cache).
+_version_cache: dict[str, str] = {}
 
 
 class ReplicateNotConfiguredError(RuntimeError):
@@ -60,18 +64,37 @@ async def _download(url: str) -> bytes:
         return resp.content
 
 
+async def _latest_version(client: httpx.AsyncClient, model: str) -> str:
+    """Resolve a model's latest version id (cached per process)."""
+    cached = _version_cache.get(model)
+    if cached:
+        return cached
+    resp = await client.get(f"{_API_BASE}/models/{model}", headers=_headers())
+    if resp.status_code >= 400:
+        raise ReplicateError(f"Replicate model lookup failed ({resp.status_code}): {resp.text}")
+    version = resp.json().get("latest_version", {}).get("id")
+    if not isinstance(version, str) or not version:
+        raise ReplicateError(f"Replicate model {model!r} has no published version.")
+    _version_cache[model] = version
+    return version
+
+
 async def run_model(model: str, model_input: dict[str, Any]) -> list[str]:
     """Run a Replicate model to completion and return its output URL(s).
 
-    Uses the model-level predictions endpoint (latest version) with the
-    `Prefer: wait` header so short jobs return synchronously; anything still
-    running after the wait window is polled until it terminates.
+    Resolves the model's latest version and creates the prediction via the
+    versioned `/predictions` endpoint with the `Prefer: wait` header (so short
+    jobs return synchronously; anything still running after the wait window is
+    polled until it terminates). The versioned endpoint works for community
+    models — `/models/{model}/predictions` is limited to Replicate's official
+    models and 404s otherwise.
     """
     async with httpx.AsyncClient(timeout=120) as client:
+        version = await _latest_version(client, model)
         resp = await client.post(
-            f"{_API_BASE}/models/{model}/predictions",
+            f"{_API_BASE}/predictions",
             headers={**_headers(), "Prefer": "wait"},
-            json={"input": model_input},
+            json={"version": version, "input": model_input},
         )
         if resp.status_code >= 400:
             raise ReplicateError(f"Replicate create failed ({resp.status_code}): {resp.text}")

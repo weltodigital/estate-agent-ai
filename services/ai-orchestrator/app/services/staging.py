@@ -107,23 +107,22 @@ async def _staged_jpeg(
     style: Style,
     variation_index: int,
 ) -> bytes:
-    """Produce one staged variation as JPEG bytes — Replicate if configured,
-    otherwise the PIL fallback. A Replicate failure degrades to the fallback
-    rather than failing the whole job."""
+    """Produce one staged variation as JPEG bytes.
+
+    When Replicate is configured we use it and let any failure propagate so the
+    job reports ``failed`` — the PIL fallback only adjusts colour/contrast and
+    cannot furnish a room, so silently substituting it would ship un-staged
+    images as if they were staged (and bill the user for them). The fallback is
+    reserved for local dev where no token is set, keeping the queue/callback
+    flow working without burning credits.
+    """
     if replicate.is_configured():
         prompt = STYLE_PROMPTS[style] + _PROMPT_SUFFIX
-        try:
-            staged = await replicate.stage_room(
-                raw, prompt, _NEGATIVE_PROMPT, seed=_SEED_BASE + variation_index
-            )
-            return _encode_jpeg(Image.open(io.BytesIO(staged)))
-        except Exception:
-            logger.warning(
-                "staging: Replicate failed for style=%s var=%d; using PIL fallback",
-                style,
-                variation_index,
-                exc_info=True,
-            )
+        staged = await replicate.stage_room(
+            raw, prompt, _NEGATIVE_PROMPT, seed=_SEED_BASE + variation_index
+        )
+        return _encode_jpeg(Image.open(io.BytesIO(staged)))
+    logger.info("staging: Replicate not configured; using PIL fallback (dev)")
     return _encode_jpeg(_render_variation_fallback(original, style, variation_index))
 
 
