@@ -17,6 +17,13 @@ FROM node:22-slim
 RUN corepack enable
 WORKDIR /repo
 
+# Survive transient npm-registry blips during install. The default 2 retries
+# isn't enough — flaky registry GETs surface as ERR_PNPM_ENOENT and fail the
+# build (and can leave a half-written store). pnpm reads these npm_config_* vars.
+ENV npm_config_fetch_retries=5 \
+    npm_config_fetch_retry_mintimeout=20000 \
+    npm_config_fetch_retry_maxtimeout=120000
+
 # Install the whole workspace from the committed lockfile. The repo is copied
 # in full; .dockerignore keeps node_modules / .next / dist / .venv / .env out.
 COPY . .
