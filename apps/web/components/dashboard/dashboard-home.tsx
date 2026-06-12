@@ -32,11 +32,6 @@ export function DashboardHome() {
     queryFn: () => propertyApi.list({ limit: 5, offset: 0 }),
   });
 
-  const active = useQuery({
-    queryKey: queryKeys.properties({ status: "active", limit: 1, offset: 0 }),
-    queryFn: () => propertyApi.list({ status: "active", limit: 1, offset: 0 }),
-  });
-
   const billing = useQuery<BillingStatusResponse>({
     queryKey: ["billing", "status"],
     queryFn: billingApi.status,
@@ -81,8 +76,9 @@ export function DashboardHome() {
           value={recent.isLoading ? null : (recent.data?.total ?? 0)}
         />
         <StatCard
-          label="Active listings"
-          value={active.isLoading ? null : (active.data?.total ?? 0)}
+          label="Photos enhanced"
+          value={usageLabel(billing.data, "photo_enhanced")}
+          hint="this month"
         />
         <StatCard
           label="AI descriptions"
