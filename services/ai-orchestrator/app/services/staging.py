@@ -88,7 +88,7 @@ def _encode_jpeg(image: Image.Image) -> bytes:
 # Disclosure stamped into every staged image — the furniture is digital, so the
 # image must say so. Baked into the pixels (not metadata) so it survives a
 # download / re-upload to a portal.
-_WATERMARK_TEXT = "Virtually staged"
+_WATERMARK_TEXT = "Virtually staged with Privett"
 
 
 def _apply_watermark(image: Image.Image) -> Image.Image:
