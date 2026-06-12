@@ -23,7 +23,7 @@ import uuid
 from typing import Literal
 
 import httpx
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 from app.integrations import fal
 from app.integrations.hmac_sign import sign
@@ -83,6 +83,44 @@ def _encode_jpeg(image: Image.Image) -> bytes:
     buf = io.BytesIO()
     image.convert("RGB").save(buf, format="JPEG", quality=88, optimize=True)
     return buf.getvalue()
+
+
+# Disclosure stamped into every staged image — the furniture is digital, so the
+# image must say so. Baked into the pixels (not metadata) so it survives a
+# download / re-upload to a portal.
+_WATERMARK_TEXT = "Virtually staged"
+
+
+def _apply_watermark(image: Image.Image) -> Image.Image:
+    """Stamp the staging disclosure into the bottom-right corner, on a
+    semi-transparent slate pill so it stays legible over any background. Sized
+    relative to the image so it reads at thumbnail and full size alike."""
+    base = image.convert("RGBA")
+    w, h = base.size
+    font_size = max(18, w // 36)
+    font = ImageFont.load_default(size=font_size)
+
+    overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    left, top, right, bottom = draw.textbbox((0, 0), _WATERMARK_TEXT, font=font)
+    text_w, text_h = right - left, bottom - top
+
+    pad = max(8, font_size // 3)
+    margin = max(12, w // 60)
+    box_right, box_bottom = w - margin, h - margin
+    box_left, box_top = box_right - text_w - 2 * pad, box_bottom - text_h - 2 * pad
+    draw.rounded_rectangle(
+        (box_left, box_top, box_right, box_bottom),
+        radius=pad,
+        fill=(15, 23, 42, 140),  # slate-900 at ~55% opacity
+    )
+    draw.text(
+        (box_left + pad - left, box_top + pad - top),
+        _WATERMARK_TEXT,
+        font=font,
+        fill=(255, 255, 255, 235),
+    )
+    return Image.alpha_composite(base, overlay).convert("RGB")
 
 
 def _fal_image_size(image: Image.Image) -> dict[str, int]:
@@ -149,9 +187,12 @@ async def _staged_jpeg(
             seed=_SEED_BASE + variation_index,
             image_size=_fal_image_size(original),
         )
-        return _encode_jpeg(Image.open(io.BytesIO(staged)))
-    logger.info("staging: fal not configured; using PIL fallback (dev)")
-    return _encode_jpeg(_render_variation_fallback(original, style, variation_index))
+        image: Image.Image = Image.open(io.BytesIO(staged))
+    else:
+        logger.info("staging: fal not configured; using PIL fallback (dev)")
+        image = _render_variation_fallback(original, style, variation_index)
+    # Every staged image carries the disclosure watermark.
+    return _encode_jpeg(_apply_watermark(image))
 
 
 def _key(photo_id: str, variation_id: str) -> str:
