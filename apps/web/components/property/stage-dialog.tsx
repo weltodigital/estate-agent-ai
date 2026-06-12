@@ -199,7 +199,9 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
 
         {photo.staged_url ? (
           <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-            A staged image is saved for this photo. Picking another variation replaces it.
+            This staged image is now used for the photo in your listing (shown with a “Staged” badge
+            in the photo grid). Pick another variation to swap it, or Clear to revert to the
+            original.
           </div>
         ) : null}
       </div>

@@ -384,7 +384,12 @@ function SortablePhoto({
     id: photo.id,
   });
   const [showCompare, setShowCompare] = useState(false);
-  const hasEnhanced = Boolean(photo.enhanced_url);
+  // The image actually used for this photo: a selected staged image wins, then
+  // any enhancement, else the original. `derivedUrl` is whatever differs from
+  // the original (drives the before/after compare).
+  const derivedUrl = photo.staged_url ?? photo.enhanced_url ?? null;
+  const displayUrl = derivedUrl ?? photo.original_url;
+  const hasDerived = Boolean(derivedUrl);
 
   return (
     <div
@@ -409,12 +414,17 @@ function SortablePhoto({
           Processing…
         </span>
       ) : null}
+      {photo.staged_url ? (
+        <span className="absolute bottom-2 left-2 z-10 rounded bg-[color:var(--brand-primary)] px-2 py-0.5 text-xs text-white">
+          Staged
+        </span>
+      ) : null}
 
-      {showCompare && photo.enhanced_url ? (
-        <BeforeAfterSlider before={photo.original_url} after={photo.enhanced_url} />
+      {showCompare && derivedUrl ? (
+        <BeforeAfterSlider before={photo.original_url} after={derivedUrl} />
       ) : (
         <img
-          src={photo.enhanced_url ?? photo.original_url}
+          src={displayUrl}
           alt=""
           className="aspect-[4/3] w-full cursor-grab object-cover"
           {...attributes}
@@ -425,7 +435,7 @@ function SortablePhoto({
       <div className="flex items-center justify-between px-3 py-2 text-xs">
         <span>{photo.is_primary ? "Primary" : photo.room_type.replace("_", " ")}</span>
         <div className="flex flex-wrap gap-2">
-          {hasEnhanced ? (
+          {hasDerived ? (
             <button
               type="button"
               onClick={() => setShowCompare((v) => !v)}
