@@ -6,6 +6,7 @@ import { STAGING_STYLES, type StagingStyle } from "@app/shared/constants";
 import type { Photo, StagingVariation } from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
+import { ImageLightbox } from "./image-lightbox";
 
 const STYLE_LABELS: Record<StagingStyle, string> = {
   modern: "Modern",
@@ -26,6 +27,8 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
   // the picker at 3 to match the results grid).
   const [variationCount, setVariationCount] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  // URL of the staged image currently shown enlarged, if any.
+  const [enlargedUrl, setEnlargedUrl] = useState<string | null>(null);
 
   const variations = photo.staging_variations ?? [];
   const isGenerating = variations.length === 0 && photo.staged_url === null;
@@ -156,6 +159,7 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
                   variation={v}
                   onPick={() => select.mutate(v.id)}
                   isPicking={select.isPending}
+                  onEnlarge={() => setEnlargedUrl(v.url)}
                 />
               ))}
           </div>
@@ -167,6 +171,10 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
           </div>
         ) : null}
       </div>
+
+      {enlargedUrl ? (
+        <ImageLightbox src={enlargedUrl} alt="Staged image" onClose={() => setEnlargedUrl(null)} />
+      ) : null}
     </div>
   );
 }
@@ -183,16 +191,25 @@ function VariationCard({
   variation,
   onPick,
   isPicking,
+  onEnlarge,
 }: {
   variation: StagingVariation;
   onPick: () => void;
   isPicking: boolean;
+  onEnlarge: () => void;
 }) {
   return (
     <div
       className={`overflow-hidden rounded-md border ${variation.selected ? "border-[color:var(--brand-primary)] ring-2 ring-[color:var(--brand-primary)]" : "border-slate-200"} bg-white shadow-sm`}
     >
-      <img src={variation.url} alt="" className="aspect-[4/3] w-full object-cover" />
+      <button
+        type="button"
+        onClick={onEnlarge}
+        aria-label="Enlarge staged image"
+        className="block w-full cursor-zoom-in"
+      >
+        <img src={variation.url} alt="" className="aspect-[4/3] w-full object-cover" />
+      </button>
       <div className="flex items-center justify-between px-3 py-2 text-xs">
         <span>{variation.selected ? "Selected" : "Variation"}</span>
         <Button
