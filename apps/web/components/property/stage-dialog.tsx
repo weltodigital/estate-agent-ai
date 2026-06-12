@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { STAGING_STYLES, type StagingStyle } from "@app/shared/constants";
+import { STAGING_STYLES, type RoomType, type StagingStyle } from "@app/shared/constants";
 import type { Photo, StagingVariation } from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
@@ -17,10 +17,27 @@ const STYLE_LABELS: Record<StagingStyle, string> = {
   family: "Family",
 };
 
+// Rooms worth furnishing — exterior/garden are excluded from staging.
+const STAGING_ROOM_TYPES: RoomType[] = ["living_room", "bedroom", "kitchen", "bathroom", "other"];
+const ROOM_TYPE_LABELS: Record<RoomType, string> = {
+  living_room: "Living room",
+  bedroom: "Bedroom",
+  kitchen: "Kitchen",
+  bathroom: "Bathroom",
+  exterior: "Exterior",
+  garden: "Garden",
+  other: "Other",
+};
+
 export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => void }) {
   const queryClient = useQueryClient();
   const [style, setStyle] = useState<StagingStyle>(
     photo.staging_style ?? photo.suggested_style ?? "modern",
+  );
+  // Default to the photo's detected room (so a bedroom is staged as a bedroom),
+  // falling back to "other" for non-furnishable detections like exterior/garden.
+  const [roomType, setRoomType] = useState<RoomType>(
+    STAGING_ROOM_TYPES.includes(photo.room_type) ? photo.room_type : "other",
   );
   // Each variation costs one staging credit, so default to a single image and
   // let the agent spend more deliberately (up to the schema's max of 4; we cap
@@ -34,7 +51,8 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
   const isGenerating = variations.length === 0 && photo.staged_url === null;
 
   const generate = useMutation({
-    mutationFn: () => photoApi.stage(photo.id, { style, variations: variationCount }),
+    mutationFn: () =>
+      photoApi.stage(photo.id, { style, room_type: roomType, variations: variationCount }),
     onSuccess: () => {
       // Trigger a poll loop — the photos query will pick up the new variations
       // once the callback lands. We don't optimistically write anything here.
@@ -102,6 +120,20 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
             ) : null}
           </label>
           <div className="flex flex-wrap items-end gap-2">
+            <label className="space-y-1 text-sm">
+              <span className="block font-medium">Room type</span>
+              <select
+                value={roomType}
+                onChange={(e) => setRoomType(e.target.value as RoomType)}
+                className="h-10 w-36 rounded-md border border-slate-300 bg-white px-3 text-sm"
+              >
+                {STAGING_ROOM_TYPES.map((r) => (
+                  <option key={r} value={r}>
+                    {ROOM_TYPE_LABELS[r]}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="space-y-1 text-sm">
               <span className="block font-medium">Variations</span>
               <select

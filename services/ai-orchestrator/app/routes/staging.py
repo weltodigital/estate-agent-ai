@@ -21,6 +21,7 @@ async def generate(
         agency_id=request.agency_id,
         photo_url=str(request.photo_url),
         style=request.style,
+        room_type=request.room_type,
         variations=request.variations,
         callback_url=str(request.callback_url),
     )

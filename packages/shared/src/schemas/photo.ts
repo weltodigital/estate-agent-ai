@@ -118,6 +118,9 @@ export type PhotoEnhancedCallback = z.infer<typeof photoEnhancedCallbackSchema>;
 
 export const stagePhotoRequestSchema = z.object({
   style: z.enum(STAGING_STYLES),
+  // Drives room-appropriate furnishing (a bedroom is staged unlike a living
+  // room). Defaults to the photo's detected room_type on the client.
+  room_type: z.enum(ROOM_TYPES).optional(),
   variations: z.number().int().min(1).max(4).default(3),
 });
 export type StagePhotoRequest = z.infer<typeof stagePhotoRequestSchema>;

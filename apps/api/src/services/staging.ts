@@ -1,4 +1,5 @@
 import type { FastifyRequest } from "fastify";
+import type { RoomType } from "@app/shared/constants";
 import type {
   PhotoStagedCallback,
   StagePhotoRequest,
@@ -27,9 +28,9 @@ export async function enqueueStaging(
   const supabase = getUserClient(request.user.accessToken);
   const { data: photo, error } = await supabase
     .from("property_photos")
-    .select("id, property_id")
+    .select("id, property_id, room_type")
     .eq("id", photoId)
-    .maybeSingle<{ id: string; property_id: string }>();
+    .maybeSingle<{ id: string; property_id: string; room_type: RoomType }>();
   if (error) {
     throw new AppError({
       status: 500,
@@ -47,6 +48,8 @@ export async function enqueueStaging(
       property_id: photo.property_id,
       agency_id: request.agencyId,
       style: payload.style,
+      // Caller's choice wins; otherwise stage for the photo's detected room.
+      room_type: payload.room_type ?? photo.room_type,
       variations: payload.variations,
     },
     { jobId, removeOnComplete: 500, removeOnFail: 200 },

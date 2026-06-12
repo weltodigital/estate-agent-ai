@@ -32,31 +32,56 @@ from app.integrations.r2 import put_object
 logger = logging.getLogger(__name__)
 
 Style = Literal["modern", "scandi", "classic", "minimal", "luxury", "family"]
+RoomType = Literal[
+    "living_room", "bedroom", "kitchen", "bathroom", "exterior", "garden", "other"
+]
 
-# Per-style descriptions, tuned for the UK market — understated, John Lewis not
-# Restoration Hardware. Folded into the instruction below.
+# Per-style FURNISHING descriptions — deliberately about the furniture and
+# soft-furnishings, NOT "an interior". Describing the room as a whole (e.g.
+# "a classic British interior") invited the model to redesign the shell —
+# adding period windows, coving, fireplaces. Keep these to movable pieces.
 STYLE_PROMPTS: dict[Style, str] = {
-    "modern": "a modern British interior, contemporary furniture, clean lines, neutral palette",
-    "scandi": "a Scandinavian interior, light oak, soft textiles, white walls, uncluttered",
-    "classic": "a classic British interior, elegant traditional furniture, warm tones",
-    "minimal": "a minimalist interior, uncluttered, neutral palette, generous space",
-    "luxury": "a refined luxury British interior, high-end furnishings, rich textures",
-    "family": "a comfortable family British interior, practical furniture, warm and inviting",
+    "modern": "modern contemporary furniture, clean lines and a neutral palette",
+    "scandi": "Scandinavian furniture — light oak, soft textiles, an uncluttered look",
+    "classic": "classic traditional furniture and soft furnishings in warm tones",
+    "minimal": "minimalist furniture, uncluttered, a neutral palette and generous space",
+    "luxury": "high-end furniture and refined soft furnishings with rich textiles",
+    "family": "comfortable, practical family furniture, warm and inviting",
 }
-# FLUX.2 follows natural-language edits, so we instruct it to furnish the room
-# AND explicitly hold the architecture fixed — this is what keeps the staging
-# honest (no fabricated windows/doors/flooring) for an estate-agent listing.
+
+# Human phrasing for the room being staged. "other" stays generic.
+ROOM_LABELS: dict[RoomType, str] = {
+    "living_room": "living room",
+    "bedroom": "bedroom",
+    "kitchen": "kitchen",
+    "bathroom": "bathroom",
+    "exterior": "outdoor space",
+    "garden": "garden",
+    "other": "room",
+}
+
+# FLUX.2 follows natural-language edits. We tell it (a) what to add, scoped to
+# the room type, and (b) — forcefully and specifically — that the room's
+# structure must not change. The explicit "do NOT add" list names the features
+# the model was fabricating (windows, radiators, coving) so the staging stays an
+# honest representation of the actual property.
 _STAGING_INSTRUCTION = (
-    "Furnish this empty room as {style}. Add tasteful, photorealistic furniture "
-    "and decor suitable for a UK estate-agent listing photo, with natural "
-    "daylight and realistic shadows. Keep the existing walls, windows, doors, "
-    "flooring, ceiling and room dimensions exactly as they are — do not alter, "
-    "add or remove any architectural features."
+    "Virtually stage this photograph of an empty {room} for a UK estate-agent "
+    "listing. Add only free-standing furniture, soft furnishings and decor "
+    "appropriate for a {room}: {style}. Light it with natural daylight and "
+    "realistic shadows. "
+    "CRITICAL — do not change the room itself in any way. Keep the existing "
+    "walls, windows, doors, flooring, ceiling, skirting and proportions exactly "
+    "as in the photograph. Do NOT add, remove or alter any architectural or "
+    "fixed feature: no new or changed windows, doors, radiators, fireplaces, "
+    "ceiling coving or cornicing, ceiling roses, wall panelling, mouldings, "
+    "skylights, ceiling lights or built-in units. Place only removable furniture, "
+    "rugs, artwork, plants, lamps and soft furnishings on the existing floor."
 )
 
 
-def _staging_prompt(style: Style) -> str:
-    return _STAGING_INSTRUCTION.format(style=STYLE_PROMPTS[style])
+def _staging_prompt(style: Style, room_type: RoomType) -> str:
+    return _STAGING_INSTRUCTION.format(room=ROOM_LABELS[room_type], style=STYLE_PROMPTS[style])
 
 
 # Base seed; each variation offsets it so outputs differ but stay reproducible.
@@ -169,6 +194,7 @@ async def _staged_jpeg(
     photo_url: str,
     original: Image.Image,
     style: Style,
+    room_type: RoomType,
     variation_index: int,
 ) -> bytes:
     """Produce one staged variation as JPEG bytes.
@@ -183,7 +209,7 @@ async def _staged_jpeg(
     if fal.is_configured():
         staged = await fal.stage_room(
             photo_url,
-            _staging_prompt(style),
+            _staging_prompt(style, room_type),
             seed=_SEED_BASE + variation_index,
             image_size=_fal_image_size(original),
         )
@@ -215,11 +241,13 @@ async def run_staging_job(
     agency_id: str,
     photo_url: str,
     style: Style,
+    room_type: RoomType | None = None,
     variations: int,
     callback_url: str,
 ) -> None:
     """Background-task entry point. Renders N variations, uploads them to R2,
     and POSTs the resulting URLs to `callback_url` signed with HMAC."""
+    room = room_type or "other"
     try:
         raw = await _download(photo_url)
         original = Image.open(io.BytesIO(raw))
@@ -227,7 +255,7 @@ async def run_staging_job(
         outputs: list[dict[str, object]] = []
         for i in range(max(1, min(variations, 4))):
             variation_id = str(uuid.uuid4())
-            jpeg = await _staged_jpeg(photo_url, original, style, i)
+            jpeg = await _staged_jpeg(photo_url, original, style, room, i)
             url = put_object(_key(photo_id, variation_id), jpeg)
             outputs.append({"id": variation_id, "url": url, "sort_order": i})
 

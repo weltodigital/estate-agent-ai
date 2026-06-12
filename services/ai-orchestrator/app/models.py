@@ -27,6 +27,10 @@ class StagingGenerateRequest(BaseModel):
     agency_id: str
     photo_url: HttpUrl
     style: Literal["modern", "scandi", "classic", "minimal", "luxury", "family"]
+    room_type: (
+        Literal["living_room", "bedroom", "kitchen", "bathroom", "exterior", "garden", "other"]
+        | None
+    ) = None
     variations: int = 3
     callback_url: HttpUrl
 

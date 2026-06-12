@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
 import { z } from "zod";
-import { STAGING_STYLES } from "@app/shared/constants";
+import { ROOM_TYPES, STAGING_STYLES } from "@app/shared/constants";
 import { getRedisConnection } from "./connection.js";
 
 export const stagingGenerateJobSchema = z.object({
@@ -8,6 +8,7 @@ export const stagingGenerateJobSchema = z.object({
   property_id: z.string().uuid(),
   agency_id: z.string().uuid(),
   style: z.enum(STAGING_STYLES),
+  room_type: z.enum(ROOM_TYPES).optional(),
   variations: z.number().int().min(1).max(4).default(3),
 });
 export type StagingGenerateJob = z.infer<typeof stagingGenerateJobSchema>;

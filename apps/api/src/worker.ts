@@ -71,6 +71,7 @@ new Worker<StagingGenerateJob>(
         agency_id: parsed.agency_id,
         photo_url: photoUrl,
         style: parsed.style,
+        room_type: parsed.room_type,
         variations: parsed.variations,
         callback_url: STAGE_CALLBACK,
       }),
