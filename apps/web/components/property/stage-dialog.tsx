@@ -68,7 +68,7 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-12">
-      <div className="w-full max-w-3xl space-y-5 rounded-lg bg-white p-6 shadow-xl">
+      <div className="max-h-[calc(100vh-6rem)] w-full max-w-3xl space-y-5 overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
         <header className="flex items-start justify-between">
           <div>
             <h2 className="text-lg font-semibold">Virtual staging</h2>

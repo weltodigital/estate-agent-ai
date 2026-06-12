@@ -56,11 +56,12 @@ export async function enqueueStaging(
 }
 
 /**
- * Persists the orchestrator's variation URLs onto the photo. Replaces any
- * previous, non-selected variations — the user has just regenerated, so the
- * old ones are no longer relevant. A selected variation (already saved as
- * staged_url) is left alone on the photo row; only the variations array is
- * overwritten.
+ * Persists the orchestrator's variation URLs onto the photo. Appends the new
+ * variations to the photo's existing staging gallery so every generated image
+ * stays available to choose — generating again no longer discards earlier
+ * variations. Any previously selected variation keeps its `selected` flag (and
+ * the photo's staged_url is untouched). Use clearStagingVariations to wipe the
+ * gallery.
  *
  * Service-role: same rationale as the enhance callback.
  */
@@ -73,9 +74,9 @@ export async function applyStagingCallback(payload: PhotoStagedCallback): Promis
 
   const { data: existing, error: lookupError } = await supabase
     .from("property_photos")
-    .select("property_id")
+    .select("property_id, staging_variations")
     .eq("id", payload.photo_id)
-    .maybeSingle<{ property_id: string }>();
+    .maybeSingle<{ property_id: string; staging_variations: StagingVariation[] | null }>();
   if (lookupError || !existing) {
     throw new AppError({
       status: 404,
@@ -84,13 +85,18 @@ export async function applyStagingCallback(payload: PhotoStagedCallback): Promis
     });
   }
 
-  const variations: StagingVariation[] = payload.variations.map((v) => ({
+  const incoming: StagingVariation[] = payload.variations.map((v) => ({
     id: v.id,
     style: payload.style,
     url: v.url,
     sort_order: v.sort_order,
     selected: false,
   }));
+  // Keep the existing gallery (incl. any selected variation) and append the new
+  // ones, re-indexing sort_order across the merged list for a stable order.
+  const variations: StagingVariation[] = [...(existing.staging_variations ?? []), ...incoming].map(
+    (v, index) => ({ ...v, sort_order: index }),
+  );
 
   const { error: updateError } = await supabase
     .from("property_photos")
@@ -108,7 +114,8 @@ export async function applyStagingCallback(payload: PhotoStagedCallback): Promis
     agencyId: payload.agency_id,
     propertyId: existing.property_id,
     eventType: "staging_generated",
-    unitsConsumed: variations.length,
+    // Bill only the newly generated variations, not the whole merged gallery.
+    unitsConsumed: incoming.length,
     billable: true,
   });
 }
