@@ -99,12 +99,6 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
     },
   });
 
-  const update = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof photoApi.update>[1] }) =>
-      photoApi.update(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId) }),
-  });
-
   const remove = useMutation({
     mutationFn: (id: string) => photoApi.remove(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId) }),
@@ -275,33 +269,62 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
       ) : photos.length === 0 ? (
         <p className="text-sm text-slate-500">No photos yet. Upload to get started.</p>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
+        <div className="space-y-8">
+          {/* Photo enhancements — improve the real photos. Owns upload/reorder/
+              select/delete; cards expose enhance + object removal. */}
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold">Photo enhancements</h3>
+              <p className="text-xs text-slate-500">
+                Improve your real photos — exposure, dusk shots, GDPR blur, object removal. Drag to
+                reorder.
+              </p>
+            </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+              <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+                  {photos.map((photo) => (
+                    <EnhancePhotoCard
+                      key={photo.id}
+                      photo={photo}
+                      isSelected={selected.has(photo.id)}
+                      isProcessing={inFlight.has(photo.id)}
+                      onToggleSelect={() => toggleSelected(photo.id)}
+                      onEnhanceJustThis={() => {
+                        setDialogOpen(true);
+                        setSelected(new Set([photo.id]));
+                      }}
+                      onRemoveObjects={() => setObjectRemovalPhotoId(photo.id)}
+                      onDelete={() => {
+                        if (confirm("Delete this photo?")) remove.mutate(photo.id);
+                      }}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
+
+          {/* Virtual staging — furnish empty rooms. Same photos, staging only. */}
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold">Virtual staging</h3>
+              <p className="text-xs text-slate-500">
+                Furnish empty rooms. The staged image you pick is watermarked and used for that
+                photo.
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
               {photos.map((photo) => (
-                <SortablePhoto
+                <StagePhotoCard
                   key={photo.id}
                   photo={photo}
-                  isSelected={selected.has(photo.id)}
-                  isProcessing={inFlight.has(photo.id)}
-                  onToggleSelect={() => toggleSelected(photo.id)}
-                  onEnhanceJustThis={() => {
-                    setDialogOpen(true);
-                    setSelected(new Set([photo.id]));
-                  }}
                   onStage={() => setStageDialogPhotoId(photo.id)}
-                  onRemoveObjects={() => setObjectRemovalPhotoId(photo.id)}
-                  onSetPrimary={() =>
-                    update.mutate({ id: photo.id, payload: { is_primary: true } })
-                  }
-                  onDelete={() => {
-                    if (confirm("Delete this photo?")) remove.mutate(photo.id);
-                  }}
                 />
               ))}
             </div>
-          </SortableContext>
-        </DndContext>
+          </div>
+        </div>
       )}
 
       {stageDialogPhoto ? (
@@ -359,15 +382,13 @@ function EnhanceDialog({
   );
 }
 
-function SortablePhoto({
+function EnhancePhotoCard({
   photo,
   isSelected,
   isProcessing,
   onToggleSelect,
   onEnhanceJustThis,
-  onStage,
   onRemoveObjects,
-  onSetPrimary,
   onDelete,
 }: {
   photo: Photo;
@@ -375,21 +396,15 @@ function SortablePhoto({
   isProcessing: boolean;
   onToggleSelect: () => void;
   onEnhanceJustThis: () => void;
-  onStage: () => void;
   onRemoveObjects: () => void;
-  onSetPrimary: () => void;
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: photo.id,
   });
   const [showCompare, setShowCompare] = useState(false);
-  // The image actually used for this photo: a selected staged image wins, then
-  // any enhancement, else the original. `derivedUrl` is whatever differs from
-  // the original (drives the before/after compare).
-  const derivedUrl = photo.staged_url ?? photo.enhanced_url ?? null;
-  const displayUrl = derivedUrl ?? photo.original_url;
-  const hasDerived = Boolean(derivedUrl);
+  const displayUrl = photo.enhanced_url ?? photo.original_url;
+  const hasEnhanced = Boolean(photo.enhanced_url);
 
   return (
     <div
@@ -414,14 +429,9 @@ function SortablePhoto({
           Processing…
         </span>
       ) : null}
-      {photo.staged_url ? (
-        <span className="absolute bottom-2 left-2 z-10 rounded bg-[color:var(--brand-primary)] px-2 py-0.5 text-xs text-white">
-          Staged
-        </span>
-      ) : null}
 
-      {showCompare && derivedUrl ? (
-        <BeforeAfterSlider before={photo.original_url} after={derivedUrl} />
+      {showCompare && photo.enhanced_url ? (
+        <BeforeAfterSlider before={photo.original_url} after={photo.enhanced_url} />
       ) : (
         <img
           src={displayUrl}
@@ -433,9 +443,9 @@ function SortablePhoto({
       )}
 
       <div className="flex items-center justify-between px-3 py-2 text-xs">
-        <span>{photo.is_primary ? "Primary" : photo.room_type.replace("_", " ")}</span>
+        <span>{photo.room_type.replace("_", " ")}</span>
         <div className="flex flex-wrap gap-2">
-          {hasDerived ? (
+          {hasEnhanced ? (
             <button
               type="button"
               onClick={() => setShowCompare((v) => !v)}
@@ -453,29 +463,57 @@ function SortablePhoto({
           </button>
           <button
             type="button"
-            onClick={onStage}
-            className="text-[color:var(--brand-primary)] underline"
-          >
-            Stage
-          </button>
-          <button
-            type="button"
             onClick={onRemoveObjects}
             className="text-[color:var(--brand-primary)] underline"
           >
             Remove objects
           </button>
-          {!photo.is_primary ? (
-            <button
-              type="button"
-              onClick={onSetPrimary}
-              className="text-[color:var(--brand-primary)] underline"
-            >
-              Set primary
-            </button>
-          ) : null}
           <button type="button" onClick={onDelete} className="text-red-600 underline">
             Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StagePhotoCard({ photo, onStage }: { photo: Photo; onStage: () => void }) {
+  const [showCompare, setShowCompare] = useState(false);
+  const displayUrl = photo.staged_url ?? photo.original_url;
+  const hasStaged = Boolean(photo.staged_url);
+
+  return (
+    <div className="group relative overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      {hasStaged ? (
+        <span className="absolute bottom-2 left-2 z-10 rounded bg-[color:var(--brand-primary)] px-2 py-0.5 text-xs text-white">
+          Staged
+        </span>
+      ) : null}
+
+      {showCompare && photo.staged_url ? (
+        <BeforeAfterSlider before={photo.original_url} after={photo.staged_url} />
+      ) : (
+        <img src={displayUrl} alt="" className="aspect-[4/3] w-full object-cover" />
+      )}
+
+      <div className="flex items-center justify-between px-3 py-2 text-xs">
+        <span>{photo.room_type.replace("_", " ")}</span>
+        <div className="flex flex-wrap gap-2">
+          {hasStaged ? (
+            <button
+              type="button"
+              onClick={() => setShowCompare((v) => !v)}
+              className="text-slate-600 underline"
+            >
+              {showCompare ? "Hide compare" : "Compare"}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onStage}
+            className="text-[color:var(--brand-primary)] underline"
+          >
+            {hasStaged ? "Re-stage" : "Stage"}
           </button>
         </div>
       </div>
