@@ -122,7 +122,7 @@ def _apply_watermark(image: Image.Image) -> Image.Image:
     relative to the image so it reads at thumbnail and full size alike."""
     base = image.convert("RGBA")
     w, h = base.size
-    font_size = max(18, w // 36)
+    font_size = max(13, w // 54)
     font = ImageFont.load_default(size=font_size)
 
     overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
