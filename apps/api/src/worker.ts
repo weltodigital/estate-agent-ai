@@ -46,6 +46,8 @@ new Worker<PhotoEnhanceJob>(
         photo_url: photoUrl,
         enhancements: parsed.enhancements,
         mask_url: parsed.mask_url,
+        logo_url: parsed.logo_url,
+        watermark_position: parsed.watermark_position,
         callback_url: ENHANCE_CALLBACK,
       }),
     });

@@ -5,6 +5,11 @@ results to R2, and POSTs the URLs back to the API.
 
 Implementations:
   - exposure_correction: PIL (autocontrast + small brightness lift)
+  - colour_saturation:   PIL (gentle saturation boost)
+  - shadow_boost:        PIL (lift shadows only — composite a brightened copy
+                         into dark regions via an inverted-luminance mask)
+  - logo_watermark:      PIL (composite the agency logo into a corner; needs
+                         logo_url + watermark_position)
   - gdpr_blur:           AWS Rekognition face/text (number-plate) detection +
                          targeted blur; falls back to a full-image blur when
                          AWS isn't configured
@@ -41,8 +46,12 @@ Enhancement = Literal[
     "object_removal",
     "gdpr_blur",
     "exposure_correction",
+    "colour_saturation",
+    "shadow_boost",
+    "logo_watermark",
     "dusk_shot",
 ]
+WatermarkPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
 
 _DUSK_PROMPT = "warm golden-hour dusk lighting, sunset glow, soft warm tones, twilight sky"
 
@@ -53,6 +62,52 @@ def _apply_exposure_correction(image: Image.Image) -> Image.Image:
     image = ImageOps.autocontrast(image, cutoff=1)
     image = ImageEnhance.Brightness(image).enhance(1.05)
     return image
+
+
+def _apply_colour_saturation(image: Image.Image) -> Image.Image:
+    # Gentle saturation lift — punchier without looking oversaturated.
+    return ImageEnhance.Color(image).enhance(1.15)
+
+
+def _apply_shadow_boost(image: Image.Image) -> Image.Image:
+    """Lift shadows to reveal detail without blowing out the highlights:
+    composite a brightened copy into the dark regions only, weighted by an
+    inverted-luminance mask (darker pixels get more of the brightened copy)."""
+    brightened = ImageEnhance.Brightness(image).enhance(1.4)
+    mask = ImageOps.invert(image.convert("L"))
+    return Image.composite(brightened, image, mask)
+
+
+def _watermark_offset(
+    position: WatermarkPosition,
+    base_size: tuple[int, int],
+    logo_size: tuple[int, int],
+    margin: int,
+) -> tuple[int, int]:
+    base_w, base_h = base_size
+    logo_w, logo_h = logo_size
+    x = margin if "left" in position else base_w - logo_w - margin
+    y = margin if "top" in position else base_h - logo_h - margin
+    return x, y
+
+
+def _apply_logo_watermark(
+    image: Image.Image, logo_bytes: bytes, position: WatermarkPosition
+) -> Image.Image:
+    """Composite the agency logo into the chosen corner, scaled to ~18% of the
+    image width and slightly transparent so it reads as a watermark."""
+    logo = Image.open(io.BytesIO(logo_bytes)).convert("RGBA")
+    target_w = max(60, image.width // 6)
+    if logo.width != target_w:
+        ratio = target_w / logo.width
+        logo = logo.resize((target_w, max(1, round(logo.height * ratio))))
+    # Knock the logo back to ~85% so it sits on the photo, not over it.
+    logo.putalpha(logo.getchannel("A").point(lambda a: round(a * 0.85)))
+
+    margin = max(12, image.width // 50)
+    base = image.convert("RGBA")
+    base.alpha_composite(logo, _watermark_offset(position, base.size, logo.size, margin))
+    return base.convert("RGB")
 
 
 def _blur_regions(image: Image.Image, boxes: list[rekognition.Box]) -> Image.Image:
@@ -109,6 +164,8 @@ async def _apply_object_removal(image: Image.Image, mask: bytes) -> Image.Image 
 async def _process_enhanced(
     image: Image.Image,
     mask: bytes | None,
+    logo: bytes | None,
+    watermark_position: WatermarkPosition,
     enhancements: list[Enhancement],
 ) -> tuple[Image.Image, list[Enhancement]]:
     applied: list[Enhancement] = []
@@ -127,13 +184,26 @@ async def _process_enhanced(
             out = cleaned
             applied.append("object_removal")
 
+    if "shadow_boost" in enhancements:
+        out = _apply_shadow_boost(out)
+        applied.append("shadow_boost")
+
     if "exposure_correction" in enhancements:
         out = _apply_exposure_correction(out)
         applied.append("exposure_correction")
 
+    if "colour_saturation" in enhancements:
+        out = _apply_colour_saturation(out)
+        applied.append("colour_saturation")
+
     if "gdpr_blur" in enhancements:
         out = await _apply_gdpr_blur(out)
         applied.append("gdpr_blur")
+
+    # Watermark goes on last so the logo sits on top of every other edit.
+    if "logo_watermark" in enhancements and logo is not None:
+        out = _apply_logo_watermark(out, logo, watermark_position)
+        applied.append("logo_watermark")
 
     return out, applied
 
@@ -194,6 +264,8 @@ async def run_photo_enhance_job(
     enhancements: list[Enhancement],
     callback_url: str,
     mask_url: str | None = None,
+    logo_url: str | None = None,
+    watermark_position: WatermarkPosition = "bottom-right",
 ) -> None:
     """Background-task entry point. Fetches the original, applies the
     enhancements, uploads outputs, and POSTs the callback. Any failure is
@@ -207,13 +279,20 @@ async def run_photo_enhance_job(
         if mask_url and "object_removal" in enhancements:
             mask = await _download(mask_url)
 
+        # Likewise the logo only matters for logo_watermark.
+        logo: bytes | None = None
+        if logo_url and "logo_watermark" in enhancements:
+            logo = await _download(logo_url)
+
         enhanced_url: str | None = None
         dusk_url: str | None = None
         applied: list[Enhancement] = []
 
         non_dusk: list[Enhancement] = [e for e in enhancements if e != "dusk_shot"]
         if non_dusk:
-            processed, marks = await _process_enhanced(original, mask, non_dusk)
+            processed, marks = await _process_enhanced(
+                original, mask, logo, watermark_position, non_dusk
+            )
             enhanced_url = put_object(_key(photo_id, "enhanced"), _encode_jpeg(processed))
             applied.extend(marks)
 

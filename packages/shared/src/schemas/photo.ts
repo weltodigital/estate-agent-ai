@@ -65,6 +65,9 @@ export const PHOTO_ENHANCEMENTS = [
   "object_removal",
   "gdpr_blur",
   "exposure_correction",
+  "colour_saturation",
+  "shadow_boost",
+  "logo_watermark",
   "dusk_shot",
 ] as const;
 export type PhotoEnhancement = (typeof PHOTO_ENHANCEMENTS)[number];

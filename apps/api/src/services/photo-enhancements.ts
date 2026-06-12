@@ -1,10 +1,11 @@
 import type { FastifyRequest } from "fastify";
+import type { WatermarkPosition } from "@app/shared/constants";
 import type {
   EnhancePhotoRequest,
   EnhancePhotoResponse,
   PhotoEnhancedCallback,
 } from "@app/shared/schemas";
-import { AppError, notFound, unauthorised } from "../errors.js";
+import { AppError, badRequest, notFound, unauthorised } from "../errors.js";
 import { photoEnhanceQueue } from "../queues/photo-enhance.js";
 import { getServiceClient, getUserClient } from "../integrations/supabase.js";
 import { assertWithinQuota } from "./quota.js";
@@ -44,6 +45,23 @@ export async function enqueuePhotoEnhance(
   }
   if (!photo) throw notFound("Photo");
 
+  // Logo watermark needs the agency's logo. Fetch it (and the preferred
+  // position) up front, and reject clearly if no logo has been uploaded.
+  let logoUrl: string | undefined;
+  let watermarkPosition: WatermarkPosition | undefined;
+  if (payload.enhancements.includes("logo_watermark")) {
+    const { data: agency } = await supabase
+      .from("agencies")
+      .select("logo_url, default_watermark_position")
+      .eq("id", request.agencyId)
+      .maybeSingle<{ logo_url: string | null; default_watermark_position: WatermarkPosition }>();
+    if (!agency?.logo_url) {
+      throw badRequest("Add your agency logo in Settings before using the logo watermark.");
+    }
+    logoUrl = agency.logo_url;
+    watermarkPosition = agency.default_watermark_position;
+  }
+
   const jobId = `photo-enhance:${photoId}:${Date.now()}`;
   await photoEnhanceQueue().add(
     "enhance",
@@ -53,6 +71,8 @@ export async function enqueuePhotoEnhance(
       agency_id: request.agencyId,
       enhancements: payload.enhancements,
       mask_url: payload.mask_url,
+      logo_url: logoUrl,
+      watermark_position: watermarkPosition,
     },
     { jobId, removeOnComplete: 500, removeOnFail: 200 },
   );

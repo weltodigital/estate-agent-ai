@@ -46,11 +46,19 @@ class PhotoEnhanceRequest(BaseModel):
             "object_removal",
             "gdpr_blur",
             "exposure_correction",
+            "colour_saturation",
+            "shadow_boost",
+            "logo_watermark",
             "dusk_shot",
         ]
     ]
     # Present only for object_removal — the painted mask (white = remove).
     mask_url: HttpUrl | None = None
+    # Present only for logo_watermark — the agency logo and where to place it.
+    logo_url: HttpUrl | None = None
+    watermark_position: Literal["top-left", "top-right", "bottom-left", "bottom-right"] = (
+        "bottom-right"
+    )
     callback_url: HttpUrl
 
 

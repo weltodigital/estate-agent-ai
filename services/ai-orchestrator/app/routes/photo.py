@@ -22,6 +22,8 @@ async def enhance(
         photo_url=str(request.photo_url),
         enhancements=list(request.enhancements),
         mask_url=str(request.mask_url) if request.mask_url else None,
+        logo_url=str(request.logo_url) if request.logo_url else None,
+        watermark_position=request.watermark_position,
         callback_url=str(request.callback_url),
     )
     return JobAccepted(job_id=job_id)
