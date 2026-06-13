@@ -1,10 +1,50 @@
 import type { FastifyRequest } from "fastify";
-import type { GenerateDescriptionRequest, Property } from "@app/shared/schemas";
+import type { DescriptionInputs, GenerateDescriptionRequest, Property } from "@app/shared/schemas";
 import { AppError, unauthorised } from "../errors.js";
 import { ClaudeNotConfiguredError, defaultModel, getClaude } from "../integrations/claude.js";
+import { getUserClient } from "../integrations/supabase.js";
 import { getProperty } from "./properties.js";
 import { assertWithinQuota } from "./quota.js";
 import { recordUsageEvent } from "./usage.js";
+
+const FURNISHED_LABELS: Record<NonNullable<DescriptionInputs["furnished"]>, string> = {
+  furnished: "furnished",
+  part_furnished: "part-furnished",
+  unfurnished: "unfurnished",
+};
+
+const FEATURE_CATEGORY_LABELS: Record<string, string> = {
+  unique: "Unique features",
+  kitchen: "Kitchen",
+  bathroom: "Bathroom",
+  outside: "Outside / garden",
+  location: "Location",
+  ideal_for: "Ideal for",
+};
+
+function appendInputs(lines: string[], inputs: DescriptionInputs): void {
+  if (inputs.condition.length > 0) {
+    lines.push(`- Condition: ${inputs.condition.join(", ")}`);
+  }
+  if (inputs.furnished) {
+    lines.push(`- Furnishing: ${FURNISHED_LABELS[inputs.furnished]}`);
+  }
+  if (inputs.council_tax_band) {
+    lines.push(`- Council tax band: ${inputs.council_tax_band}`);
+  }
+  const featureLines = Object.entries(inputs.features)
+    .filter(([, items]) => items.length > 0)
+    .map(([cat, items]) => `  - ${FEATURE_CATEGORY_LABELS[cat] ?? cat}: ${items.join(", ")}`);
+  if (featureLines.length > 0) {
+    lines.push(`- Features the agent wants reflected:`);
+    lines.push(...featureLines);
+  }
+  if (inputs.other_details.trim()) {
+    lines.push(``);
+    lines.push(`Additional details (use as input, do not quote directly):`);
+    lines.push(inputs.other_details.trim());
+  }
+}
 
 const TONE_GUIDANCE: Record<GenerateDescriptionRequest["tone"], string> = {
   professional:
@@ -60,6 +100,9 @@ function buildUserPrompt(property: Property, payload: GenerateDescriptionRequest
     lines.push(`Agent notes (use as input, do not quote directly):`);
     lines.push(property.notes);
   }
+  if (payload.inputs) {
+    appendInputs(lines, payload.inputs);
+  }
   if (payload.highlights && payload.highlights.length > 0) {
     lines.push(``);
     lines.push(`Highlights to feature:`);
@@ -90,6 +133,15 @@ export async function streamDescription(
 
   // RLS-guarded fetch — confirms the caller owns this property.
   const property = await getProperty(request, propertyId);
+
+  // Persist the structured inputs (RLS-scoped) so they're remembered for next
+  // time, regardless of whether the generation below succeeds.
+  if (payload.inputs) {
+    await getUserClient(request.user.accessToken)
+      .from("properties")
+      .update({ description_inputs: payload.inputs })
+      .eq("id", propertyId);
+  }
 
   let claude;
   try {

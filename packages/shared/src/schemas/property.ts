@@ -7,6 +7,23 @@ import {
   UK_PROPERTY_TYPES,
 } from "../constants";
 
+/**
+ * Structured, agent-supplied inputs that steer AI description generation
+ * (condition, furnishing, council tax band, feature chips per category, and a
+ * free-text catch-all). Persisted on the property as JSONB so they're
+ * remembered between generations. `features` is keyed by category id
+ * (kitchen, bathroom, outside, location, unique, ideal_for, …) and open-ended
+ * so the client can add categories without a schema change.
+ */
+export const descriptionInputsSchema = z.object({
+  condition: z.array(z.string().min(1).max(80)).max(30).default([]),
+  furnished: z.enum(["furnished", "part_furnished", "unfurnished"]).nullable().default(null),
+  council_tax_band: z.string().max(2).nullable().default(null),
+  features: z.record(z.string(), z.array(z.string().min(1).max(80)).max(40)).default({}),
+  other_details: z.string().max(3000).default(""),
+});
+export type DescriptionInputs = z.infer<typeof descriptionInputsSchema>;
+
 export const propertySchema = z.object({
   id: z.string().uuid(),
   agency_id: z.string().uuid(),
@@ -28,6 +45,10 @@ export const propertySchema = z.object({
   epc_potential_rating: z.enum(EPC_RATINGS).nullable(),
   epc_expiry_date: z.string().date().nullable(),
   notes: z.string().nullable(),
+  // Optional (not just nullable) so reads survive the gap before the
+  // description_inputs column migration is applied — the field is simply absent
+  // then rather than null.
+  description_inputs: descriptionInputsSchema.nullable().optional(),
   created_at: z.string().datetime({ offset: true }),
   updated_at: z.string().datetime({ offset: true }),
 });
@@ -64,6 +85,7 @@ export const updatePropertySchema = createPropertySchema
     status: z.enum(PROPERTY_STATUSES),
     description: z.string().nullable(),
     description_tone: z.enum(TONE_OPTIONS).nullable(),
+    description_inputs: descriptionInputsSchema.nullable(),
     epc_current_rating: z.enum(EPC_RATINGS).nullable(),
     epc_potential_rating: z.enum(EPC_RATINGS).nullable(),
     epc_expiry_date: z.string().date().nullable(),
@@ -73,6 +95,8 @@ export type UpdatePropertyRequest = z.infer<typeof updatePropertySchema>;
 
 export const generateDescriptionRequestSchema = z.object({
   tone: z.enum(TONE_OPTIONS),
+  // Structured details the agent wants reflected in the description.
+  inputs: descriptionInputsSchema.optional(),
   highlights: z.array(z.string()).max(20).optional(),
 });
 export type GenerateDescriptionRequest = z.infer<typeof generateDescriptionRequestSchema>;
