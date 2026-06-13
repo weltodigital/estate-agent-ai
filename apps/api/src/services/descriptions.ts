@@ -14,6 +14,7 @@ const FURNISHED_LABELS: Record<NonNullable<DescriptionInputs["furnished"]>, stri
 };
 
 const FEATURE_CATEGORY_LABELS: Record<string, string> = {
+  rooms: "Other rooms",
   unique: "Unique features",
   kitchen: "Kitchen",
   bathroom: "Bathroom",

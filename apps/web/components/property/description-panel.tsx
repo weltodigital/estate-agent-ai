@@ -37,6 +37,22 @@ const COUNCIL_TAX_BANDS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 // Feature categories with common pre-made chips. Agents can also add their own.
 const FEATURE_CATEGORIES: { id: string; label: string; presets: string[] }[] = [
   {
+    id: "rooms",
+    label: "Other rooms",
+    presets: [
+      "Office / study",
+      "Utility room",
+      "Gym",
+      "Conservatory",
+      "Dining room",
+      "Cloakroom / WC",
+      "Garage",
+      "Annexe",
+      "Pantry",
+      "Boot room",
+    ],
+  },
+  {
     id: "unique",
     label: "Unique features",
     presets: [
