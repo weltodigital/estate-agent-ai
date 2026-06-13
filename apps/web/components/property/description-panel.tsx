@@ -135,6 +135,10 @@ export function DescriptionPanel({ property }: { property: Property }) {
   const [inputs, setInputs] = useState<DescriptionInputs>(() =>
     normaliseInputs(property.description_inputs),
   );
+  // Bedrooms/bathrooms are headline key features and aren't on the slim create
+  // form, so they're captured here (and persisted onto the property).
+  const [bedrooms, setBedrooms] = useState(property.bedrooms);
+  const [bathrooms, setBathrooms] = useState(property.bathrooms);
   const [streaming, setStreaming] = useState(false);
   const [streamError, setStreamError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -168,6 +172,8 @@ export function DescriptionPanel({ property }: { property: Property }) {
         description: text.length > 0 ? text : null,
         description_tone: tone,
         description_inputs: inputs,
+        bedrooms,
+        bathrooms,
       });
     },
     onSuccess: (updated) => {
@@ -182,6 +188,20 @@ export function DescriptionPanel({ property }: { property: Property }) {
     setStreaming(true);
     editor.setEditable(false);
     editor.commands.setContent("");
+
+    // Persist the key facts/inputs first so the generated key-features list
+    // reflects what's on screen (the API reads bedrooms/bathrooms from the
+    // property record). Non-fatal if it fails — generation still proceeds.
+    try {
+      const updated = await propertyApi.update(property.id, {
+        bedrooms,
+        bathrooms,
+        description_inputs: inputs,
+      });
+      queryClient.setQueryData(queryKeys.property(property.id), updated);
+    } catch {
+      /* ignore — fall back to existing values */
+    }
 
     const body: GenerateDescriptionRequest = { tone, inputs };
 
@@ -217,9 +237,32 @@ export function DescriptionPanel({ property }: { property: Property }) {
       <div>
         <h3 className="text-sm font-semibold">Property details</h3>
         <p className="text-xs text-slate-500">
-          Add the details you want included, then generate. The more you add, the more specific the
-          description. Your selections are saved for next time.
+          Add the details you want included, then generate. Bedrooms, bathrooms and the features you
+          pick lead the description as a key-features list. Your selections are saved for next time.
         </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="space-y-1 text-sm">
+          <span className="block font-medium">Bedrooms</span>
+          <input
+            type="number"
+            min={0}
+            value={bedrooms}
+            onChange={(e) => setBedrooms(Math.max(0, Number(e.target.value) || 0))}
+            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+          />
+        </label>
+        <label className="space-y-1 text-sm">
+          <span className="block font-medium">Bathrooms</span>
+          <input
+            type="number"
+            min={0}
+            value={bathrooms}
+            onChange={(e) => setBathrooms(Math.max(0, Number(e.target.value) || 0))}
+            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+          />
+        </label>
       </div>
 
       <ChipMultiSelect
@@ -409,7 +452,34 @@ function ChipMultiSelect({
 }
 
 function toHtml(text: string): string {
-  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const paragraphs = escaped.split(/\n{2,}/).map((p) => p.replace(/\n/g, "<br />"));
-  return paragraphs.map((p) => `<p>${p}</p>`).join("");
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const isBullet = (line: string) => /^\s*[-•]\s+/.test(line);
+  const out: string[] = [];
+
+  for (const block of text.split(/\n{2,}/)) {
+    let para: string[] = [];
+    let bullets: string[] = [];
+    const flushPara = () => {
+      if (para.length) out.push(`<p>${para.join("<br />")}</p>`);
+      para = [];
+    };
+    const flushBullets = () => {
+      if (bullets.length) out.push(`<ul>${bullets.join("")}</ul>`);
+      bullets = [];
+    };
+    // Consecutive "- " / "• " lines become a real bullet list; everything else
+    // is paragraph text. This renders the leading key-features list as bullets.
+    for (const line of block.split("\n")) {
+      if (isBullet(line)) {
+        flushPara();
+        bullets.push(`<li>${esc(line.replace(/^\s*[-•]\s+/, ""))}</li>`);
+      } else {
+        flushBullets();
+        para.push(esc(line));
+      }
+    }
+    flushPara();
+    flushBullets();
+  }
+  return out.join("");
 }
