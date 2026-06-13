@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ROOM_TYPES, STAGING_STYLES } from "../constants";
+import { PHOTO_CATEGORIES, ROOM_TYPES, STAGING_STYLES } from "../constants";
 
 export const stagingVariationSchema = z.object({
   id: z.string().uuid(),
@@ -24,6 +24,9 @@ export const photoSchema = z.object({
   staging_variations: z.array(stagingVariationSchema).default([]),
   suggested_style: z.enum(STAGING_STYLES).nullable(),
   is_primary: z.boolean(),
+  // Optional (not just required) so reads survive the gap before the category
+  // column migration is applied.
+  category: z.enum(PHOTO_CATEGORIES).optional(),
   created_at: z.string().datetime({ offset: true }),
 });
 export type Photo = z.infer<typeof photoSchema>;
@@ -32,8 +35,15 @@ export const uploadPhotoSignedRequestSchema = z.object({
   filename: z.string().min(1).max(200),
   content_type: z.string().regex(/^image\//),
   room_type: z.enum(ROOM_TYPES).optional(),
+  // Which workflow tab the photo was uploaded under.
+  category: z.enum(PHOTO_CATEGORIES).optional(),
 });
 export type UploadPhotoSignedRequest = z.infer<typeof uploadPhotoSignedRequestSchema>;
+
+export const photosListQuerySchema = z.object({
+  category: z.enum(PHOTO_CATEGORIES).optional(),
+});
+export type PhotosListQuery = z.infer<typeof photosListQuerySchema>;
 
 export const uploadPhotoSignedResponseSchema = z.object({
   photo: photoSchema,

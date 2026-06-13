@@ -48,7 +48,12 @@ import { callApi } from "./api-client";
 export const queryKeys = {
   properties: (query: PropertyListQuery | Record<string, never>) => ["properties", query] as const,
   property: (id: string) => ["property", id] as const,
-  photos: (propertyId: string) => ["property", propertyId, "photos"] as const,
+  // With a category this is the exact per-tab key; without one it's the 3-part
+  // prefix, so invalidating it (e.g. from StageDialog) refreshes every tab.
+  photos: (propertyId: string, category?: string) =>
+    category
+      ? (["property", propertyId, "photos", category] as const)
+      : (["property", propertyId, "photos"] as const),
   epc: (postcode: string) => ["epc", postcode.replace(/\s+/g, "").toUpperCase()] as const,
   floorPlans: (propertyId: string) => ["property", propertyId, "floor-plans"] as const,
   floorPlan: (id: string) => ["floor-plan", id] as const,
@@ -77,7 +82,10 @@ export const propertyApi = {
 };
 
 export const photoApi = {
-  list: (propertyId: string) => callApi<PhotosListResponse>(`/v1/properties/${propertyId}/photos`),
+  list: (propertyId: string, category?: string) =>
+    callApi<PhotosListResponse>(
+      `/v1/properties/${propertyId}/photos${category ? `?category=${category}` : ""}`,
+    ),
   createUpload: (propertyId: string, body: UploadPhotoSignedRequest) =>
     callApi<UploadPhotoSignedResponse>(`/v1/properties/${propertyId}/photos`, {
       method: "POST",

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyRequest } from "fastify";
+import type { PhotoCategory } from "@app/shared/constants";
 import type {
   MaskUploadRequest,
   MaskUploadResponse,
@@ -21,15 +22,18 @@ import { getUserClient } from "../integrations/supabase.js";
 export async function listPropertyPhotos(
   request: FastifyRequest,
   propertyId: string,
+  category?: PhotoCategory,
 ): Promise<Photo[]> {
   if (!request.user || !request.agencyId) throw unauthorised();
   const supabase = getUserClient(request.user.accessToken);
-  const { data, error } = await supabase
+  let query = supabase
     .from("property_photos")
     .select("*")
     .eq("property_id", propertyId)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
+  if (category) query = query.eq("category", category);
+  const { data, error } = await query;
   if (error) {
     request.log.error({ err: error, propertyId }, "list_photos failed");
     throw new AppError({
@@ -97,6 +101,7 @@ export async function createPhotoUpload(
       property_id: propertyId,
       original_url: publicUrl(key),
       room_type: payload.room_type ?? "other",
+      category: payload.category ?? "enhancement",
       sort_order: nextSortOrder,
       is_primary: false,
     })

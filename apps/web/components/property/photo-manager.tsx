@@ -12,6 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { PhotoCategory } from "@app/shared/constants";
 import { PHOTO_ENHANCEMENTS, type Photo, type PhotoEnhancement } from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
@@ -37,7 +38,14 @@ const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
   dusk_shot: "Dusk shot (extra image)",
 };
 
-export function PhotoManager({ propertyId }: { propertyId: string }) {
+export function PhotoManager({
+  propertyId,
+  category,
+}: {
+  propertyId: string;
+  category: PhotoCategory;
+}) {
+  const isStaging = category === "staging";
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -51,8 +59,8 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
   const [objectRemovalPhotoId, setObjectRemovalPhotoId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: queryKeys.photos(propertyId),
-    queryFn: () => photoApi.list(propertyId),
+    queryKey: queryKeys.photos(propertyId, category),
+    queryFn: () => photoApi.list(propertyId, category),
     // Poll while enhancements are in flight, or while a stage dialog is open
     // waiting on a generation callback. Stops once nothing's pending.
     refetchInterval: inFlight.size > 0 || stageDialogPhotoId !== null ? 3000 : false,
@@ -98,24 +106,26 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
   const reorder = useMutation({
     mutationFn: (photoIds: string[]) => photoApi.reorder(propertyId, { photo_ids: photoIds }),
     onSuccess: (res) => {
-      queryClient.setQueryData(queryKeys.photos(propertyId), res);
+      queryClient.setQueryData(queryKeys.photos(propertyId, category), res);
     },
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => photoApi.remove(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId) }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId, category) }),
   });
 
   const removeSelected = useMutation({
     mutationFn: (ids: string[]) => Promise.all(ids.map((id) => photoApi.remove(id))),
     onSuccess: () => {
       setSelected(new Set());
-      queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId, category) });
     },
     // On a partial failure some photos may already be gone — refresh so the
     // grid reflects the real state rather than the optimistic selection.
-    onError: () => queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId) }),
+    onError: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId, category) }),
   });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -127,7 +137,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
     const newIndex = photos.findIndex((p) => p.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
     const next = arrayMove(photos, oldIndex, newIndex);
-    queryClient.setQueryData(queryKeys.photos(propertyId), { items: next });
+    queryClient.setQueryData(queryKeys.photos(propertyId, category), { items: next });
     reorder.mutate(next.map((p) => p.id));
   }
 
@@ -140,6 +150,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
         const { upload_url } = await photoApi.createUpload(propertyId, {
           filename: file.name,
           content_type: file.type || "image/jpeg",
+          category,
         });
         const putRes = await fetch(upload_url, {
           method: "PUT",
@@ -150,7 +161,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
           throw new Error(`Upload failed for ${file.name} (${putRes.status})`);
         }
       }
-      await queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId, category) });
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -205,7 +216,16 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Photos</h2>
+        <div>
+          <h2 className="text-lg font-semibold">
+            {isStaging ? "Virtual staging" : "Photo enhancements"}
+          </h2>
+          <p className="text-xs text-slate-500">
+            {isStaging
+              ? "Upload empty rooms to furnish. Separate from your enhancement photos."
+              : "Upload your listing photos to improve. Separate from your staging photos."}
+          </p>
+        </div>
         <div className="flex items-center gap-3">
           <input
             ref={fileInputRef}
@@ -227,7 +247,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
         </p>
       ) : null}
 
-      {selected.size > 0 ? (
+      {!isStaging && selected.size > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-300 bg-slate-50 px-3 py-2">
           <span className="text-sm">{selected.size} selected</span>
           <div className="flex gap-2">
@@ -252,7 +272,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
         </div>
       ) : null}
 
-      {dialogOpen ? (
+      {!isStaging && dialogOpen ? (
         <EnhanceDialog
           chosen={chosen}
           onToggle={toggleChosen}
@@ -261,7 +281,7 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
         />
       ) : null}
 
-      {enhanceError ? (
+      {!isStaging && enhanceError ? (
         <p role="alert" className="text-sm text-red-600">
           {enhanceError}
         </p>
@@ -271,63 +291,40 @@ export function PhotoManager({ propertyId }: { propertyId: string }) {
         <p className="text-sm text-slate-500">Loading photos…</p>
       ) : photos.length === 0 ? (
         <p className="text-sm text-slate-500">No photos yet. Upload to get started.</p>
+      ) : isStaging ? (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          {photos.map((photo) => (
+            <StagePhotoCard
+              key={photo.id}
+              photo={photo}
+              onStage={() => setStageDialogPhotoId(photo.id)}
+            />
+          ))}
+        </div>
       ) : (
-        <div className="space-y-8">
-          {/* Photo enhancements — improve the real photos. Owns upload/reorder/
-              select/delete; cards expose enhance + object removal. */}
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-sm font-semibold">Photo enhancements</h3>
-              <p className="text-xs text-slate-500">
-                Improve your real photos — exposure, dusk shots, GDPR blur, object removal. Drag to
-                reorder.
-              </p>
-            </div>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-              <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-                  {photos.map((photo) => (
-                    <EnhancePhotoCard
-                      key={photo.id}
-                      photo={photo}
-                      isSelected={selected.has(photo.id)}
-                      isProcessing={inFlight.has(photo.id)}
-                      onToggleSelect={() => toggleSelected(photo.id)}
-                      onEnhanceJustThis={() => {
-                        setDialogOpen(true);
-                        setSelected(new Set([photo.id]));
-                      }}
-                      onRemoveObjects={() => setObjectRemovalPhotoId(photo.id)}
-                      onDelete={() => {
-                        if (confirm("Delete this photo?")) remove.mutate(photo.id);
-                      }}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </div>
-
-          {/* Virtual staging — furnish empty rooms. Same photos, staging only. */}
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-sm font-semibold">Virtual staging</h3>
-              <p className="text-xs text-slate-500">
-                Furnish empty rooms. The staged image you pick is watermarked and used for that
-                photo.
-              </p>
-            </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
               {photos.map((photo) => (
-                <StagePhotoCard
+                <EnhancePhotoCard
                   key={photo.id}
                   photo={photo}
-                  onStage={() => setStageDialogPhotoId(photo.id)}
+                  isSelected={selected.has(photo.id)}
+                  isProcessing={inFlight.has(photo.id)}
+                  onToggleSelect={() => toggleSelected(photo.id)}
+                  onEnhanceJustThis={() => {
+                    setDialogOpen(true);
+                    setSelected(new Set([photo.id]));
+                  }}
+                  onRemoveObjects={() => setObjectRemovalPhotoId(photo.id)}
+                  onDelete={() => {
+                    if (confirm("Delete this photo?")) remove.mutate(photo.id);
+                  }}
                 />
               ))}
             </div>
-          </div>
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {stageDialogPhoto ? (

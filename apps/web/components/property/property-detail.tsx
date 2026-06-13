@@ -12,7 +12,8 @@ import { FloorPlanPanel } from "./floor-plan-panel";
 import { PhotoManager } from "./photo-manager";
 
 const TABS = [
-  { key: "photos", label: "Photos" },
+  { key: "enhancements", label: "Enhancements" },
+  { key: "virtual_staging", label: "Virtual staging" },
   { key: "description", label: "Description" },
   { key: "floor_plan", label: "Floor plan" },
   { key: "epc", label: "EPC" },
@@ -33,7 +34,7 @@ const STATUS_LABELS: Record<PropertyStatus, string> = {
 export function PropertyDetail({ propertyId }: { propertyId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<TabKey>("photos");
+  const [tab, setTab] = useState<TabKey>("enhancements");
 
   const query = useQuery({
     queryKey: queryKeys.property(propertyId),
@@ -120,7 +121,12 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
       </nav>
 
       <div className="pt-2">
-        {tab === "photos" ? <PhotoManager propertyId={propertyId} /> : null}
+        {tab === "enhancements" ? (
+          <PhotoManager propertyId={propertyId} category="enhancement" />
+        ) : null}
+        {tab === "virtual_staging" ? (
+          <PhotoManager propertyId={propertyId} category="staging" />
+        ) : null}
         {tab === "description" ? <DescriptionPanel property={property} /> : null}
         {tab === "floor_plan" ? <FloorPlanPanel propertyId={propertyId} /> : null}
         {tab === "epc" ? <EpcPanel property={property} /> : null}

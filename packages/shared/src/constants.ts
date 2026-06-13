@@ -12,6 +12,11 @@ export const ROOM_TYPES = [
 ] as const;
 export type RoomType = (typeof ROOM_TYPES)[number];
 
+// Which workflow a photo belongs to — the Enhancements and Virtual staging tabs
+// each have their own separate set of uploads.
+export const PHOTO_CATEGORIES = ["enhancement", "staging"] as const;
+export type PhotoCategory = (typeof PHOTO_CATEGORIES)[number];
+
 export const STAGING_STYLES = [
   "modern",
   "scandi",

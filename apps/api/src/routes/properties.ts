@@ -6,6 +6,7 @@ import {
   createPropertySchema,
   floorPlansListResponseSchema,
   generateDescriptionRequestSchema,
+  photosListQuerySchema,
   photosListResponseSchema,
   propertyListQuerySchema,
   propertyListResponseSchema,
@@ -67,9 +68,15 @@ export const propertyRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     "/:id/photos",
-    { schema: { params: idParams, response: { 200: photosListResponseSchema } } },
+    {
+      schema: {
+        params: idParams,
+        querystring: photosListQuerySchema,
+        response: { 200: photosListResponseSchema },
+      },
+    },
     async (request) => ({
-      items: await listPropertyPhotos(request, request.params.id),
+      items: await listPropertyPhotos(request, request.params.id, request.query.category),
     }),
   );
 
