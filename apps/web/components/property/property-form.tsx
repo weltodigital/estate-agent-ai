@@ -52,6 +52,8 @@ const LISTING_LABELS: Record<ListingType, string> = {
 export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string }) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  // Creating: just address, price and sale/let. Editing: the full detail set.
+  const isEdit = mode.kind === "edit";
 
   // Memoise so the defaults object reference is stable across renders;
   // otherwise the reset() effect below loops and the inputs feel frozen.
@@ -77,7 +79,7 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
             address_line_1: "",
             town: "",
             postcode: "",
-            property_type: "detached",
+            property_type: "other",
             listing_type: "sale",
             bedrooms: 0,
             bathrooms: 0,
@@ -128,32 +130,36 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
         <Field label="Address line 1" id="address_line_1" error={errors.address_line_1?.message}>
           <Input id="address_line_1" {...register("address_line_1")} />
         </Field>
-        <Field
-          label="Address line 2 (optional)"
-          id="address_line_2"
-          error={errors.address_line_2?.message}
-        >
-          <Input id="address_line_2" {...register("address_line_2")} />
-        </Field>
+        {isEdit ? (
+          <Field
+            label="Address line 2 (optional)"
+            id="address_line_2"
+            error={errors.address_line_2?.message}
+          >
+            <Input id="address_line_2" {...register("address_line_2")} />
+          </Field>
+        ) : null}
         <Field label="Town" id="town" error={errors.town?.message}>
           <Input id="town" {...register("town")} />
         </Field>
         <Field label="Postcode" id="postcode" error={errors.postcode?.message}>
           <Input id="postcode" {...register("postcode")} />
         </Field>
-        <Field label="Property type" id="property_type" error={errors.property_type?.message}>
-          <select
-            id="property_type"
-            className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
-            {...register("property_type")}
-          >
-            {UK_PROPERTY_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {PROPERTY_TYPE_LABELS[t]}
-              </option>
-            ))}
-          </select>
-        </Field>
+        {isEdit ? (
+          <Field label="Property type" id="property_type" error={errors.property_type?.message}>
+            <select
+              id="property_type"
+              className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+              {...register("property_type")}
+            >
+              {UK_PROPERTY_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {PROPERTY_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
         <Field label="Listing type" id="listing_type" error={errors.listing_type?.message}>
           <select
             id="listing_type"
@@ -167,22 +173,26 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
             ))}
           </select>
         </Field>
-        <Field label="Bedrooms" id="bedrooms" error={errors.bedrooms?.message}>
-          <Input
-            id="bedrooms"
-            type="number"
-            min={0}
-            {...register("bedrooms", { valueAsNumber: true })}
-          />
-        </Field>
-        <Field label="Bathrooms" id="bathrooms" error={errors.bathrooms?.message}>
-          <Input
-            id="bathrooms"
-            type="number"
-            min={0}
-            {...register("bathrooms", { valueAsNumber: true })}
-          />
-        </Field>
+        {isEdit ? (
+          <>
+            <Field label="Bedrooms" id="bedrooms" error={errors.bedrooms?.message}>
+              <Input
+                id="bedrooms"
+                type="number"
+                min={0}
+                {...register("bedrooms", { valueAsNumber: true })}
+              />
+            </Field>
+            <Field label="Bathrooms" id="bathrooms" error={errors.bathrooms?.message}>
+              <Input
+                id="bathrooms"
+                type="number"
+                min={0}
+                {...register("bathrooms", { valueAsNumber: true })}
+              />
+            </Field>
+          </>
+        ) : null}
         <Field label="Price (£)" id="price_pounds" error={errors.price_pounds?.message}>
           <Input
             id="price_pounds"
@@ -192,15 +202,17 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
             {...register("price_pounds", { valueAsNumber: true })}
           />
         </Field>
-        <div className="md:col-span-2">
-          <Field label="Notes (optional)" id="notes" error={errors.notes?.message}>
-            <textarea
-              id="notes"
-              className="min-h-[6rem] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-              {...register("notes")}
-            />
-          </Field>
-        </div>
+        {isEdit ? (
+          <div className="md:col-span-2">
+            <Field label="Notes (optional)" id="notes" error={errors.notes?.message}>
+              <textarea
+                id="notes"
+                className="min-h-[6rem] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+                {...register("notes")}
+              />
+            </Field>
+          </div>
+        ) : null}
       </div>
 
       {serverError ? (

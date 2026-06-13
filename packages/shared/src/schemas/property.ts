@@ -47,7 +47,16 @@ export const createPropertySchema = propertySchema
     price_pence: true,
     notes: true,
   })
-  .partial({ address_line_2: true, notes: true });
+  // Creation captures only address, price and sale/let. Property type, bedrooms
+  // and bathrooms are optional here — enriched later via the edit form or the
+  // AI-description step — and the API fills sensible defaults on insert.
+  .partial({
+    address_line_2: true,
+    notes: true,
+    property_type: true,
+    bedrooms: true,
+    bathrooms: true,
+  });
 export type CreatePropertyRequest = z.infer<typeof createPropertySchema>;
 
 export const updatePropertySchema = createPropertySchema

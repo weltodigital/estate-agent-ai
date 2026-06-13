@@ -78,6 +78,9 @@ export async function createProperty(
     .from("properties")
     .insert({
       ...payload,
+      // property_type has no DB default (bedrooms/bathrooms/price do), so fill
+      // it when omitted at creation.
+      property_type: payload.property_type ?? "other",
       agency_id: request.agencyId,
       created_by: request.user.id,
     })
