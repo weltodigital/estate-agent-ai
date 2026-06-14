@@ -143,7 +143,7 @@ export function FloorPlanEditor({ floorPlanId }: { floorPlanId: string }) {
     return [(p[0] - transform.ox) / transform.scale, (p[1] - transform.oy) / transform.scale];
   }
 
-  if (query.isLoading) return <p className="text-sm text-slate-500">Loading floor plan…</p>;
+  if (query.isLoading) return <p className="text-brand-slate text-sm">Loading floor plan…</p>;
   if (query.isError)
     return (
       <p role="alert" className="text-sm text-red-600">
@@ -160,12 +160,12 @@ export function FloorPlanEditor({ floorPlanId }: { floorPlanId: string }) {
 
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-4">
-      <div className="flex-1 overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2">
-          <h1 className="text-lg font-semibold">
-            {plan.floor_label} <span className="text-sm text-slate-400">· {plan.status}</span>
+      <div className="border-brand-stone shadow-card flex-1 overflow-hidden rounded-md border bg-white">
+        <div className="border-brand-stone flex items-center justify-between border-b px-4 py-2">
+          <h1 className="text-brand-ink font-serif text-lg font-medium">
+            {plan.floor_label} <span className="text-brand-slate text-sm">· {plan.status}</span>
           </h1>
-          <div className="flex items-center gap-3 text-xs text-slate-500">
+          <div className="text-brand-slate flex items-center gap-3 text-xs">
             <span>
               {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved" : ""}
             </span>
@@ -296,7 +296,7 @@ export function FloorPlanEditor({ floorPlanId }: { floorPlanId: string }) {
         </Stage>
       </div>
 
-      <aside className="w-72 space-y-4 overflow-y-auto rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+      <aside className="border-brand-stone shadow-card w-72 space-y-4 overflow-y-auto rounded-md border bg-white p-4">
         {finaliseError ? (
           <p role="alert" className="text-sm text-red-600">
             {finaliseError}
@@ -454,7 +454,7 @@ export function FloorPlanEditor({ floorPlanId }: { floorPlanId: string }) {
         {selectedOpening ? (
           <section className="space-y-2">
             <h2 className="text-sm font-semibold">Opening</h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-brand-slate text-xs">
               Drag the red handles in the canvas to position. Use the toggle to switch kind.
             </p>
             <div className="flex gap-2">
@@ -501,7 +501,7 @@ export function FloorPlanEditor({ floorPlanId }: { floorPlanId: string }) {
         ) : null}
 
         {!selectedRoom && !selectedOpening ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-brand-slate text-xs">
             Click a room or opening to edit. Drag rooms to reposition. Click empty canvas to
             deselect.
           </p>
