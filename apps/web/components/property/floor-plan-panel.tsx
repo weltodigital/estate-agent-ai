@@ -77,7 +77,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
     <section className="space-y-6">
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Upload a sketch</h2>
+          <h2 className="text-brand-ink font-serif text-[22px] font-medium">Upload a sketch</h2>
         </header>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[14rem] flex-1 space-y-1">
@@ -108,9 +108,9 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-slate-500">Loading floor plans…</p>
+        <p className="text-brand-slate text-sm">Loading floor plans…</p>
       ) : plans.length === 0 ? (
-        <p className="text-sm text-slate-500">No floor plans yet. Upload a sketch above.</p>
+        <p className="text-brand-slate text-sm">No floor plans yet. Upload a sketch above.</p>
       ) : (
         <ul className="space-y-4">
           {plans.map((plan) => (
@@ -121,7 +121,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
               <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="space-y-0.5">
                   <p className="font-medium">{plan.floor_label}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-brand-slate text-xs">
                     Status: {STATUS_LABELS[plan.status]}
                     {plan.total_area_sqm ? ` · ${plan.total_area_sqm.toFixed(1)} m² total` : ""}
                   </p>
@@ -179,7 +179,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
                   </p>
                 </div>
               ) : plan.status === "parsing" || plan.status === "uploaded" ? (
-                <div className="border-brand-stone flex aspect-[4/3] items-center justify-center rounded-md border border-dashed bg-slate-50 text-sm text-slate-500">
+                <div className="border-brand-stone bg-brand-bone text-brand-slate flex aspect-[4/3] items-center justify-center rounded-md border border-dashed text-sm">
                   Claude is reading the sketch…
                 </div>
               ) : plan.output_svg_url ? (
@@ -190,10 +190,10 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
                   aria-label={`${plan.floor_label} floor plan`}
                 />
               ) : (
-                <p className="text-sm text-slate-500">No render available.</p>
+                <p className="text-brand-slate text-sm">No render available.</p>
               )}
 
-              <details className="mt-3 text-sm text-slate-500">
+              <details className="text-brand-slate mt-3 text-sm">
                 <summary className="cursor-pointer">Original sketch</summary>
                 <img src={plan.sketch_url} alt="" className="mt-2 max-h-96 rounded-md border" />
               </details>

@@ -49,7 +49,7 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
     },
   });
 
-  if (query.isLoading) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (query.isLoading) return <p className="text-brand-slate text-sm">Loading…</p>;
   if (query.isError)
     return (
       <p role="alert" className="text-sm text-red-600">
@@ -138,7 +138,7 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
 
 function Placeholder({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-brand-stone bg-brand-cream rounded-md border border-dashed p-6 text-sm text-slate-500">
+    <div className="border-brand-stone bg-brand-cream text-brand-slate rounded-md border border-dashed p-6 text-sm">
       {children}
     </div>
   );

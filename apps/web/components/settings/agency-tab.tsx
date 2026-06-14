@@ -59,7 +59,7 @@ export function AgencyTab() {
     setTemplate(data.floor_plan_template);
   }, [data]);
 
-  if (isLoading) return <p className="text-sm text-slate-500">Loading agency…</p>;
+  if (isLoading) return <p className="text-brand-slate text-sm">Loading agency…</p>;
   if (isError)
     return (
       <p role="alert" className="text-sm text-red-600">
@@ -94,7 +94,7 @@ export function AgencyTab() {
         <div className="space-y-1">
           <Label htmlFor="slug">URL slug</Label>
           <Input id="slug" value={data.slug} disabled />
-          <p className="text-xs text-slate-500">Generated when you signed up; not editable.</p>
+          <p className="text-brand-slate text-xs">Generated when you signed up; not editable.</p>
         </div>
         <div className="space-y-1">
           <Label htmlFor="tone">Default description tone</Label>

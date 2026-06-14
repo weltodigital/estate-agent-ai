@@ -40,7 +40,7 @@ export function SignupForm() {
     return (
       <div className="border-brand-stone bg-brand-cream space-y-2 rounded-md border p-4 text-sm">
         <p className="font-medium">Check your inbox.</p>
-        <p className="text-slate-600">
+        <p className="text-brand-walnut">
           We&apos;ve emailed you a confirmation link. Open it to finish setting up your agency.
         </p>
       </div>

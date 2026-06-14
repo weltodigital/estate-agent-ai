@@ -245,14 +245,14 @@ export function DescriptionPanel({ property }: { property: Property }) {
   }
 
   if (!editor) {
-    return <p className="text-sm text-slate-500">Loading editor…</p>;
+    return <p className="text-brand-slate text-sm">Loading editor…</p>;
   }
 
   return (
     <section className="space-y-5">
       <div>
-        <h3 className="text-sm font-semibold">Property details</h3>
-        <p className="text-xs text-slate-500">
+        <h3 className="text-brand-ink font-serif text-lg font-medium">Property details</h3>
+        <p className="text-brand-slate text-xs">
           Add the details you want included, then generate. Bedrooms, bathrooms and the features you
           pick lead the description as a key-features list. Your selections are saved for next time.
         </p>
@@ -393,8 +393,8 @@ export function DescriptionPanel({ property }: { property: Property }) {
 
 function chipClass(active: boolean): string {
   return active
-    ? "rounded-full border border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] px-3 py-1 text-xs font-medium text-white"
-    : "rounded-full border border-brand-stone bg-brand-cream px-3 py-1 text-xs text-slate-700 hover:border-slate-400";
+    ? "rounded-full border border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] px-3 py-1 text-xs font-medium text-brand-cream"
+    : "rounded-full border border-brand-stone bg-brand-cream px-3 py-1 text-xs text-brand-walnut hover:border-slate-400";
 }
 
 function ChipMultiSelect({
@@ -429,7 +429,7 @@ function ChipMultiSelect({
       <span className="block text-sm font-medium">
         {label}
         {selected.length > 0 ? (
-          <span className="ml-1 font-normal text-slate-400">({selected.length})</span>
+          <span className="text-brand-slate ml-1 font-normal">({selected.length})</span>
         ) : null}
       </span>
       <div className="flex flex-wrap gap-2">

@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">
+    <div className="text-brand-slate flex min-h-screen items-center justify-center text-sm">
       Loading…
     </div>
   );

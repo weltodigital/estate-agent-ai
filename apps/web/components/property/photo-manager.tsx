@@ -524,13 +524,13 @@ function EnhancePhotoCard({
 
       <div className="space-y-1.5 px-3 py-2 text-xs">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-slate-500">{photo.room_type.replace("_", " ")}</span>
+          <span className="text-brand-slate">{photo.room_type.replace("_", " ")}</span>
           <div className="flex flex-wrap gap-2">
             {hasEnhanced ? (
               <button
                 type="button"
                 onClick={() => setShowCompare((v) => !v)}
-                className="text-slate-600 underline"
+                className="text-brand-walnut underline"
               >
                 {showCompare ? "Hide compare" : "Compare"}
               </button>
@@ -550,7 +550,7 @@ function EnhancePhotoCard({
               Remove objects
             </button>
             {hasEnhanced ? (
-              <button type="button" onClick={onRevert} className="text-slate-600 underline">
+              <button type="button" onClick={onRevert} className="text-brand-walnut underline">
                 Revert
               </button>
             ) : null}
@@ -570,7 +570,7 @@ function EnhancePhotoCard({
               <span aria-hidden>{showApplied ? "▾" : "▸"}</span>
             </button>
             {showApplied ? (
-              <ul className="mt-1 space-y-0.5 text-slate-500">
+              <ul className="text-brand-slate mt-1 space-y-0.5">
                 {applied.map((e) => (
                   <li key={e}>· {ENHANCEMENT_LABELS[e]}</li>
                 ))}
@@ -591,7 +591,7 @@ function StagePhotoCard({ photo, onStage }: { photo: Photo; onStage: () => void 
   return (
     <div className="bg-brand-cream shadow-card group relative overflow-hidden rounded-xl">
       {hasStaged ? (
-        <span className="absolute bottom-2 left-2 z-10 rounded bg-[color:var(--brand-primary)] px-2 py-0.5 text-xs text-white">
+        <span className="text-brand-cream absolute bottom-2 left-2 z-10 rounded bg-[color:var(--brand-primary)] px-2 py-0.5 text-xs">
           Staged
         </span>
       ) : null}
@@ -609,7 +609,7 @@ function StagePhotoCard({ photo, onStage }: { photo: Photo; onStage: () => void 
             <button
               type="button"
               onClick={() => setShowCompare((v) => !v)}
-              className="text-slate-600 underline"
+              className="text-brand-walnut underline"
             >
               {showCompare ? "Hide compare" : "Compare"}
             </button>

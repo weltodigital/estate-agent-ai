@@ -26,7 +26,7 @@ export default async function FinishSetupPage() {
     <section className="border-brand-stone bg-brand-cream space-y-4 rounded-lg border p-6 shadow-sm">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold">Finish setting up your agency</h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-brand-slate text-sm">
           We just need a couple more details to create your agency and branch.
         </p>
       </header>

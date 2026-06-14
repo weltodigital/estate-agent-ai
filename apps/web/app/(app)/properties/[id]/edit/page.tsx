@@ -18,7 +18,7 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
     <section className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold">Edit property</h1>
-        <p className="text-sm text-slate-500">{(data as Property).address_line_1}</p>
+        <p className="text-brand-slate text-sm">{(data as Property).address_line_1}</p>
       </header>
       <PropertyForm
         mode={{ kind: "edit", property: data as Property }}

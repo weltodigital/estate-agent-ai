@@ -150,15 +150,15 @@ export function ObjectRemovalDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-12">
-      <div className="bg-brand-cream w-full max-w-2xl space-y-4 rounded-lg p-6 shadow-xl">
+      <div className="bg-brand-cream shadow-card w-full max-w-2xl space-y-4 rounded-xl p-6">
         <header className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Remove objects</h2>
-            <p className="text-sm text-slate-500">
+            <h2 className="text-brand-ink font-serif text-[22px] font-medium">Remove objects</h2>
+            <p className="text-brand-slate text-sm">
               Paint over the things you want gone, like a bin, a car, or clutter, then remove them.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="text-sm text-slate-500">
+          <button type="button" onClick={onClose} className="text-brand-slate text-sm">
             Close
           </button>
         </header>

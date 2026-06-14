@@ -9,10 +9,10 @@ export default function SignupPage() {
     <section className="border-brand-stone bg-brand-cream space-y-4 rounded-lg border p-6 shadow-sm">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold">Create your agency</h1>
-        <p className="text-sm text-slate-500">Start your 7-day free trial. No card required.</p>
+        <p className="text-brand-slate text-sm">Start your 7-day free trial. No card required.</p>
       </header>
       <SignupForm />
-      <p className="text-sm text-slate-500">
+      <p className="text-brand-slate text-sm">
         Already have an account?{" "}
         <a href="/login" className="text-[color:var(--brand-primary)] underline">
           Log in

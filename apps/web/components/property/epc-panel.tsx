@@ -54,12 +54,12 @@ export function EpcPanel({ property }: { property: Property }) {
     <div className="space-y-6">
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Current EPC</h2>
+          <h2 className="text-brand-ink font-serif text-[22px] font-medium">Current EPC</h2>
           {property.epc_current_rating ? (
             <button
               type="button"
               onClick={() => clear.mutate()}
-              className="text-sm text-slate-500 underline"
+              className="text-brand-slate text-sm underline"
               disabled={clear.isPending}
             >
               Clear
@@ -75,7 +75,7 @@ export function EpcPanel({ property }: { property: Property }) {
               {property.epc_potential_rating ? (
                 <RatingBadge rating={property.epc_potential_rating} />
               ) : (
-                <span className="text-slate-400">N/A</span>
+                <span className="text-brand-slate">N/A</span>
               )}
             </Stat>
             <Stat label="Valid until">
@@ -83,13 +83,13 @@ export function EpcPanel({ property }: { property: Property }) {
             </Stat>
           </dl>
         ) : (
-          <p className="text-sm text-slate-500">No EPC linked yet. Search for one below.</p>
+          <p className="text-brand-slate text-sm">No EPC linked yet. Search for one below.</p>
         )}
       </div>
 
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">EPC Register lookup</h2>
+          <h2 className="text-brand-ink font-serif text-[22px] font-medium">EPC Register lookup</h2>
           <Button variant="outline" onClick={() => search.refetch()} disabled={search.isFetching}>
             {search.isFetching ? "Searching…" : `Look up ${property.postcode}`}
           </Button>
@@ -103,7 +103,7 @@ export function EpcPanel({ property }: { property: Property }) {
 
         {search.data ? (
           search.data.results.length === 0 ? (
-            <p className="text-sm text-slate-500">No EPCs found for {property.postcode}.</p>
+            <p className="text-brand-slate text-sm">No EPCs found for {property.postcode}.</p>
           ) : (
             <ul className="divide-y divide-slate-200">
               {search.data.results.map((record, idx) => (
@@ -113,7 +113,7 @@ export function EpcPanel({ property }: { property: Property }) {
                 >
                   <div className="space-y-1">
                     <p className="text-sm font-medium">{record.address}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-brand-slate text-xs">
                       Valid until {record.expiry_date ?? "N/A"}
                       {record.inspection_date ? ` · inspected ${record.inspection_date}` : ""}
                     </p>
@@ -121,7 +121,7 @@ export function EpcPanel({ property }: { property: Property }) {
                   <div className="flex items-center gap-3">
                     <RatingBadge rating={record.current_rating} />
                     {record.potential_rating ? (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-brand-slate text-xs">
                         → <RatingBadge rating={record.potential_rating} small />
                       </span>
                     ) : null}
@@ -134,7 +134,7 @@ export function EpcPanel({ property }: { property: Property }) {
             </ul>
           )
         ) : (
-          <p className="text-sm text-slate-500">
+          <p className="text-brand-slate text-sm">
             Click look up to fetch certificates for this postcode.
           </p>
         )}
@@ -146,7 +146,7 @@ export function EpcPanel({ property }: { property: Property }) {
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
+      <dt className="text-brand-slate text-xs uppercase tracking-wide">{label}</dt>
       <dd>{children}</dd>
     </div>
   );
@@ -155,7 +155,7 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
 function RatingBadge({ rating, small = false }: { rating: EpcRating; small?: boolean }) {
   return (
     <span
-      className={`${RATING_COLOURS[rating]} inline-flex ${small ? "h-5 w-5 text-xs" : "h-7 w-7 text-sm"} items-center justify-center rounded font-semibold text-white`}
+      className={`${RATING_COLOURS[rating]} inline-flex ${small ? "h-5 w-5 text-xs" : "h-7 w-7 text-sm"} text-brand-cream items-center justify-center rounded font-semibold`}
     >
       {rating}
     </span>

@@ -37,7 +37,7 @@ export default async function NewPropertyPage() {
     <section className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold">New property</h1>
-        <p className="text-sm text-slate-500">Add a listing to your branch.</p>
+        <p className="text-brand-slate text-sm">Add a listing to your branch.</p>
       </header>
       <PropertyForm mode={{ kind: "create" }} branchId={branchId} />
     </section>

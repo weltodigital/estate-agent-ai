@@ -60,8 +60,10 @@ export function TeamTab() {
     <section className="space-y-6">
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3">
-          <h2 className="text-lg font-semibold">Invite a team member</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="text-brand-ink font-serif text-[22px] font-medium">
+            Invite a team member
+          </h2>
+          <p className="text-brand-slate text-xs">
             Admins only. They&apos;ll set their own password via the invite link.
           </p>
         </header>
@@ -134,18 +136,18 @@ export function TeamTab() {
       </div>
 
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
-        <h2 className="mb-3 text-lg font-semibold">Pending invites</h2>
+        <h2 className="text-brand-ink mb-3 font-serif text-[22px] font-medium">Pending invites</h2>
         {invitesQuery.isLoading ? (
-          <p className="text-sm text-slate-500">Loading invites…</p>
+          <p className="text-brand-slate text-sm">Loading invites…</p>
         ) : (invitesQuery.data?.items ?? []).length === 0 ? (
-          <p className="text-sm text-slate-500">No pending invites.</p>
+          <p className="text-brand-slate text-sm">No pending invites.</p>
         ) : (
           <ul className="divide-y divide-slate-200">
             {invitesQuery.data?.items.map((invite) => (
               <li key={invite.id} className="flex items-center justify-between py-2 text-sm">
                 <div>
                   <p className="font-medium">{invite.email}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-brand-slate text-xs">
                     {ROLE_LABELS[invite.role]} · expires{" "}
                     {new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(
                       new Date(invite.expires_at),
@@ -159,11 +161,11 @@ export function TeamTab() {
       </div>
 
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
-        <h2 className="mb-3 text-lg font-semibold">Team</h2>
+        <h2 className="text-brand-ink mb-3 font-serif text-[22px] font-medium">Team</h2>
         {usersQuery.isLoading ? (
-          <p className="text-sm text-slate-500">Loading team…</p>
+          <p className="text-brand-slate text-sm">Loading team…</p>
         ) : (usersQuery.data?.items ?? []).length === 0 ? (
-          <p className="text-sm text-slate-500">No members yet.</p>
+          <p className="text-brand-slate text-sm">No members yet.</p>
         ) : (
           <ul className="divide-y divide-slate-200">
             {usersQuery.data?.items.map((user) => (
@@ -173,7 +175,7 @@ export function TeamTab() {
               >
                 <div>
                   <p className="font-medium">{user.full_name}</p>
-                  <p className="text-xs text-slate-500">{user.email}</p>
+                  <p className="text-brand-slate text-xs">{user.email}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <select

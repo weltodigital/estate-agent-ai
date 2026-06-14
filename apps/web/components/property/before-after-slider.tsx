@@ -33,10 +33,10 @@ export function BeforeAfterSlider({
       >
         <div className="bg-brand-cream h-full w-0.5 shadow" />
       </div>
-      <div className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
+      <div className="text-brand-cream absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs font-medium">
         Before
       </div>
-      <div className="absolute right-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
+      <div className="text-brand-cream absolute right-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs font-medium">
         After
       </div>
       <input

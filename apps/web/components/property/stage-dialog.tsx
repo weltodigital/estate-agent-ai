@@ -86,15 +86,15 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-12">
-      <div className="bg-brand-cream max-h-[calc(100vh-6rem)] w-full max-w-3xl space-y-5 overflow-y-auto rounded-lg p-6 shadow-xl">
+      <div className="bg-brand-cream shadow-card max-h-[calc(100vh-6rem)] w-full max-w-3xl space-y-5 overflow-y-auto rounded-xl p-6">
         <header className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Virtual staging</h2>
-            <p className="text-sm text-slate-500">
+            <h2 className="text-brand-ink font-serif text-[22px] font-medium">Virtual staging</h2>
+            <p className="text-brand-slate text-sm">
               Pick a style, generate three variations, then choose the one you like.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="text-sm text-slate-500">
+          <button type="button" onClick={onClose} className="text-brand-slate text-sm">
             Close
           </button>
         </header>
@@ -114,7 +114,7 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
               ))}
             </select>
             {photo.suggested_style ? (
-              <span className="text-xs text-slate-500">
+              <span className="text-brand-slate text-xs">
                 Suggested: {STYLE_LABELS[photo.suggested_style]}
               </span>
             ) : null}
@@ -215,7 +215,7 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
 
 function Slot({ label, pending }: { label: string; pending: boolean }) {
   return (
-    <div className="border-brand-stone flex aspect-[4/3] items-center justify-center rounded-md border border-dashed bg-slate-50 text-sm text-slate-400">
+    <div className="border-brand-stone bg-brand-bone text-brand-slate flex aspect-[4/3] items-center justify-center rounded-md border border-dashed text-sm">
       {pending ? "Rendering…" : label}
     </div>
   );

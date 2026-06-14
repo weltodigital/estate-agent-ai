@@ -28,8 +28,8 @@ export function SettingsTabs({ initialTab = "agency" }: { initialTab?: SettingsT
             onClick={() => setTab(t.key)}
             className={`-mb-px border-b-2 px-1 py-2 ${
               tab === t.key
-                ? "border-[color:var(--brand-primary)] font-medium text-slate-900"
-                : "border-transparent text-slate-600 hover:text-slate-900"
+                ? "text-brand-ink border-[color:var(--brand-primary)] font-medium"
+                : "text-brand-walnut hover:text-brand-ink border-transparent"
             }`}
           >
             {t.label}

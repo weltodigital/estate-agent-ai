@@ -58,7 +58,7 @@ export function BillingTab() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["billing", "status"] }),
   });
 
-  if (isLoading) return <p className="text-sm text-slate-500">Loading billing…</p>;
+  if (isLoading) return <p className="text-brand-slate text-sm">Loading billing…</p>;
   if (isError) {
     return (
       <p role="alert" className="text-sm text-red-600">
@@ -87,8 +87,10 @@ export function BillingTab() {
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">Current plan</p>
-            <p className="text-lg font-semibold">{TIER_LABELS[data.subscription_tier]}</p>
+            <p className="text-brand-slate text-xs uppercase tracking-wide">Current plan</p>
+            <p className="text-brand-ink font-serif text-[22px] font-medium">
+              {TIER_LABELS[data.subscription_tier]}
+            </p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -112,12 +114,12 @@ export function BillingTab() {
                 disabled={isCurrent || checkout.isPending}
                 className={`rounded-md border p-3 text-left text-sm transition-colors ${
                   isCurrent
-                    ? "border-[color:var(--brand-primary)] bg-slate-50"
+                    ? "bg-brand-bone border-[color:var(--brand-primary)]"
                     : "border-brand-stone hover:border-slate-400"
                 } ${checkout.isPending ? "opacity-50" : ""}`}
               >
                 <p className="font-medium">{TIER_LABELS[tier]}</p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="text-brand-slate mt-1 text-xs">
                   {isCurrent ? "Current plan" : "Switch to this plan"}
                 </p>
               </button>
@@ -140,8 +142,8 @@ export function BillingTab() {
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">Usage this month</p>
-            <p className="text-sm text-slate-500">
+            <p className="text-brand-slate text-xs uppercase tracking-wide">Usage this month</p>
+            <p className="text-brand-slate text-sm">
               Resets on{" "}
               {new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(
                 nextMonthStart(new Date(data.period_start)),
@@ -157,11 +159,11 @@ export function BillingTab() {
               <li key={u.event_type} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span>{EVENT_LABELS[u.event_type]}</span>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-brand-slate text-xs">
                     {u.used} / {u.limit}
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded bg-slate-100">
+                <div className="bg-brand-stone/40 h-2 w-full overflow-hidden rounded">
                   <div
                     className={`h-full ${
                       pct >= 100

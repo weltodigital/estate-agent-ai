@@ -68,13 +68,13 @@ export function BrandingTab() {
     });
   }
 
-  if (!data) return <p className="text-sm text-slate-500">Loading branding…</p>;
+  if (!data) return <p className="text-brand-slate text-sm">Loading branding…</p>;
 
   return (
     <section className="space-y-6">
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Logo</h2>
+          <h2 className="text-brand-ink font-serif text-[22px] font-medium">Logo</h2>
         </header>
         <div className="flex flex-wrap items-center gap-4">
           {data.logo_url ? (
@@ -84,7 +84,7 @@ export function BrandingTab() {
               className="h-16 max-w-[8rem] object-contain"
             />
           ) : (
-            <div className="border-brand-stone flex h-16 w-32 items-center justify-center rounded border border-dashed text-xs text-slate-400">
+            <div className="border-brand-stone text-brand-slate flex h-16 w-32 items-center justify-center rounded border border-dashed text-xs">
               No logo yet
             </div>
           )}
@@ -112,7 +112,7 @@ export function BrandingTab() {
 
       <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Brand colours</h2>
+          <h2 className="text-brand-ink font-serif text-[22px] font-medium">Brand colours</h2>
         </header>
         <div className="grid gap-4 md:grid-cols-2">
           <ColourField

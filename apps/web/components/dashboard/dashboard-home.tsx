@@ -43,14 +43,14 @@ export function DashboardHome() {
     <section className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-brand-ink font-serif text-[32px]">Dashboard</h1>
+          <p className="text-brand-slate text-sm">
             {agency.data ? `Welcome back to ${agency.data.name}.` : "Welcome back."}
           </p>
         </div>
         <a
           href="/properties/new"
-          className="rounded-md bg-[color:var(--brand-primary)] px-3 py-2 text-sm font-medium text-white"
+          className="text-brand-cream rounded-md bg-[color:var(--brand-primary)] px-3 py-2 text-sm font-medium"
         >
           New property
         </a>
@@ -97,7 +97,7 @@ export function DashboardHome() {
         <div className="lg:col-span-2">
           <div className="border-brand-stone bg-brand-cream rounded-lg border">
             <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-              <h2 className="text-sm font-semibold">Recent properties</h2>
+              <h2 className="text-brand-ink font-serif text-lg font-medium">Recent properties</h2>
               <a
                 href="/properties"
                 className="text-xs font-medium text-[color:var(--brand-primary)]"
@@ -110,10 +110,10 @@ export function DashboardHome() {
                 {(recent.error as Error).message}
               </p>
             ) : recent.isLoading ? (
-              <p className="px-4 py-6 text-sm text-slate-500">Loading…</p>
+              <p className="text-brand-slate px-4 py-6 text-sm">Loading…</p>
             ) : recent.data && recent.data.items.length === 0 ? (
               <div className="px-4 py-8 text-center">
-                <p className="text-sm text-slate-500">No listings yet.</p>
+                <p className="text-brand-slate text-sm">No listings yet.</p>
                 <a
                   href="/properties/new"
                   className="mt-2 inline-block text-sm font-medium text-[color:var(--brand-primary)]"
@@ -127,17 +127,17 @@ export function DashboardHome() {
                   <li key={p.id}>
                     <a
                       href={`/properties/${p.id}`}
-                      className="flex items-center justify-between px-4 py-3 hover:bg-slate-50"
+                      className="hover:bg-brand-stone/30 flex items-center justify-between px-4 py-3"
                     >
                       <div className="space-y-0.5">
                         <p className="font-medium">{p.address_line_1}</p>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-brand-slate text-sm">
                           {p.town} · {p.postcode} · {p.bedrooms} bed
                         </p>
                       </div>
                       <div className="space-y-0.5 text-right">
                         <p className="font-medium">{formatPrice(p.price_pence, p.listing_type)}</p>
-                        <p className="text-xs text-slate-500">{STATUS_LABELS[p.status]}</p>
+                        <p className="text-brand-slate text-xs">{STATUS_LABELS[p.status]}</p>
                       </div>
                     </a>
                   </li>
@@ -150,7 +150,7 @@ export function DashboardHome() {
         {/* Usage this month */}
         <div className="border-brand-stone bg-brand-cream rounded-lg border">
           <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-semibold">Usage this month</h2>
+            <h2 className="text-brand-ink font-serif text-lg font-medium">Usage this month</h2>
             <a
               href="/settings?tab=billing"
               className="text-xs font-medium text-[color:var(--brand-primary)]"
@@ -164,7 +164,7 @@ export function DashboardHome() {
                 {(billing.error as Error).message}
               </p>
             ) : billing.isLoading ? (
-              <p className="text-sm text-slate-500">Loading…</p>
+              <p className="text-brand-slate text-sm">Loading…</p>
             ) : (
               <ul className="space-y-3">
                 {(billing.data?.usage ?? [])
@@ -175,11 +175,11 @@ export function DashboardHome() {
                       <li key={u.event_type} className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
                           <span>{EVENT_LABELS[u.event_type]}</span>
-                          <span className="text-xs text-slate-500">
+                          <span className="text-brand-slate text-xs">
                             {u.used} / {u.limit}
                           </span>
                         </div>
-                        <div className="h-2 w-full overflow-hidden rounded bg-slate-100">
+                        <div className="bg-brand-stone/40 h-2 w-full overflow-hidden rounded">
                           <div
                             className={`h-full ${
                               pct >= 100
@@ -214,9 +214,9 @@ function StatCard({
 }) {
   return (
     <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value === null ? "…" : value}</p>
-      {hint ? <p className="text-xs text-slate-400">{hint}</p> : null}
+      <p className="text-brand-slate text-xs uppercase tracking-wide">{label}</p>
+      <p className="text-brand-ink mt-1 font-serif text-[32px]">{value === null ? "…" : value}</p>
+      {hint ? <p className="text-brand-slate text-xs">{hint}</p> : null}
     </div>
   );
 }

@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Building2 } from "lucide-react";
 import { PROPERTY_STATUSES, type PropertyStatus } from "@app/shared/constants";
+import { Button } from "@app/ui";
 import { queryKeys, propertyApi } from "@/lib/queries";
-import { EMPTY_STATES } from "@/lib/copy";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
   draft: "Draft",
@@ -37,15 +39,15 @@ export function PropertyList() {
   });
 
   return (
-    <section className="space-y-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Properties</h1>
-        <a
-          href="/properties/new"
-          className="rounded-md bg-[color:var(--brand-primary)] px-3 py-2 text-sm font-medium text-white"
-        >
-          New property
-        </a>
+    <section className="space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-brand-ink font-serif text-[32px]">Properties</h1>
+          <p className="text-brand-slate text-sm">Your listings and where each one is up to.</p>
+        </div>
+        <Button asChild>
+          <a href="/properties/new">New property</a>
+        </Button>
       </header>
 
       <div className="flex flex-wrap gap-3">
@@ -77,26 +79,35 @@ export function PropertyList() {
       ) : null}
 
       {query.isLoading ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-brand-slate text-sm">Loading…</p>
       ) : query.data && query.data.items.length === 0 ? (
-        <p className="text-sm text-slate-500">{EMPTY_STATES.properties}</p>
+        <EmptyState
+          icon={Building2}
+          title="No properties yet"
+          subtitle="Add your first property to start building its listing."
+          action={
+            <Button asChild>
+              <a href="/properties/new">New property</a>
+            </Button>
+          }
+        />
       ) : (
-        <ul className="border-brand-stone bg-brand-cream divide-y divide-slate-200 rounded-lg border">
+        <ul className="bg-brand-cream divide-brand-stone shadow-card divide-y overflow-hidden rounded-xl">
           {query.data?.items.map((p) => (
             <li key={p.id}>
               <a
                 href={`/properties/${p.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-slate-50"
+                className="hover:bg-brand-stone/30 flex items-center justify-between px-4 py-3"
               >
                 <div className="space-y-0.5">
                   <p className="font-medium">{p.address_line_1}</p>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-brand-slate text-sm">
                     {p.town} · {p.postcode} · {p.bedrooms} bed
                   </p>
                 </div>
                 <div className="space-y-0.5 text-right">
                   <p className="font-medium">{formatPrice(p.price_pence, p.listing_type)}</p>
-                  <p className="text-xs text-slate-500">{STATUS_LABELS[p.status]}</p>
+                  <p className="text-brand-slate text-xs">{STATUS_LABELS[p.status]}</p>
                 </div>
               </a>
             </li>

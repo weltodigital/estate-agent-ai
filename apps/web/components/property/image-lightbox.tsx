@@ -37,7 +37,7 @@ export function ImageLightbox({
         type="button"
         onClick={onClose}
         aria-label="Close enlarged image"
-        className="absolute right-4 top-4 text-sm text-white/80 hover:text-white"
+        className="text-brand-cream/80 hover:text-brand-cream absolute right-4 top-4 text-sm"
       >
         Close
       </button>
