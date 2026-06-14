@@ -6,6 +6,7 @@ import { type PropertyStatus, type UsageEventType } from "@app/shared/constants"
 import type { BillingStatusResponse, Property } from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { agencyApi, billingApi, propertyApi, queryKeys } from "@/lib/queries";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
   draft: "Draft",
@@ -112,15 +113,16 @@ export function DashboardHome() {
             ) : recent.isLoading ? (
               <p className="text-brand-slate px-4 py-6 text-sm">Loading…</p>
             ) : recent.data && recent.data.items.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <p className="text-brand-slate text-sm">No listings yet.</p>
-                <a
-                  href="/properties/new"
-                  className="text-brand-hedge mt-2 inline-block text-sm font-medium"
-                >
-                  Add your first one →
-                </a>
-              </div>
+              <EmptyState
+                icon={Building2}
+                title="No properties yet"
+                subtitle="Add your first to start building its listing."
+                action={
+                  <Button asChild>
+                    <a href="/properties/new">New property</a>
+                  </Button>
+                }
+              />
             ) : (
               <ul className="divide-brand-stone divide-y">
                 {recent.data?.items.map((p) => (

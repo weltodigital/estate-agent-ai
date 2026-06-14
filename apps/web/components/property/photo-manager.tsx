@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
@@ -23,6 +23,7 @@ import { ImagePlus, Loader2, Sparkles, Sun, Sunset } from "lucide-react";
 import { Button, Checkbox } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
 import { BeforeAfterSlider } from "./before-after-slider";
 import { StageDialog } from "./stage-dialog";
 import { ObjectRemovalDialog } from "./object-removal-dialog";
@@ -62,6 +63,11 @@ export function PhotoManager({
 }) {
   const isStaging = category === "staging";
   const queryClient = useQueryClient();
+  const toast = useToast();
+  // Creative enhancement run: toast goes to loading on enqueue and resolves when
+  // every awaited photo has cleared its in-flight markers (callbacks landed).
+  const creativeToastRef = useRef<number | null>(null);
+  const awaitedRef = useRef<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
@@ -117,6 +123,17 @@ export function PhotoManager({
     }
     if (changed) setInFlight(next);
   }, [photos, inFlight]);
+
+  // Resolve the creative-enhancement toast once all awaited photos are done.
+  useEffect(() => {
+    if (creativeToastRef.current === null) return;
+    const stillRunning = [...awaitedRef.current].some((id) => inFlight.has(id));
+    if (!stillRunning) {
+      toast.success(creativeToastRef.current, "Enhancements applied");
+      creativeToastRef.current = null;
+      awaitedRef.current = new Set();
+    }
+  }, [inFlight, toast]);
 
   const reorder = useMutation({
     mutationFn: (photoIds: string[]) => photoApi.reorder(propertyId, { photo_ids: photoIds }),
@@ -255,8 +272,15 @@ export function PhotoManager({
       });
       setSelected(new Set());
       setDialogOpen(false);
+      // Watch these photos and resolve a single toast when they're all done.
+      awaitedRef.current = new Set(ids);
+      creativeToastRef.current = toast.loading(
+        `Enhancing ${ids.length} photo${ids.length === 1 ? "" : "s"}…`,
+      );
     } catch (err) {
-      setEnhanceError(err instanceof Error ? err.message : "Could not enqueue enhancements.");
+      const message = err instanceof Error ? err.message : "Could not enqueue enhancements.";
+      setEnhanceError(message);
+      toast.error(undefined, "Enhancement failed", { subtitle: message });
     }
   }
 
