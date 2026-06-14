@@ -26,8 +26,15 @@ ENV npm_config_fetch_retries=5 \
 
 # Install the whole workspace from the committed lockfile. The repo is copied
 # in full; .dockerignore keeps node_modules / .next / dist / .venv / .env out.
+#
+# Retry the whole install on failure: a flaky registry can leave a half-written
+# store and surface as ERR_PNPM_ENOENT (a copyfile from a missing store entry)
+# even with fetch-retries set. A second/third attempt re-fetches the missing
+# entries, so transient blips no longer fail the build.
 COPY . .
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile \
+  || (echo "pnpm install failed, retrying in 5s…" && sleep 5 && pnpm install --frozen-lockfile) \
+  || (echo "pnpm install failed, retrying in 20s…" && sleep 20 && pnpm install --frozen-lockfile)
 
 WORKDIR /repo/apps/api
 EXPOSE 3001
