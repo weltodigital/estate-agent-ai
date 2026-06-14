@@ -8,6 +8,7 @@ import { TONE_OPTIONS, type Tone } from "@app/shared/constants";
 import type { DescriptionInputs, GenerateDescriptionRequest, Property } from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { propertyApi, queryKeys, streamApi } from "@/lib/queries";
+import { useToast } from "@/components/ui/toast";
 
 const TONE_LABELS: Record<Tone, string> = {
   professional: "Professional",
@@ -147,6 +148,7 @@ function normaliseInputs(stored: DescriptionInputs | null | undefined): Descript
 
 export function DescriptionPanel({ property }: { property: Property }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [tone, setTone] = useState<Tone>(property.description_tone ?? "professional");
   const [inputs, setInputs] = useState<DescriptionInputs>(() =>
     normaliseInputs(property.description_inputs),
@@ -220,6 +222,7 @@ export function DescriptionPanel({ property }: { property: Property }) {
     }
 
     const body: GenerateDescriptionRequest = { tone, inputs };
+    const toastId = toast.loading("Generating description…", "This usually takes a few seconds.");
 
     let buffer = "";
     try {
@@ -235,9 +238,14 @@ export function DescriptionPanel({ property }: { property: Property }) {
         const cleaned = buffer.slice(0, markerIndex).trim();
         editor.commands.setContent(toHtml(cleaned), false);
         setStreamError(message || "Generation failed.");
+        toast.error(toastId, "Generation failed", { subtitle: message, onRetry: generate });
+      } else {
+        toast.success(toastId, "Description ready");
       }
     } catch (err) {
-      setStreamError(err instanceof Error ? err.message : "Generation failed.");
+      const message = err instanceof Error ? err.message : "Generation failed.";
+      setStreamError(message);
+      toast.error(toastId, "Generation failed", { subtitle: message, onRetry: generate });
     } finally {
       setStreaming(false);
       editor.setEditable(true);

@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { BrandColours } from "./brand-colours";
+import { ToastProvider } from "./ui/toast";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -20,7 +21,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <BrandColours />
-      {children}
+      <ToastProvider>{children}</ToastProvider>
     </QueryClientProvider>
   );
 }

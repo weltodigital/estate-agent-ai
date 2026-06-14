@@ -38,7 +38,7 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
 /** Shared marketing footer. Hedge Green background, Bone wordmark. */
 export function MarketingFooter() {
   return (
-    <footer className="bg-brand-hedge">
+    <footer className="bg-brand-hedge" style={{ borderTop: "0.5px solid #4A453A" }}>
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
           <div className="col-span-2 md:col-span-1">

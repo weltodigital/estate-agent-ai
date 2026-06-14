@@ -1,5 +1,8 @@
+import { FileText, Image as ImageIcon, PenLine, type LucideIcon } from "lucide-react";
 import { PricingCard } from "@/components/marketing/pricing-card";
 import { TIERS } from "@/components/marketing/pricing-data";
+
+const FEATURE_ICONS: LucideIcon[] = [ImageIcon, PenLine, FileText];
 
 const PROOF_POINTS = [
   {
@@ -73,7 +76,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-5xl gap-12 md:grid-cols-3">
           {PROOF_POINTS.map((point) => (
             <div key={point.word}>
-              <p className="text-brand-bone font-serif text-[32px]" style={{ fontWeight: 400 }}>
+              <p className="text-brand-bone font-serif text-[36px]" style={{ fontWeight: 400 }}>
                 {point.word}
               </p>
               <p className="text-brand-sand mt-3 text-[13px] leading-relaxed">{point.body}</p>
@@ -100,13 +103,19 @@ export default function HomePage() {
         <div className="mx-auto max-w-5xl space-y-20 py-12">
           {FEATURES.map((feature, index) => (
             <div key={feature.title} className="grid items-center gap-10 md:grid-cols-2">
-              {/* TODO: replace with real product screenshot */}
+              {/* Designed placeholder until real product screenshots land. */}
               <div
-                className={`bg-brand-sand flex aspect-[3/2] items-center justify-center rounded-xl ${
+                className={`border-brand-stone bg-brand-cream flex aspect-[3/2] flex-col items-center justify-center gap-3 rounded-xl border ${
                   index % 2 === 1 ? "md:order-2" : ""
                 }`}
               >
-                <span className="text-brand-walnut text-sm">preview</span>
+                {(() => {
+                  const Icon = FEATURE_ICONS[index % FEATURE_ICONS.length] ?? ImageIcon;
+                  return (
+                    <Icon className="text-brand-walnut h-12 w-12" strokeWidth={1.5} aria-hidden />
+                  );
+                })()}
+                <span className="text-brand-slate text-sm">Screenshot coming soon</span>
               </div>
               <div className={index % 2 === 1 ? "md:order-1" : ""}>
                 <h3 className="text-brand-ink text-[28px]">{feature.title}</h3>
