@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { STAGING_STYLES, type RoomType, type StagingStyle } from "@app/shared/constants";
 import type { Photo, StagingVariation } from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
+import { useToast } from "@/components/ui/toast";
 import { ImageLightbox } from "./image-lightbox";
 
 const STYLE_LABELS: Record<StagingStyle, string> = {
@@ -31,6 +32,11 @@ const ROOM_TYPE_LABELS: Record<RoomType, string> = {
 
 export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => void }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
+  // Staging is fire-and-poll: the toast goes to loading on enqueue and resolves
+  // when the new variations arrive (tracked by count) via the effect below.
+  const stageToastRef = useRef<number | null>(null);
+  const pendingCountRef = useRef(0);
   const [style, setStyle] = useState<StagingStyle>(
     photo.staging_style ?? photo.suggested_style ?? "modern",
   );
@@ -57,9 +63,26 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
       // Trigger a poll loop — the photos query will pick up the new variations
       // once the callback lands. We don't optimistically write anything here.
       queryClient.invalidateQueries({ queryKey: queryKeys.photos(photo.property_id) });
+      pendingCountRef.current = variations.length;
+      stageToastRef.current = toast.loading(
+        "Generating staging…",
+        "This usually takes around a minute.",
+      );
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Could not start staging."),
+    onError: (err) => {
+      const message = err instanceof Error ? err.message : "Could not start staging.";
+      setError(message);
+      toast.error(undefined, "Staging failed", { subtitle: message });
+    },
   });
+
+  // Resolve the staging toast once the new variations land.
+  useEffect(() => {
+    if (stageToastRef.current !== null && variations.length > pendingCountRef.current) {
+      toast.success(stageToastRef.current, "Staging ready");
+      stageToastRef.current = null;
+    }
+  }, [variations.length, toast]);
 
   const select = useMutation({
     mutationFn: (variationId: string) => photoApi.selectStaging(photo.id, variationId),
