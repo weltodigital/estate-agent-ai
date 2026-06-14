@@ -22,9 +22,11 @@ export function AppSidebarNav() {
             href={href}
             className={cn(
               "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              // Active state uses the agency's brand colour (var) for the text +
+              // icon so per-agency overrides apply; background stays neutral.
               active
-                ? "bg-brand-hedge/10 text-brand-hedge"
-                : "text-brand-walnut hover:bg-brand-stone/40 hover:text-brand-ink",
+                ? "bg-brand-stone/40 text-[color:var(--brand-primary)]"
+                : "text-brand-walnut hover:bg-brand-stone/30 hover:text-brand-ink",
             )}
           >
             <Icon className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden />

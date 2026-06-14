@@ -1,8 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Building2, FileText, ImagePlus, Sparkles, type LucideIcon } from "lucide-react";
 import { type PropertyStatus, type UsageEventType } from "@app/shared/constants";
 import type { BillingStatusResponse, Property } from "@app/shared/schemas";
+import { Button } from "@app/ui";
 import { agencyApi, billingApi, propertyApi, queryKeys } from "@/lib/queries";
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
@@ -48,12 +50,9 @@ export function DashboardHome() {
             {agency.data ? `Welcome back to ${agency.data.name}.` : "Welcome back."}
           </p>
         </div>
-        <a
-          href="/properties/new"
-          className="text-brand-cream rounded-md bg-[color:var(--brand-primary)] px-3 py-2 text-sm font-medium"
-        >
-          New property
-        </a>
+        <Button asChild>
+          <a href="/properties/new">New property</a>
+        </Button>
       </header>
 
       {trialDays !== null && trialDays > 0 ? (
@@ -70,22 +69,26 @@ export function DashboardHome() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
+          icon={Building2}
           label="Total properties"
           value={recent.isLoading ? null : (recent.data?.total ?? 0)}
         />
         <StatCard
+          icon={ImagePlus}
           label="Photos enhanced"
           value={usageLabel(billing.data, "photo_enhanced")}
           hint="this month"
         />
         <StatCard
+          icon={FileText}
           label="AI descriptions"
           value={usageLabel(billing.data, "description_generated")}
           hint="this month"
         />
         <StatCard
+          icon={Sparkles}
           label="Virtual stagings"
           value={usageLabel(billing.data, "staging_generated")}
           hint="this month"
@@ -95,13 +98,10 @@ export function DashboardHome() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent properties */}
         <div className="lg:col-span-2">
-          <div className="border-brand-stone bg-brand-cream rounded-lg border">
-            <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+          <div className="bg-brand-cream shadow-card rounded-xl">
+            <header className="border-brand-stone flex items-center justify-between border-b px-4 py-3">
               <h2 className="text-brand-ink font-serif text-lg font-medium">Recent properties</h2>
-              <a
-                href="/properties"
-                className="text-xs font-medium text-[color:var(--brand-primary)]"
-              >
+              <a href="/properties" className="text-brand-hedge text-xs font-medium">
                 View all
               </a>
             </header>
@@ -116,13 +116,13 @@ export function DashboardHome() {
                 <p className="text-brand-slate text-sm">No listings yet.</p>
                 <a
                   href="/properties/new"
-                  className="mt-2 inline-block text-sm font-medium text-[color:var(--brand-primary)]"
+                  className="text-brand-hedge mt-2 inline-block text-sm font-medium"
                 >
                   Add your first one →
                 </a>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-brand-stone divide-y">
                 {recent.data?.items.map((p) => (
                   <li key={p.id}>
                     <a
@@ -148,13 +148,10 @@ export function DashboardHome() {
         </div>
 
         {/* Usage this month */}
-        <div className="border-brand-stone bg-brand-cream rounded-lg border">
-          <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+        <div className="bg-brand-cream shadow-card rounded-xl">
+          <header className="border-brand-stone flex items-center justify-between border-b px-4 py-3">
             <h2 className="text-brand-ink font-serif text-lg font-medium">Usage this month</h2>
-            <a
-              href="/settings?tab=billing"
-              className="text-xs font-medium text-[color:var(--brand-primary)]"
-            >
+            <a href="/settings?tab=billing" className="text-brand-hedge text-xs font-medium">
               Billing
             </a>
           </header>
@@ -207,15 +204,22 @@ function StatCard({
   label,
   value,
   hint,
+  icon: Icon,
 }: {
   label: string;
   value: string | number | null;
   hint?: string;
+  icon?: LucideIcon;
 }) {
   return (
-    <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
-      <p className="text-brand-slate text-xs uppercase tracking-wide">{label}</p>
-      <p className="text-brand-ink mt-1 font-serif text-[32px]">{value === null ? "…" : value}</p>
+    <div className="bg-brand-cream shadow-card rounded-xl p-5">
+      <div className="flex items-center gap-2">
+        {Icon ? <Icon className="text-brand-slate h-4 w-4" strokeWidth={1.5} aria-hidden /> : null}
+        <p className="text-brand-slate text-xs font-medium uppercase tracking-wide">{label}</p>
+      </div>
+      <p className="text-brand-ink mt-2 text-[28px] font-medium tabular-nums">
+        {value === null ? "…" : value}
+      </p>
       {hint ? <p className="text-brand-slate text-xs">{hint}</p> : null}
     </div>
   );

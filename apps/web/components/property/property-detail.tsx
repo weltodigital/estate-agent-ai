@@ -111,7 +111,7 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
             onClick={() => setTab(t.key)}
             className={`-mb-px border-b-2 px-1 py-2 ${
               tab === t.key
-                ? "border-brand-hedge text-brand-ink font-medium"
+                ? "text-brand-ink border-[color:var(--brand-primary)] font-medium"
                 : "text-brand-walnut hover:text-brand-ink border-transparent"
             }`}
           >

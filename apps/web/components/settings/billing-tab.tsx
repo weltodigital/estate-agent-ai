@@ -115,7 +115,7 @@ export function BillingTab() {
                 className={`rounded-md border p-3 text-left text-sm transition-colors ${
                   isCurrent
                     ? "bg-brand-bone border-[color:var(--brand-primary)]"
-                    : "border-brand-stone hover:border-slate-400"
+                    : "border-brand-stone hover:border-brand-walnut/50"
                 } ${checkout.isPending ? "opacity-50" : ""}`}
               >
                 <p className="font-medium">{TIER_LABELS[tier]}</p>

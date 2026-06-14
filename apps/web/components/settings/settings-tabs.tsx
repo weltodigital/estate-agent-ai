@@ -19,7 +19,7 @@ export function SettingsTabs({ initialTab = "agency" }: { initialTab?: SettingsT
   const [tab, setTab] = useState<SettingsTabKey>(initialTab);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <nav className="border-brand-stone flex gap-4 border-b text-sm">
         {TABS.map((t) => (
           <button
