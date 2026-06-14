@@ -12,7 +12,12 @@ import {
   suggestStyleResponseSchema,
   updatePhotoSchema,
 } from "@app/shared/schemas";
-import { createMaskUpload, deletePhoto, updatePhoto } from "../services/photos.js";
+import {
+  createMaskUpload,
+  deletePhoto,
+  resetPhotoEnhancements,
+  updatePhoto,
+} from "../services/photos.js";
 import { enqueuePhotoEnhance } from "../services/photo-enhancements.js";
 import {
   clearStagingVariations,
@@ -36,6 +41,13 @@ export const photoRoutes: FastifyPluginAsyncZod = async (app) => {
     await deletePhoto(request, request.params.id);
     return reply.code(204).send();
   });
+
+  // Revert a photo to its original (clears auto + creative enhancements).
+  app.delete(
+    "/photos/:id/enhancements",
+    { schema: { params: photoParams, response: { 200: photoSchema } } },
+    async (request) => resetPhotoEnhancements(request, request.params.id),
+  );
 
   app.post(
     "/photos/:id/mask-upload",

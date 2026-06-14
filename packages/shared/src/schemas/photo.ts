@@ -75,12 +75,40 @@ export const PHOTO_ENHANCEMENTS = [
   "object_removal",
   "gdpr_blur",
   "exposure_correction",
+  "colour_temperature",
   "colour_saturation",
   "shadow_boost",
+  "hd_upscale",
   "logo_watermark",
   "dusk_shot",
 ] as const;
 export type PhotoEnhancement = (typeof PHOTO_ENHANCEMENTS)[number];
+
+// Safe "cleanup" enhancements: auto-applied on upload (conditionally, never
+// making a photo worse), free, and reversible. The orchestrator decides per
+// image whether each actually applies.
+export const AUTO_ENHANCEMENTS = [
+  "gdpr_blur",
+  "exposure_correction",
+  "colour_temperature",
+  "colour_saturation",
+  "shadow_boost",
+  "hd_upscale",
+] as const satisfies readonly PhotoEnhancement[];
+
+// Creative enhancements: explicit, per-photo/per-property decisions — these are
+// the billable ones and the only options shown in the "Add creative
+// enhancements" dialog (object removal stays its own per-photo mask action).
+export const CREATIVE_ENHANCEMENTS = [
+  "sky_replacement",
+  "object_removal",
+  "dusk_shot",
+  "logo_watermark",
+] as const satisfies readonly PhotoEnhancement[];
+
+export function isCreativeEnhancement(e: PhotoEnhancement): boolean {
+  return (CREATIVE_ENHANCEMENTS as readonly PhotoEnhancement[]).includes(e);
+}
 
 export const enhancePhotoRequestSchema = z
   .object({

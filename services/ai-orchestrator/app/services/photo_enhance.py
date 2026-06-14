@@ -3,8 +3,14 @@
 Downloads the original photo, applies the requested enhancements, uploads the
 results to R2, and POSTs the URLs back to the API.
 
+Auto-cleanup enhancements are gated (only applied when an analysis says they
+help), so they never make a good photo worse.
+
 Implementations:
-  - exposure_correction: PIL (autocontrast + small brightness lift)
+  - exposure_correction: PIL (autocontrast + brightness), only when under/over
+                         exposed or low-contrast
+  - colour_temperature:  PIL grey-world white balance, only when a cast is found
+  - hd_upscale:          Replicate Real-ESRGAN, only for sub-1400px photos
   - colour_saturation:   PIL (gentle saturation boost)
   - shadow_boost:        PIL (lift shadows only — composite a brightened copy
                          into dark regions via an inverted-luminance mask)
@@ -33,7 +39,7 @@ import uuid
 from typing import Literal
 
 import httpx
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageStat
 
 from app.integrations import rekognition, replicate
 from app.integrations.hmac_sign import sign
@@ -46,14 +52,49 @@ Enhancement = Literal[
     "object_removal",
     "gdpr_blur",
     "exposure_correction",
+    "colour_temperature",
     "colour_saturation",
     "shadow_boost",
+    "hd_upscale",
     "logo_watermark",
     "dusk_shot",
 ]
 WatermarkPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
 
 _DUSK_PROMPT = "warm golden-hour dusk lighting, sunset glow, soft warm tones, twilight sky"
+# Auto-upscale only photos whose longest side is below this (anything larger is
+# already listing-quality, so we don't spend a Replicate call on it).
+_UPSCALE_THRESHOLD = 1400
+
+
+# --- Conditional gates: auto-cleanup only applies when it genuinely helps, so
+# it never makes a good photo worse. ---
+
+
+def _needs_exposure(image: Image.Image) -> bool:
+    stat = ImageStat.Stat(image.convert("L"))
+    mean, std = stat.mean[0], stat.stddev[0]
+    # Under-exposed, over-exposed, or flat (low contrast).
+    return mean < 105 or mean > 175 or std < 45
+
+
+def _needs_colour_temperature(image: Image.Image) -> bool:
+    r, g, b = ImageStat.Stat(image.convert("RGB")).mean
+    avg = (r + g + b) / 3
+    if avg <= 0:
+        return False
+    return max(abs(r - avg), abs(g - avg), abs(b - avg)) / avg > 0.06
+
+
+def _needs_shadow_boost(image: Image.Image) -> bool:
+    hist = image.convert("L").histogram()
+    total = sum(hist) or 1
+    # Crushed shadows: a meaningful share of pixels sit in the darkest band.
+    return sum(hist[:40]) / total > 0.12
+
+
+def _needs_upscale(image: Image.Image) -> bool:
+    return max(image.size) < _UPSCALE_THRESHOLD
 
 
 def _apply_exposure_correction(image: Image.Image) -> Image.Image:
@@ -64,9 +105,36 @@ def _apply_exposure_correction(image: Image.Image) -> Image.Image:
     return image
 
 
+def _apply_colour_temperature(image: Image.Image) -> Image.Image:
+    """Grey-world white balance: scale each channel toward neutral so a yellow
+    or blue cast is corrected. Partial (70%) so the photo keeps its character."""
+    r, g, b = ImageStat.Stat(image.convert("RGB")).mean
+    avg = (r + g + b) / 3
+
+    def lut(channel_mean: float) -> list[int]:
+        scale = 1 + (avg / max(channel_mean, 1) - 1) * 0.7
+        return [min(255, round(i * scale)) for i in range(256)]
+
+    rc, gc, bc = image.convert("RGB").split()
+    return Image.merge("RGB", (rc.point(lut(r)), gc.point(lut(g)), bc.point(lut(b))))
+
+
 def _apply_colour_saturation(image: Image.Image) -> Image.Image:
     # Gentle saturation lift — punchier without looking oversaturated.
     return ImageEnhance.Color(image).enhance(1.15)
+
+
+async def _apply_upscale(image: Image.Image) -> Image.Image | None:
+    """HD upscale via Replicate Real-ESRGAN. Returns None if Replicate isn't
+    configured or the call fails (the pipeline then keeps the original size)."""
+    if not replicate.is_configured():
+        return None
+    try:
+        out = await replicate.upscale(_encode_jpeg(image), scale=2)
+        return Image.open(io.BytesIO(out)).convert("RGB")
+    except Exception:
+        logger.warning("hd_upscale: Replicate failed; skipping", exc_info=True)
+        return None
 
 
 def _apply_shadow_boost(image: Image.Image) -> Image.Image:
@@ -134,18 +202,23 @@ def _blur_regions(image: Image.Image, boxes: list[rekognition.Box]) -> Image.Ima
     return out
 
 
-async def _apply_gdpr_blur(image: Image.Image) -> Image.Image:
-    """Blur faces and number plates. Uses Rekognition to find them and blur
-    only those regions; falls back to a soft full-image blur otherwise."""
-    if rekognition.is_configured():
-        try:
-            buf = io.BytesIO()
-            image.save(buf, format="JPEG", quality=90)
-            boxes = await rekognition.detect_privacy_regions(buf.getvalue())
-            return _blur_regions(image, boxes) if boxes else image
-        except Exception:
-            logger.warning("gdpr_blur: Rekognition failed; using full-image blur", exc_info=True)
-    return image.filter(ImageFilter.GaussianBlur(radius=2))
+async def _apply_gdpr_blur(image: Image.Image) -> tuple[Image.Image, bool]:
+    """Blur faces and number plates that Rekognition finds. Returns the image
+    and whether anything was actually blurred — so on auto-apply a photo with no
+    people/plates is left untouched (no whole-image softening) and isn't marked
+    as enhanced."""
+    if not rekognition.is_configured():
+        return image, False
+    try:
+        buf = io.BytesIO()
+        image.save(buf, format="JPEG", quality=90)
+        boxes = await rekognition.detect_privacy_regions(buf.getvalue())
+    except Exception:
+        logger.warning("gdpr_blur: Rekognition failed; skipping", exc_info=True)
+        return image, False
+    if not boxes:
+        return image, False
+    return _blur_regions(image, boxes), True
 
 
 async def _apply_object_removal(image: Image.Image, mask: bytes) -> Image.Image | None:
@@ -178,27 +251,41 @@ async def _process_enhanced(
     # sky_replacement: no provider currently (hidden in the UI), so it's a
     # no-op here and never marked applied.
 
+    # Upscale first, so every later op runs at the higher resolution. Gated on
+    # size so we don't spend a Replicate call on already-large photos.
+    if "hd_upscale" in enhancements and _needs_upscale(out):
+        upscaled = await _apply_upscale(out)
+        if upscaled is not None:
+            out = upscaled
+            applied.append("hd_upscale")
+
     if "object_removal" in enhancements and mask is not None:
         cleaned = await _apply_object_removal(out, mask)
         if cleaned is not None:
             out = cleaned
             applied.append("object_removal")
 
-    if "shadow_boost" in enhancements:
+    # Auto-cleanup ops are gated so they only apply when they genuinely help.
+    if "shadow_boost" in enhancements and _needs_shadow_boost(out):
         out = _apply_shadow_boost(out)
         applied.append("shadow_boost")
 
-    if "exposure_correction" in enhancements:
+    if "exposure_correction" in enhancements and _needs_exposure(out):
         out = _apply_exposure_correction(out)
         applied.append("exposure_correction")
+
+    if "colour_temperature" in enhancements and _needs_colour_temperature(out):
+        out = _apply_colour_temperature(out)
+        applied.append("colour_temperature")
 
     if "colour_saturation" in enhancements:
         out = _apply_colour_saturation(out)
         applied.append("colour_saturation")
 
     if "gdpr_blur" in enhancements:
-        out = await _apply_gdpr_blur(out)
-        applied.append("gdpr_blur")
+        out, blurred = await _apply_gdpr_blur(out)
+        if blurred:
+            applied.append("gdpr_blur")
 
     # Watermark goes on last so the logo sits on top of every other edit.
     if "logo_watermark" in enhancements and logo is not None:

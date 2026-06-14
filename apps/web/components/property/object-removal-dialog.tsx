@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import type { Photo } from "@app/shared/schemas";
+import type { Photo, PhotoEnhancement } from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { photoApi } from "@/lib/queries";
 
@@ -130,7 +130,15 @@ export function ObjectRemovalDialog({
         headers: { "content-type": "image/png" },
       });
       if (!put.ok) throw new Error(`Mask upload failed (${put.status}).`);
-      await photoApi.enhance(photo.id, { enhancements: ["object_removal"], mask_url });
+      // Re-runs derive from the original, so keep the photo's existing (auto)
+      // enhancements alongside the object removal.
+      const enhancements = Array.from(
+        new Set<PhotoEnhancement>([
+          ...(photo.enhancements_applied as PhotoEnhancement[]),
+          "object_removal",
+        ]),
+      );
+      await photoApi.enhance(photo.id, { enhancements, mask_url });
       onQueued();
       onClose();
     } catch (err) {

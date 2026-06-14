@@ -225,6 +225,32 @@ export async function updatePhoto(
   return data;
 }
 
+/**
+ * Reverts a photo to its original: clears the enhanced/dusk outputs and the
+ * applied-enhancements list. Used by the per-photo "Revert to original" action
+ * that turns auto (and any creative) enhancement off for a single photo.
+ */
+export async function resetPhotoEnhancements(request: FastifyRequest, id: string): Promise<Photo> {
+  if (!request.user || !request.agencyId) throw unauthorised();
+  const supabase = getUserClient(request.user.accessToken);
+  const { data, error } = await supabase
+    .from("property_photos")
+    .update({ enhanced_url: null, dusk_url: null, enhancements_applied: [] })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle<Photo>();
+  if (error) {
+    request.log.error({ err: error, id }, "reset_photo_enhancements failed");
+    throw new AppError({
+      status: 500,
+      code: "reset_enhancements_failed",
+      message: "Could not revert the photo.",
+    });
+  }
+  if (!data) throw notFound("Photo");
+  return data;
+}
+
 export async function reorderPhotos(
   request: FastifyRequest,
   propertyId: string,

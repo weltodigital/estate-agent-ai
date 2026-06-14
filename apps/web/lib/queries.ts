@@ -101,6 +101,8 @@ export const photoApi = {
     }),
   enhance: (id: string, body: EnhancePhotoRequest) =>
     callApi<EnhancePhotoResponse>(`/v1/photos/${id}/enhance`, { method: "POST", body }),
+  resetEnhancements: (id: string) =>
+    callApi<Photo>(`/v1/photos/${id}/enhancements`, { method: "DELETE" }),
   maskUpload: (id: string, body: MaskUploadRequest) =>
     callApi<MaskUploadResponse>(`/v1/photos/${id}/mask-upload`, { method: "POST", body }),
   stage: (id: string, body: StagePhotoRequest) =>

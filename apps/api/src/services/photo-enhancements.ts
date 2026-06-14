@@ -4,7 +4,9 @@ import type {
   EnhancePhotoRequest,
   EnhancePhotoResponse,
   PhotoEnhancedCallback,
+  PhotoEnhancement,
 } from "@app/shared/schemas";
+import { isCreativeEnhancement } from "@app/shared/schemas";
 import { AppError, badRequest, notFound, unauthorised } from "../errors.js";
 import { photoEnhanceQueue } from "../queues/photo-enhance.js";
 import { getServiceClient, getUserClient } from "../integrations/supabase.js";
@@ -22,11 +24,16 @@ export async function enqueuePhotoEnhance(
 ): Promise<EnhancePhotoResponse> {
   if (!request.user || !request.agencyId) throw unauthorised();
 
-  await assertWithinQuota({
-    agencyId: request.agencyId,
-    eventType: "photo_enhanced",
-    units: payload.enhancements.length,
-  });
+  // Only creative enhancements count against quota; the auto cleanup bucket is
+  // free, so a pure auto-enhance run skips the quota check entirely.
+  const billableUnits = payload.enhancements.filter(isCreativeEnhancement).length;
+  if (billableUnits > 0) {
+    await assertWithinQuota({
+      agencyId: request.agencyId,
+      eventType: "photo_enhanced",
+      units: billableUnits,
+    });
+  }
 
   const supabase = getUserClient(request.user.accessToken);
 
@@ -112,6 +119,9 @@ export async function applyEnhanceCallback(payload: PhotoEnhancedCallback): Prom
     });
   }
 
+  // Each run re-derives the image from the original with the full requested
+  // set, so the applied set is what came back (not a merge). Tracking the exact
+  // set keeps the "what was applied" badge honest and "revert" simple.
   const previous = new Set(existing.enhancements_applied ?? []);
   const incoming = payload.enhancements_applied;
   const newOnes = incoming.filter((e) => !previous.has(e));
@@ -135,9 +145,11 @@ export async function applyEnhanceCallback(payload: PhotoEnhancedCallback): Prom
     });
   }
 
-  // One ledger row per newly-applied enhancement. Re-deliveries don't double-bill.
+  // Only creative enhancements bill; the auto cleanup bucket is free. One ledger
+  // row per newly-applied creative enhancement. Re-deliveries don't double-bill.
+  const billableNew = newOnes.filter((e) => isCreativeEnhancement(e as PhotoEnhancement));
   await Promise.all(
-    newOnes.map(() =>
+    billableNew.map(() =>
       recordUsageEvent({
         agencyId: payload.agency_id,
         propertyId: existing.property_id,

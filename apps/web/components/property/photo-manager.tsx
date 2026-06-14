@@ -13,17 +13,22 @@ import {
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { PhotoCategory } from "@app/shared/constants";
-import { PHOTO_ENHANCEMENTS, type Photo, type PhotoEnhancement } from "@app/shared/schemas";
+import {
+  AUTO_ENHANCEMENTS,
+  CREATIVE_ENHANCEMENTS,
+  type Photo,
+  type PhotoEnhancement,
+} from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
 import { BeforeAfterSlider } from "./before-after-slider";
 import { StageDialog } from "./stage-dialog";
 import { ObjectRemovalDialog } from "./object-removal-dialog";
 
-// Enhancements offered in the batch dialog. Object removal is per-photo (it
-// needs a painted mask), so it lives in its own dialog. Sky replacement is
-// hidden until a sky provider is wired (it had no good fit after ClipDrop).
-const BATCH_ENHANCEMENTS = PHOTO_ENHANCEMENTS.filter(
+// The creative dialog offers only deliberate, billable choices. Object removal
+// is per-photo (it needs a painted mask), and sky replacement is hidden until a
+// provider is wired — so the dialog is dusk + watermark.
+const CREATIVE_DIALOG_ENHANCEMENTS = CREATIVE_ENHANCEMENTS.filter(
   (e) => e !== "object_removal" && e !== "sky_replacement",
 );
 
@@ -32,8 +37,10 @@ const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
   object_removal: "Object removal",
   gdpr_blur: "GDPR blur (faces & plates)",
   exposure_correction: "Exposure correction",
+  colour_temperature: "Colour temperature",
   colour_saturation: "Colour saturation",
   shadow_boost: "Boost shadows",
+  hd_upscale: "HD upscale",
   logo_watermark: "Logo watermark",
   dusk_shot: "Dusk shot (extra image)",
 };
@@ -52,7 +59,7 @@ export function PhotoManager({
   const [uploadingCount, setUploadingCount] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [chosen, setChosen] = useState<Set<PhotoEnhancement>>(new Set(["exposure_correction"]));
+  const [chosen, setChosen] = useState<Set<PhotoEnhancement>>(new Set());
   const [enhanceError, setEnhanceError] = useState<string | null>(null);
   const [inFlight, setInFlight] = useState<Map<string, Set<PhotoEnhancement>>>(new Map());
   const [stageDialogPhotoId, setStageDialogPhotoId] = useState<string | null>(null);
@@ -116,6 +123,12 @@ export function PhotoManager({
       queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId, category) }),
   });
 
+  const revert = useMutation({
+    mutationFn: (id: string) => photoApi.resetEnhancements(id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId, category) }),
+  });
+
   const removeSelected = useMutation({
     mutationFn: (ids: string[]) => Promise.all(ids.map((id) => photoApi.remove(id))),
     onSuccess: () => {
@@ -146,8 +159,9 @@ export function PhotoManager({
     setUploadError(null);
     setUploadingCount(files.length);
     try {
+      const uploadedIds: string[] = [];
       for (const file of Array.from(files)) {
-        const { upload_url } = await photoApi.createUpload(propertyId, {
+        const { photo, upload_url } = await photoApi.createUpload(propertyId, {
           filename: file.name,
           content_type: file.type || "image/jpeg",
           category,
@@ -160,8 +174,23 @@ export function PhotoManager({
         if (!putRes.ok) {
           throw new Error(`Upload failed for ${file.name} (${putRes.status})`);
         }
+        uploadedIds.push(photo.id);
       }
       await queryClient.invalidateQueries({ queryKey: queryKeys.photos(propertyId, category) });
+      // Auto-clean enhancement photos in the background (free, reversible). The
+      // orchestrator decides which of the safe bucket each photo actually needs.
+      if (!isStaging) {
+        for (const id of uploadedIds) {
+          try {
+            await photoApi.enhance(id, { enhancements: [...AUTO_ENHANCEMENTS] });
+            // colour_saturation always applies, so it's a reliable in-flight
+            // sentinel that clears once the callback lands.
+            markInFlight(id, "colour_saturation");
+          } catch {
+            /* non-fatal — the photo still uploaded */
+          }
+        }
+      }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -194,14 +223,24 @@ export function PhotoManager({
       setEnhanceError("Pick at least one photo and one enhancement.");
       return;
     }
-    const enhancements = Array.from(chosen);
+    const creative = Array.from(chosen);
     try {
-      await Promise.all(ids.map((id) => photoApi.enhance(id, { enhancements })));
+      // Each run re-derives from the original, so include the photo's existing
+      // (auto) enhancements alongside the new creative ones to preserve cleanup.
+      await Promise.all(
+        ids.map((id) => {
+          const photo = photos.find((p) => p.id === id);
+          const current = (photo?.enhancements_applied ?? []) as PhotoEnhancement[];
+          const enhancements = Array.from(new Set([...current, ...creative]));
+          return photoApi.enhance(id, { enhancements });
+        }),
+      );
+      // Mark only the creative ones in-flight — they reliably land in `applied`.
       setInFlight((prev) => {
         const next = new Map(prev);
         for (const id of ids) {
           const existing = next.get(id) ?? new Set<PhotoEnhancement>();
-          for (const e of enhancements) existing.add(e);
+          for (const e of creative) existing.add(e);
           next.set(id, existing);
         }
         return next;
@@ -251,7 +290,7 @@ export function PhotoManager({
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-300 bg-slate-50 px-3 py-2">
           <span className="text-sm">{selected.size} selected</span>
           <div className="flex gap-2">
-            <Button onClick={() => setDialogOpen(true)}>Enhance selected</Button>
+            <Button onClick={() => setDialogOpen(true)}>Add creative enhancements</Button>
             <Button
               variant="destructive"
               disabled={removeSelected.isPending}
@@ -312,11 +351,12 @@ export function PhotoManager({
                   isSelected={selected.has(photo.id)}
                   isProcessing={inFlight.has(photo.id)}
                   onToggleSelect={() => toggleSelected(photo.id)}
-                  onEnhanceJustThis={() => {
+                  onAddCreative={() => {
                     setDialogOpen(true);
                     setSelected(new Set([photo.id]));
                   }}
                   onRemoveObjects={() => setObjectRemovalPhotoId(photo.id)}
+                  onRevert={() => revert.mutate(photo.id)}
                   onDelete={() => {
                     if (confirm("Delete this photo?")) remove.mutate(photo.id);
                   }}
@@ -355,14 +395,18 @@ function EnhanceDialog({
 }) {
   return (
     <div className="rounded-md border border-slate-300 bg-white p-4 shadow-sm">
-      <header className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold">Enhance photos</h3>
+      <header className="mb-1 flex items-center justify-between">
+        <h3 className="font-semibold">Add creative enhancements</h3>
         <button type="button" onClick={onClose} className="text-sm text-slate-500">
           Cancel
         </button>
       </header>
+      <p className="mb-3 text-xs text-slate-500">
+        Safe cleanup (exposure, colour, GDPR blur, upscale) is applied automatically on upload.
+        These are deliberate creative choices.
+      </p>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        {BATCH_ENHANCEMENTS.map((value) => (
+        {CREATIVE_DIALOG_ENHANCEMENTS.map((value) => (
           <label
             key={value}
             className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
@@ -376,7 +420,7 @@ function EnhanceDialog({
         Object removal is per-photo. Use “Remove objects” on a photo to paint what to erase.
       </p>
       <div className="mt-3 flex justify-end">
-        <Button onClick={onSubmit}>Run enhancements</Button>
+        <Button onClick={onSubmit}>Apply</Button>
       </div>
     </div>
   );
@@ -387,24 +431,28 @@ function EnhancePhotoCard({
   isSelected,
   isProcessing,
   onToggleSelect,
-  onEnhanceJustThis,
+  onAddCreative,
   onRemoveObjects,
+  onRevert,
   onDelete,
 }: {
   photo: Photo;
   isSelected: boolean;
   isProcessing: boolean;
   onToggleSelect: () => void;
-  onEnhanceJustThis: () => void;
+  onAddCreative: () => void;
   onRemoveObjects: () => void;
+  onRevert: () => void;
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: photo.id,
   });
   const [showCompare, setShowCompare] = useState(false);
+  const [showApplied, setShowApplied] = useState(false);
   const displayUrl = photo.enhanced_url ?? photo.original_url;
   const hasEnhanced = Boolean(photo.enhanced_url);
+  const applied = photo.enhancements_applied as PhotoEnhancement[];
 
   return (
     <div
@@ -426,7 +474,7 @@ function EnhancePhotoCard({
       </label>
       {isProcessing ? (
         <span className="absolute right-2 top-2 z-10 rounded bg-black/60 px-2 py-0.5 text-xs text-white">
-          Processing…
+          Auto-enhancing…
         </span>
       ) : null}
 
@@ -442,36 +490,62 @@ function EnhancePhotoCard({
         />
       )}
 
-      <div className="flex items-center justify-between px-3 py-2 text-xs">
-        <span>{photo.room_type.replace("_", " ")}</span>
-        <div className="flex flex-wrap gap-2">
-          {hasEnhanced ? (
+      <div className="space-y-1.5 px-3 py-2 text-xs">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-slate-500">{photo.room_type.replace("_", " ")}</span>
+          <div className="flex flex-wrap gap-2">
+            {hasEnhanced ? (
+              <button
+                type="button"
+                onClick={() => setShowCompare((v) => !v)}
+                className="text-slate-600 underline"
+              >
+                {showCompare ? "Hide compare" : "Compare"}
+              </button>
+            ) : null}
             <button
               type="button"
-              onClick={() => setShowCompare((v) => !v)}
-              className="text-slate-600 underline"
+              onClick={onAddCreative}
+              className="text-[color:var(--brand-primary)] underline"
             >
-              {showCompare ? "Hide compare" : "Compare"}
+              Creative
             </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={onEnhanceJustThis}
-            className="text-[color:var(--brand-primary)] underline"
-          >
-            Enhance
-          </button>
-          <button
-            type="button"
-            onClick={onRemoveObjects}
-            className="text-[color:var(--brand-primary)] underline"
-          >
-            Remove objects
-          </button>
-          <button type="button" onClick={onDelete} className="text-red-600 underline">
-            Delete
-          </button>
+            <button
+              type="button"
+              onClick={onRemoveObjects}
+              className="text-[color:var(--brand-primary)] underline"
+            >
+              Remove objects
+            </button>
+            {hasEnhanced ? (
+              <button type="button" onClick={onRevert} className="text-slate-600 underline">
+                Revert
+              </button>
+            ) : null}
+            <button type="button" onClick={onDelete} className="text-red-600 underline">
+              Delete
+            </button>
+          </div>
         </div>
+        {applied.length > 0 ? (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowApplied((v) => !v)}
+              className="flex items-center gap-1 font-medium text-emerald-700"
+            >
+              <span>Auto-enhanced ({applied.length})</span>
+              <span aria-hidden>{showApplied ? "▾" : "▸"}</span>
+            </button>
+            {showApplied ? (
+              <ul className="mt-1 space-y-0.5 text-slate-500">
+                {applied.map((e) => (
+                  <li key={e}>· {ENHANCEMENT_LABELS[e]}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

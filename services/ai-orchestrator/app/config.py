@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     replicate_relight_model: str = "zsxkib/ic-light"
     # LaMa object removal: image + mask (white = remove). See replicate.remove_object.
     replicate_inpaint_model: str = "zylim0702/remove-object"
+    # Real-ESRGAN HD upscaling (auto-applied only to small images). See replicate.upscale.
+    replicate_upscale_model: str = "nightmareai/real-esrgan"
 
     # fal.ai — virtual staging via the FLUX.2 apartment-staging model. Auth is
     # the FAL_KEY env var (see app/integrations/fal.py). The model furnishes an

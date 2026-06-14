@@ -143,3 +143,15 @@ async def remove_object(image_bytes: bytes, mask_bytes: bytes) -> bytes:
     if not outputs:
         raise ReplicateError("Inpaint model returned no image.")
     return await _download(outputs[0])
+
+
+async def upscale(image_bytes: bytes, scale: int = 2) -> bytes:
+    """HD upscale with Real-ESRGAN. `scale` is the factor (2x by default).
+    Returns the upscaled image bytes."""
+    outputs = await run_model(
+        get_settings().replicate_upscale_model,
+        {"image": _data_uri(image_bytes), "scale": scale},
+    )
+    if not outputs:
+        raise ReplicateError("Upscale model returned no image.")
+    return await _download(outputs[0])

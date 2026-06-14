@@ -46,8 +46,10 @@ class PhotoEnhanceRequest(BaseModel):
             "object_removal",
             "gdpr_blur",
             "exposure_correction",
+            "colour_temperature",
             "colour_saturation",
             "shadow_boost",
+            "hd_upscale",
             "logo_watermark",
             "dusk_shot",
         ]
