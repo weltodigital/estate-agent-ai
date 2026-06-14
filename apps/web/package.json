@@ -25,6 +25,7 @@
     "@tiptap/react": "^2.8.0",
     "@tiptap/starter-kit": "^2.8.0",
     "konva": "^9.3.0",
+    "lucide-react": "^0.451.0",
     "react-konva": "^18.2.10",
     "@sentry/nextjs": "^8.34.0",
     "@supabase/ssr": "^0.5.1",

@@ -13,8 +13,10 @@ const config: Config = {
         // colour overrides happen via the CSS custom properties below, not here.
         brand: {
           hedge: "#2E3B36",
+          "hedge-hover": "#364741", // primary button hover (~6% lighter)
           bone: "#F5F1E8",
           terracotta: "#B5663D",
+          "terracotta-cream": "#FAEFE2", // warm cream for text on terracotta
           sand: "#C9B8A0",
           ink: "#1A1F1C",
           cream: "#FAF7F0",
@@ -35,6 +37,11 @@ const config: Config = {
       fontFamily: {
         serif: ["var(--font-newsreader)", "Newsreader", "Georgia", "serif"],
         sans: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        // Barely-there lift for cards on Bone — see BRANDING.md / design pass.
+        card: "0 1px 2px rgba(26, 31, 28, 0.04), 0 4px 12px rgba(26, 31, 28, 0.04)",
+        "card-hover": "0 2px 4px rgba(26, 31, 28, 0.06), 0 8px 24px rgba(26, 31, 28, 0.06)",
       },
     },
   },

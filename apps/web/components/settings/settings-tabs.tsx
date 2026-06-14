@@ -20,7 +20,7 @@ export function SettingsTabs({ initialTab = "agency" }: { initialTab?: SettingsT
 
   return (
     <div className="space-y-4">
-      <nav className="flex gap-4 border-b border-slate-200 text-sm">
+      <nav className="border-brand-stone flex gap-4 border-b text-sm">
         {TABS.map((t) => (
           <button
             key={t.key}

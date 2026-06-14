@@ -72,7 +72,7 @@ export function BrandingTab() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Logo</h2>
         </header>
@@ -84,7 +84,7 @@ export function BrandingTab() {
               className="h-16 max-w-[8rem] object-contain"
             />
           ) : (
-            <div className="flex h-16 w-32 items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-400">
+            <div className="border-brand-stone flex h-16 w-32 items-center justify-center rounded border border-dashed text-xs text-slate-400">
               No logo yet
             </div>
           )}
@@ -110,7 +110,7 @@ export function BrandingTab() {
         ) : null}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Brand colours</h2>
         </header>
@@ -173,7 +173,7 @@ function ColourField({
           type="color"
           value={valid ? value : "#000000"}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 w-12 cursor-pointer rounded border border-slate-300"
+          className="border-brand-stone h-10 w-12 cursor-pointer rounded border"
           aria-label={`${label} colour picker`}
         />
         <Input id={id} value={value} onChange={(e) => onChange(e.target.value)} />

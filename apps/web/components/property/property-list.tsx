@@ -54,12 +54,12 @@ export function PropertyList() {
           placeholder="Search address, town, postcode…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="h-10 min-w-[16rem] flex-1 rounded-md border border-slate-300 bg-white px-3 text-sm"
+          className="border-brand-stone bg-brand-cream h-10 min-w-[16rem] flex-1 rounded-md border px-3 text-sm"
         />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value as PropertyStatus | "all")}
-          className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+          className="border-brand-stone bg-brand-cream h-10 rounded-md border px-3 text-sm"
         >
           <option value="all">All statuses</option>
           {PROPERTY_STATUSES.map((s) => (
@@ -81,7 +81,7 @@ export function PropertyList() {
       ) : query.data && query.data.items.length === 0 ? (
         <p className="text-sm text-slate-500">{EMPTY_STATES.properties}</p>
       ) : (
-        <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+        <ul className="border-brand-stone bg-brand-cream divide-y divide-slate-200 rounded-lg border">
           {query.data?.items.map((p) => (
             <li key={p.id}>
               <a

@@ -19,11 +19,19 @@ import {
   type Photo,
   type PhotoEnhancement,
 } from "@app/shared/schemas";
-import { Button } from "@app/ui";
+import { ImagePlus, Loader2, Sparkles, Sun, Sunset } from "lucide-react";
+import { Button, Checkbox } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
+import { EmptyState } from "@/components/ui/empty-state";
 import { BeforeAfterSlider } from "./before-after-slider";
 import { StageDialog } from "./stage-dialog";
 import { ObjectRemovalDialog } from "./object-removal-dialog";
+
+// Small Lucide icon beside each creative option (neutral colours per BRANDING).
+const CREATIVE_ICONS: Partial<Record<PhotoEnhancement, typeof Sun>> = {
+  dusk_shot: Sunset,
+  logo_watermark: Sparkles,
+};
 
 // The creative dialog offers only deliberate, billable choices. Object removal
 // is per-photo (it needs a painted mask), and sky replacement is hidden until a
@@ -253,16 +261,16 @@ export function PhotoManager({
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">
+    <section className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-brand-ink font-serif text-[28px] font-normal leading-tight">
             {isStaging ? "Virtual staging" : "Photo enhancements"}
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-brand-slate text-sm">
             {isStaging
               ? "Upload empty rooms to furnish. Separate from your enhancement photos."
-              : "Upload your listing photos to improve. Separate from your staging photos."}
+              : "Improve listing photos automatically. Separate from your staging photos."}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -274,8 +282,15 @@ export function PhotoManager({
             className="hidden"
             onChange={(e) => onFiles(e.target.files)}
           />
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-            {uploadingCount > 0 ? `Uploading ${uploadingCount}…` : "Upload photos"}
+          <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+            {uploadingCount > 0 ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+                Uploading {uploadingCount}…
+              </>
+            ) : (
+              "Upload photos"
+            )}
           </Button>
         </div>
       </div>
@@ -287,8 +302,8 @@ export function PhotoManager({
       ) : null}
 
       {!isStaging && selected.size > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-300 bg-slate-50 px-3 py-2">
-          <span className="text-sm">{selected.size} selected</span>
+        <div className="bg-brand-bone flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2">
+          <span className="text-brand-walnut text-sm">{selected.size} selected</span>
           <div className="flex gap-2">
             <Button onClick={() => setDialogOpen(true)}>Add creative enhancements</Button>
             <Button
@@ -327,9 +342,21 @@ export function PhotoManager({
       ) : null}
 
       {isLoading ? (
-        <p className="text-sm text-slate-500">Loading photos…</p>
+        <div className="text-brand-slate flex items-center justify-center gap-2 py-14 text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+          Loading photos…
+        </div>
       ) : photos.length === 0 ? (
-        <p className="text-sm text-slate-500">No photos yet. Upload to get started.</p>
+        <EmptyState
+          icon={ImagePlus}
+          title="No photos yet"
+          subtitle={
+            isStaging
+              ? "Upload an empty room and stage it with furniture."
+              : "Upload your listing photos and we'll tidy them up."
+          }
+          action={<Button onClick={() => fileInputRef.current?.click()}>Upload photos</Button>}
+        />
       ) : isStaging ? (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
           {photos.map((photo) => (
@@ -394,33 +421,42 @@ function EnhanceDialog({
   onSubmit: () => void;
 }) {
   return (
-    <div className="rounded-md border border-slate-300 bg-white p-4 shadow-sm">
+    <div className="bg-brand-cream shadow-card rounded-xl p-6">
       <header className="mb-1 flex items-center justify-between">
-        <h3 className="font-semibold">Add creative enhancements</h3>
-        <button type="button" onClick={onClose} className="text-sm text-slate-500">
+        <h3
+          className="text-brand-ink font-serif text-[22px] font-medium"
+          style={{ fontVariationSettings: '"opsz" 24' }}
+        >
+          Add creative enhancements
+        </h3>
+        <button type="button" onClick={onClose} className="text-brand-slate text-sm">
           Cancel
         </button>
       </header>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="text-brand-slate mb-4 text-[13px]">
         Safe cleanup (exposure, colour, GDPR blur, upscale) is applied automatically on upload.
         These are deliberate creative choices.
       </p>
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        {CREATIVE_DIALOG_ENHANCEMENTS.map((value) => (
-          <label
-            key={value}
-            className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
-          >
-            <input type="checkbox" checked={chosen.has(value)} onChange={() => onToggle(value)} />
-            <span>{ENHANCEMENT_LABELS[value]}</span>
-          </label>
-        ))}
+      <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 md:grid-cols-2">
+        {CREATIVE_DIALOG_ENHANCEMENTS.map((value) => {
+          const Icon = CREATIVE_ICONS[value] ?? Sun;
+          return (
+            <div key={value} className="flex items-center gap-2.5">
+              <Checkbox checked={chosen.has(value)} onChange={() => onToggle(value)} />
+              <Icon className="text-brand-walnut h-4 w-4" strokeWidth={1.5} aria-hidden />
+              <span className="text-brand-ink text-sm">{ENHANCEMENT_LABELS[value]}</span>
+            </div>
+          );
+        })}
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="text-brand-slate mt-3 text-[13px]">
         Object removal is per-photo. Use “Remove objects” on a photo to paint what to erase.
       </p>
-      <div className="mt-3 flex justify-end">
-        <Button onClick={onSubmit}>Apply</Button>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={onSubmit}>Run enhancements</Button>
       </div>
     </div>
   );
@@ -462,18 +498,14 @@ function EnhancePhotoCard({
         transition,
         opacity: isDragging ? 0.6 : 1,
       }}
-      className="group relative overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm"
+      className="bg-brand-cream shadow-card group relative overflow-hidden rounded-xl"
     >
-      <label className="absolute left-2 top-2 z-10 flex h-6 w-6 cursor-pointer items-center justify-center rounded bg-white/90 shadow">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={onToggleSelect}
-          aria-label="Select photo"
-        />
-      </label>
+      <span className="bg-brand-cream/90 shadow-card absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md">
+        <Checkbox checked={isSelected} onChange={onToggleSelect} aria-label="Select photo" />
+      </span>
       {isProcessing ? (
-        <span className="absolute right-2 top-2 z-10 rounded bg-black/60 px-2 py-0.5 text-xs text-white">
+        <span className="bg-brand-ink/70 text-brand-cream absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs">
+          <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2} />
           Auto-enhancing…
         </span>
       ) : null}
@@ -557,7 +589,7 @@ function StagePhotoCard({ photo, onStage }: { photo: Photo; onStage: () => void 
   const hasStaged = Boolean(photo.staged_url);
 
   return (
-    <div className="group relative overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+    <div className="bg-brand-cream shadow-card group relative overflow-hidden rounded-xl">
       {hasStaged ? (
         <span className="absolute bottom-2 left-2 z-10 rounded bg-[color:var(--brand-primary)] px-2 py-0.5 text-xs text-white">
           Staged

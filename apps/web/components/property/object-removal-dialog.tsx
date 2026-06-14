@@ -150,7 +150,7 @@ export function ObjectRemovalDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-12">
-      <div className="w-full max-w-2xl space-y-4 rounded-lg bg-white p-6 shadow-xl">
+      <div className="bg-brand-cream w-full max-w-2xl space-y-4 rounded-lg p-6 shadow-xl">
         <header className="flex items-start justify-between">
           <div>
             <h2 className="text-lg font-semibold">Remove objects</h2>
@@ -163,7 +163,7 @@ export function ObjectRemovalDialog({
           </button>
         </header>
 
-        <div className="relative overflow-hidden rounded-md border border-slate-200">
+        <div className="border-brand-stone relative overflow-hidden rounded-md border">
           <img
             src={photo.original_url}
             alt=""

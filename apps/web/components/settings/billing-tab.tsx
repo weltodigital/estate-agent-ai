@@ -84,7 +84,7 @@ export function BillingTab() {
         </div>
       ) : null}
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-500">Current plan</p>
@@ -113,7 +113,7 @@ export function BillingTab() {
                 className={`rounded-md border p-3 text-left text-sm transition-colors ${
                   isCurrent
                     ? "border-[color:var(--brand-primary)] bg-slate-50"
-                    : "border-slate-200 hover:border-slate-400"
+                    : "border-brand-stone hover:border-slate-400"
                 } ${checkout.isPending ? "opacity-50" : ""}`}
               >
                 <p className="font-medium">{TIER_LABELS[tier]}</p>
@@ -137,7 +137,7 @@ export function BillingTab() {
         ) : null}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-500">Usage this month</p>

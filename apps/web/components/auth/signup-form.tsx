@@ -38,7 +38,7 @@ export function SignupForm() {
 
   if (needsConfirmation) {
     return (
-      <div className="space-y-2 rounded-md border border-slate-200 bg-white p-4 text-sm">
+      <div className="border-brand-stone bg-brand-cream space-y-2 rounded-md border p-4 text-sm">
         <p className="font-medium">Check your inbox.</p>
         <p className="text-slate-600">
           We&apos;ve emailed you a confirmation link. Open it to finish setting up your agency.

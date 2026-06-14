@@ -102,7 +102,7 @@ export function AgencyTab() {
             id="tone"
             value={tone}
             onChange={(e) => setTone(e.target.value as Tone)}
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="border-brand-stone bg-brand-cream h-10 w-full rounded-md border px-3 text-sm"
           >
             {TONE_OPTIONS.map((t) => (
               <option key={t} value={t}>
@@ -117,7 +117,7 @@ export function AgencyTab() {
             id="watermark"
             value={watermark}
             onChange={(e) => setWatermark(e.target.value as WatermarkPosition)}
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="border-brand-stone bg-brand-cream h-10 w-full rounded-md border px-3 text-sm"
           >
             {WATERMARK_POSITIONS.map((p) => (
               <option key={p} value={p}>
@@ -132,7 +132,7 @@ export function AgencyTab() {
             id="template"
             value={template}
             onChange={(e) => setTemplate(e.target.value as FloorPlanTemplate)}
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="border-brand-stone bg-brand-cream h-10 w-full rounded-md border px-3 text-sm"
           >
             {FLOOR_PLAN_TEMPLATES.map((t) => (
               <option key={t} value={t}>

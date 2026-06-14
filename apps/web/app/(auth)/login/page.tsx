@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function LoginPage() {
   return (
-    <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="border-brand-stone bg-brand-cream space-y-4 rounded-lg border p-6 shadow-sm">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold">Log in</h1>
         <p className="text-sm text-slate-500">Welcome back.</p>

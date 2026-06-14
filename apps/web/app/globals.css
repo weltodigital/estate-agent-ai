@@ -94,3 +94,36 @@ body {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/*
+ * Brand focus ring — a soft Terracotta halo with a 2px offset (the inner ring
+ * is painted in the page background so the offset reads on any surface).
+ * Tailwind's default focus ring isn't subtle enough.
+ */
+@layer utilities {
+  .ring-brand-focus:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--brand-background),
+      0 0 0 4px rgba(181, 102, 61, 0.3);
+  }
+}
+
+/* Quiet, narrow scrollbars in Stone — see design pass. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-stone) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--brand-stone);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}

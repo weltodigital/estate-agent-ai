@@ -149,7 +149,7 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
           <Field label="Property type" id="property_type" error={errors.property_type?.message}>
             <select
               id="property_type"
-              className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+              className="border-brand-stone bg-brand-cream flex h-10 w-full rounded-md border px-3 text-sm"
               {...register("property_type")}
             >
               {UK_PROPERTY_TYPES.map((t) => (
@@ -163,7 +163,7 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
         <Field label="Listing type" id="listing_type" error={errors.listing_type?.message}>
           <select
             id="listing_type"
-            className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="border-brand-stone bg-brand-cream flex h-10 w-full rounded-md border px-3 text-sm"
             {...register("listing_type")}
           >
             {LISTING_TYPES.map((t) => (
@@ -207,7 +207,7 @@ export function PropertyForm({ mode, branchId }: { mode: Mode; branchId: string 
             <Field label="Notes (optional)" id="notes" error={errors.notes?.message}>
               <textarea
                 id="notes"
-                className="min-h-[6rem] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="border-brand-stone bg-brand-cream min-h-[6rem] w-full rounded-md border px-3 py-2 text-sm"
                 {...register("notes")}
               />
             </Field>

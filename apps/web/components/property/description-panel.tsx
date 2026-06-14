@@ -165,7 +165,7 @@ export function DescriptionPanel({ property }: { property: Property }) {
     editorProps: {
       attributes: {
         class:
-          "prose prose-slate max-w-none min-h-[12rem] rounded-md border border-slate-300 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)]",
+          "prose prose-slate max-w-none min-h-[12rem] rounded-md border border-brand-stone bg-brand-cream px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)]",
       },
     },
     immediatelyRender: false,
@@ -266,7 +266,7 @@ export function DescriptionPanel({ property }: { property: Property }) {
             min={0}
             value={bedrooms}
             onChange={(e) => setBedrooms(Math.max(0, Number(e.target.value) || 0))}
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="border-brand-stone bg-brand-cream h-10 w-full rounded-md border px-3 text-sm"
           />
         </label>
         <label className="space-y-1 text-sm">
@@ -276,7 +276,7 @@ export function DescriptionPanel({ property }: { property: Property }) {
             min={0}
             value={bathrooms}
             onChange={(e) => setBathrooms(Math.max(0, Number(e.target.value) || 0))}
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="border-brand-stone bg-brand-cream h-10 w-full rounded-md border px-3 text-sm"
           />
         </label>
       </div>
@@ -316,7 +316,7 @@ export function DescriptionPanel({ property }: { property: Property }) {
             onChange={(e) =>
               setInputs((prev) => ({ ...prev, council_tax_band: e.target.value || null }))
             }
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="border-brand-stone bg-brand-cream h-10 w-full rounded-md border px-3 text-sm"
           >
             <option value="">Not specified</option>
             {COUNCIL_TAX_BANDS.map((b) => (
@@ -345,7 +345,7 @@ export function DescriptionPanel({ property }: { property: Property }) {
           value={inputs.other_details}
           onChange={(e) => setInputs((prev) => ({ ...prev, other_details: e.target.value }))}
           placeholder="Anything else worth mentioning: recent works, chain-free, viewings, etc."
-          className="min-h-[5rem] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="border-brand-stone bg-brand-cream min-h-[5rem] w-full rounded-md border px-3 py-2 text-sm"
         />
       </label>
 
@@ -355,7 +355,7 @@ export function DescriptionPanel({ property }: { property: Property }) {
           <select
             value={tone}
             onChange={(e) => setTone(e.target.value as Tone)}
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="border-brand-stone bg-brand-cream h-10 w-full rounded-md border px-3 text-sm"
           >
             {TONE_OPTIONS.map((t) => (
               <option key={t} value={t}>
@@ -394,7 +394,7 @@ export function DescriptionPanel({ property }: { property: Property }) {
 function chipClass(active: boolean): string {
   return active
     ? "rounded-full border border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] px-3 py-1 text-xs font-medium text-white"
-    : "rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:border-slate-400";
+    : "rounded-full border border-brand-stone bg-brand-cream px-3 py-1 text-xs text-slate-700 hover:border-slate-400";
 }
 
 function ChipMultiSelect({
@@ -456,7 +456,7 @@ function ChipMultiSelect({
               }
             }}
             placeholder="Add your own"
-            className="h-9 w-48 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="border-brand-stone bg-brand-cream h-9 w-48 rounded-md border px-3 text-sm"
           />
           <Button variant="outline" onClick={addCustom} disabled={!custom.trim()}>
             Add

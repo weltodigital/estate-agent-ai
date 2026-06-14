@@ -95,7 +95,7 @@ export function DashboardHome() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent properties */}
         <div className="lg:col-span-2">
-          <div className="rounded-lg border border-slate-200 bg-white">
+          <div className="border-brand-stone bg-brand-cream rounded-lg border">
             <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
               <h2 className="text-sm font-semibold">Recent properties</h2>
               <a
@@ -148,7 +148,7 @@ export function DashboardHome() {
         </div>
 
         {/* Usage this month */}
-        <div className="rounded-lg border border-slate-200 bg-white">
+        <div className="border-brand-stone bg-brand-cream rounded-lg border">
           <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <h2 className="text-sm font-semibold">Usage this month</h2>
             <a
@@ -213,7 +213,7 @@ function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 text-2xl font-semibold">{value === null ? "…" : value}</p>
       {hint ? <p className="text-xs text-slate-400">{hint}</p> : null}

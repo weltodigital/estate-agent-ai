@@ -86,7 +86,7 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-12">
-      <div className="max-h-[calc(100vh-6rem)] w-full max-w-3xl space-y-5 overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+      <div className="bg-brand-cream max-h-[calc(100vh-6rem)] w-full max-w-3xl space-y-5 overflow-y-auto rounded-lg p-6 shadow-xl">
         <header className="flex items-start justify-between">
           <div>
             <h2 className="text-lg font-semibold">Virtual staging</h2>
@@ -105,7 +105,7 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
             <select
               value={style}
               onChange={(e) => setStyle(e.target.value as StagingStyle)}
-              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+              className="border-brand-stone bg-brand-cream h-10 w-full rounded-md border px-3 text-sm"
             >
               {STAGING_STYLES.map((s) => (
                 <option key={s} value={s}>
@@ -125,7 +125,7 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
               <select
                 value={roomType}
                 onChange={(e) => setRoomType(e.target.value as RoomType)}
-                className="h-10 w-36 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                className="border-brand-stone bg-brand-cream h-10 w-36 rounded-md border px-3 text-sm"
               >
                 {STAGING_ROOM_TYPES.map((r) => (
                   <option key={r} value={r}>
@@ -139,7 +139,7 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
               <select
                 value={variationCount}
                 onChange={(e) => setVariationCount(Number(e.target.value))}
-                className="h-10 w-24 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                className="border-brand-stone bg-brand-cream h-10 w-24 rounded-md border px-3 text-sm"
               >
                 {[1, 2, 3].map((n) => (
                   <option key={n} value={n}>
@@ -215,7 +215,7 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
 
 function Slot({ label, pending }: { label: string; pending: boolean }) {
   return (
-    <div className="flex aspect-[4/3] items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-400">
+    <div className="border-brand-stone flex aspect-[4/3] items-center justify-center rounded-md border border-dashed bg-slate-50 text-sm text-slate-400">
       {pending ? "Rendering…" : label}
     </div>
   );
@@ -234,7 +234,7 @@ function VariationCard({
 }) {
   return (
     <div
-      className={`overflow-hidden rounded-md border ${variation.selected ? "border-[color:var(--brand-primary)] ring-2 ring-[color:var(--brand-primary)]" : "border-slate-200"} bg-white shadow-sm`}
+      className={`overflow-hidden rounded-md border ${variation.selected ? "border-[color:var(--brand-primary)] ring-2 ring-[color:var(--brand-primary)]" : "border-brand-stone"} bg-brand-cream shadow-sm`}
     >
       <button
         type="button"

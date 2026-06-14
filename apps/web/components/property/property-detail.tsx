@@ -64,15 +64,15 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
     <section className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">{property.address_line_1}</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-brand-ink text-[32px] leading-tight">{property.address_line_1}</h1>
+          <p className="text-brand-slate text-sm">
             {property.town} · {property.postcode} · {STATUS_LABELS[property.status]}
           </p>
         </div>
         <div className="flex gap-2">
           <a
             href={`/properties/${propertyId}/edit`}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="border-brand-stone rounded-md border px-3 py-2 text-sm"
           >
             Edit
           </a>
@@ -103,7 +103,7 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
         </div>
       </header>
 
-      <nav className="flex gap-4 border-b border-slate-200 text-sm">
+      <nav className="border-brand-stone flex gap-4 border-b text-sm">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -111,8 +111,8 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
             onClick={() => setTab(t.key)}
             className={`-mb-px border-b-2 px-1 py-2 ${
               tab === t.key
-                ? "border-[color:var(--brand-primary)] font-medium text-slate-900"
-                : "border-transparent text-slate-600 hover:text-slate-900"
+                ? "border-brand-hedge text-brand-ink font-medium"
+                : "text-brand-walnut hover:text-brand-ink border-transparent"
             }`}
           >
             {t.label}
@@ -138,7 +138,7 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
 
 function Placeholder({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
+    <div className="border-brand-stone bg-brand-cream rounded-md border border-dashed p-6 text-sm text-slate-500">
       {children}
     </div>
   );

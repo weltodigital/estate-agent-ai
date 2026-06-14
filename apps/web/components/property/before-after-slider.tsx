@@ -31,7 +31,7 @@ export function BeforeAfterSlider({
         className="pointer-events-none absolute inset-y-0"
         style={{ left: `calc(${pos}% - 1px)` }}
       >
-        <div className="h-full w-0.5 bg-white shadow" />
+        <div className="bg-brand-cream h-full w-0.5 shadow" />
       </div>
       <div className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
         Before

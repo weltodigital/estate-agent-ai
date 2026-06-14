@@ -75,7 +75,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Upload a sketch</h2>
         </header>
@@ -114,7 +114,10 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
       ) : (
         <ul className="space-y-4">
           {plans.map((plan) => (
-            <li key={plan.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <li
+              key={plan.id}
+              className="border-brand-stone bg-brand-cream rounded-lg border p-4 shadow-sm"
+            >
               <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="space-y-0.5">
                   <p className="font-medium">{plan.floor_label}</p>
@@ -136,7 +139,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
                   {EDITABLE_STATUSES.has(plan.status) ? (
                     <a
                       href={`/properties/${propertyId}/floor-plan/${plan.id}/edit`}
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      className="border-brand-stone rounded-md border px-3 py-2 text-sm"
                     >
                       Edit
                     </a>
@@ -146,7 +149,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
                       href={plan.output_pdf_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      className="border-brand-stone rounded-md border px-3 py-2 text-sm"
                     >
                       PDF
                     </a>
@@ -156,7 +159,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
                       href={plan.output_svg_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      className="border-brand-stone rounded-md border px-3 py-2 text-sm"
                     >
                       Open SVG
                     </a>
@@ -176,14 +179,14 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
                   </p>
                 </div>
               ) : plan.status === "parsing" || plan.status === "uploaded" ? (
-                <div className="flex aspect-[4/3] items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+                <div className="border-brand-stone flex aspect-[4/3] items-center justify-center rounded-md border border-dashed bg-slate-50 text-sm text-slate-500">
                   Claude is reading the sketch…
                 </div>
               ) : plan.output_svg_url ? (
                 <object
                   data={plan.output_svg_url}
                   type="image/svg+xml"
-                  className="aspect-[4/3] w-full rounded-md border border-slate-200 bg-white"
+                  className="border-brand-stone bg-brand-cream aspect-[4/3] w-full rounded-md border"
                   aria-label={`${plan.floor_label} floor plan`}
                 />
               ) : (

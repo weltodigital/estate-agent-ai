@@ -52,7 +52,7 @@ export function EpcPanel({ property }: { property: Property }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Current EPC</h2>
           {property.epc_current_rating ? (
@@ -87,7 +87,7 @@ export function EpcPanel({ property }: { property: Property }) {
         )}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">EPC Register lookup</h2>
           <Button variant="outline" onClick={() => search.refetch()} disabled={search.isFetching}>

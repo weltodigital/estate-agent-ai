@@ -58,7 +58,7 @@ export function TeamTab() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <header className="mb-3">
           <h2 className="text-lg font-semibold">Invite a team member</h2>
           <p className="text-xs text-slate-500">
@@ -102,7 +102,7 @@ export function TeamTab() {
               id="invite_role"
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value as UserRole)}
-              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+              className="border-brand-stone bg-brand-cream h-10 w-full rounded-md border px-3 text-sm"
             >
               {USER_ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -126,14 +126,14 @@ export function TeamTab() {
           <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
             <p className="font-medium">Invite link</p>
             <p>Share this with your teammate. They&apos;ll be asked to set a password.</p>
-            <code className="mt-1 block break-all rounded bg-white p-2 font-mono">
+            <code className="bg-brand-cream mt-1 block break-all rounded p-2 font-mono">
               {latestInviteUrl}
             </code>
           </div>
         ) : null}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <h2 className="mb-3 text-lg font-semibold">Pending invites</h2>
         {invitesQuery.isLoading ? (
           <p className="text-sm text-slate-500">Loading invites…</p>
@@ -158,7 +158,7 @@ export function TeamTab() {
         )}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="border-brand-stone bg-brand-cream rounded-lg border p-4">
         <h2 className="mb-3 text-lg font-semibold">Team</h2>
         {usersQuery.isLoading ? (
           <p className="text-sm text-slate-500">Loading team…</p>
@@ -184,7 +184,7 @@ export function TeamTab() {
                         payload: { role: e.target.value as UserRole },
                       })
                     }
-                    className="h-9 rounded-md border border-slate-300 bg-white px-2 text-xs"
+                    className="border-brand-stone bg-brand-cream h-9 rounded-md border px-2 text-xs"
                     disabled={updateRole.isPending}
                   >
                     {USER_ROLES.map((r) => (
