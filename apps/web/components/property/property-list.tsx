@@ -36,6 +36,19 @@ const dateFormat = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
 });
 
+// Sale-price brackets (in pounds) for the min/max dropdowns.
+const PRICE_BRACKETS = [
+  50_000, 75_000, 100_000, 125_000, 150_000, 175_000, 200_000, 250_000, 300_000, 350_000, 400_000,
+  450_000, 500_000, 600_000, 700_000, 800_000, 900_000, 1_000_000, 1_250_000, 1_500_000, 2_000_000,
+  3_000_000, 5_000_000,
+];
+
+const priceFormat = new Intl.NumberFormat("en-GB", {
+  style: "currency",
+  currency: "GBP",
+  maximumFractionDigits: 0,
+});
+
 const inputClass = "border-brand-stone bg-brand-cream h-10 rounded-md border px-3 text-sm";
 
 export function PropertyList() {
@@ -121,26 +134,32 @@ export function PropertyList() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="number"
-            min={0}
-            inputMode="numeric"
-            placeholder="Min £"
+          <select
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
-            className={`${inputClass} w-28`}
-            aria-label="Minimum price in pounds"
-          />
-          <input
-            type="number"
-            min={0}
-            inputMode="numeric"
-            placeholder="Max £"
+            className={inputClass}
+            aria-label="Minimum price"
+          >
+            <option value="">No min price</option>
+            {PRICE_BRACKETS.map((v) => (
+              <option key={v} value={v}>
+                {priceFormat.format(v)}
+              </option>
+            ))}
+          </select>
+          <select
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
-            className={`${inputClass} w-28`}
-            aria-label="Maximum price in pounds"
-          />
+            className={inputClass}
+            aria-label="Maximum price"
+          >
+            <option value="">No max price</option>
+            {PRICE_BRACKETS.map((v) => (
+              <option key={v} value={v}>
+                {priceFormat.format(v)}
+              </option>
+            ))}
+          </select>
           <label className="text-brand-walnut flex items-center gap-2 text-sm">
             <span className="text-brand-slate">Added from</span>
             <input
