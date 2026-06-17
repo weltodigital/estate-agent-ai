@@ -1,4 +1,5 @@
 import type { FastifyRequest } from "fastify";
+import type { PropertyStatus } from "@app/shared/constants";
 import type {
   CreatePropertyRequest,
   Property,
@@ -126,6 +127,19 @@ export async function updateProperty(
 ): Promise<Property> {
   if (!request.user || !request.agencyId) throw unauthorised();
   const supabase = getUserClient(request.user.accessToken);
+
+  // Note the prior status before the update so a transition can be logged to
+  // the property's activity feed. Only read it when a status change is possible.
+  let previousStatus: PropertyStatus | null = null;
+  if (payload.status !== undefined) {
+    const { data: current } = await supabase
+      .from("properties")
+      .select("status")
+      .eq("id", id)
+      .maybeSingle<{ status: PropertyStatus }>();
+    previousStatus = current?.status ?? null;
+  }
+
   const { data, error } = await supabase
     .from("properties")
     .update(payload)
@@ -141,6 +155,24 @@ export async function updateProperty(
     });
   }
   if (!data) throw notFound("Property");
+
+  if (
+    payload.status !== undefined &&
+    previousStatus !== null &&
+    previousStatus !== payload.status
+  ) {
+    // Audit-only ledger entry, not a billing meter. Service-role write.
+    await recordUsageEvent({
+      agencyId: request.agencyId,
+      branchId: data.branch_id,
+      userId: request.user.id,
+      propertyId: data.id,
+      eventType: "status_changed",
+      billable: false,
+      metadata: { from: previousStatus, to: payload.status },
+    });
+  }
+
   return data as Property;
 }
 

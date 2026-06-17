@@ -97,6 +97,14 @@ export const USAGE_EVENT_TYPES = [
 ] as const;
 export type UsageEventType = (typeof USAGE_EVENT_TYPES)[number];
 
+/**
+ * Events surfaced in a property's activity log. A superset of the billable
+ * USAGE_EVENT_TYPES that adds audit-only events (e.g. status changes) — logged
+ * for history but never metered, quota-checked, or shown in the Billing tab.
+ */
+export const ACTIVITY_EVENT_TYPES = [...USAGE_EVENT_TYPES, "status_changed"] as const;
+export type ActivityEventType = (typeof ACTIVITY_EVENT_TYPES)[number];
+
 export const EPC_RATINGS = ["A", "B", "C", "D", "E", "F", "G"] as const;
 export type EpcRating = (typeof EPC_RATINGS)[number];
 

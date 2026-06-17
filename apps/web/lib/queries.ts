@@ -28,6 +28,7 @@ import type {
   PortalSessionRequest,
   PortalSessionResponse,
   Property,
+  PropertyActivityResponse,
   PropertyListQuery,
   PropertyListResponse,
   ReorderPhotosRequest,
@@ -57,6 +58,7 @@ export const queryKeys = {
   epc: (postcode: string) => ["epc", postcode.replace(/\s+/g, "").toUpperCase()] as const,
   floorPlans: (propertyId: string) => ["property", propertyId, "floor-plans"] as const,
   floorPlan: (id: string) => ["floor-plan", id] as const,
+  activity: (propertyId: string) => ["property", propertyId, "activity"] as const,
 };
 
 export const propertyApi = {
@@ -79,6 +81,7 @@ export const propertyApi = {
       body: { status: "withdrawn" } satisfies UpdatePropertyRequest,
     }),
   remove: (id: string) => callApi<null>(`/v1/properties/${id}`, { method: "DELETE" }),
+  activity: (id: string) => callApi<PropertyActivityResponse>(`/v1/properties/${id}/activity`),
 };
 
 export const photoApi = {

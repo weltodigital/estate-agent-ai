@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PropertyStatus } from "@app/shared/constants";
 import { Button } from "@app/ui";
 import { propertyApi, queryKeys } from "@/lib/queries";
+import { ActivityPanel } from "./activity-panel";
 import { DescriptionPanel } from "./description-panel";
 import { EpcPanel } from "./epc-panel";
 import { FloorPlanPanel } from "./floor-plan-panel";
@@ -130,16 +131,8 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
         {tab === "description" ? <DescriptionPanel property={property} /> : null}
         {tab === "floor_plan" ? <FloorPlanPanel propertyId={propertyId} /> : null}
         {tab === "epc" ? <EpcPanel property={property} /> : null}
-        {tab === "activity" ? <Placeholder>Activity log lands later.</Placeholder> : null}
+        {tab === "activity" ? <ActivityPanel propertyId={propertyId} /> : null}
       </div>
     </section>
-  );
-}
-
-function Placeholder({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="border-brand-stone bg-brand-cream text-brand-slate rounded-md border border-dashed p-6 text-sm">
-      {children}
-    </div>
   );
 }

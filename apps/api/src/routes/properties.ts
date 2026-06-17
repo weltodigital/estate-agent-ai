@@ -8,6 +8,7 @@ import {
   generateDescriptionRequestSchema,
   photosListQuerySchema,
   photosListResponseSchema,
+  propertyActivityResponseSchema,
   propertyListQuerySchema,
   propertyListResponseSchema,
   propertySchema,
@@ -24,6 +25,7 @@ import {
   updateProperty,
 } from "../services/properties.js";
 import { createPhotoUpload, listPropertyPhotos, reorderPhotos } from "../services/photos.js";
+import { listPropertyActivity } from "../services/usage.js";
 import { streamDescription } from "../services/descriptions.js";
 import { createFloorPlan, listFloorPlans } from "../services/floor-plans.js";
 
@@ -162,5 +164,11 @@ export const propertyRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request) => createFloorPlan(request, request.params.id, request.body),
+  );
+
+  app.get(
+    "/:id/activity",
+    { schema: { params: idParams, response: { 200: propertyActivityResponseSchema } } },
+    async (request) => listPropertyActivity(request, request.params.id),
   );
 };
