@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PropertyStatus } from "@app/shared/constants";
+import { PROPERTY_STATUSES } from "@app/shared/constants";
 import { Button } from "@app/ui";
 import { propertyApi, queryKeys } from "@/lib/queries";
 import { ActivityPanel } from "./activity-panel";
@@ -42,11 +43,13 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
     queryFn: () => propertyApi.get(propertyId),
   });
 
-  const archive = useMutation({
-    mutationFn: () => propertyApi.archive(propertyId),
+  const updateStatus = useMutation({
+    mutationFn: (status: PropertyStatus) => propertyApi.update(propertyId, { status }),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.property(propertyId), data);
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      // Surface the logged status change in the Activity tab straight away.
+      queryClient.invalidateQueries({ queryKey: queryKeys.activity(propertyId) });
     },
   });
 
@@ -67,27 +70,33 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
         <div className="space-y-1">
           <h1 className="text-brand-ink text-[32px] leading-tight">{property.address_line_1}</h1>
           <p className="text-brand-slate text-sm">
-            {property.town} · {property.postcode} · {STATUS_LABELS[property.status]}
+            {property.town} · {property.postcode}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor="property-status">
+            Property status
+          </label>
+          <select
+            id="property-status"
+            value={property.status}
+            onChange={(event) => updateStatus.mutate(event.target.value as PropertyStatus)}
+            disabled={updateStatus.isPending}
+            className="border-brand-stone text-brand-ink rounded-md border bg-white px-3 py-2 text-sm disabled:opacity-60"
+          >
+            {PROPERTY_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {STATUS_LABELS[status]}
+              </option>
+            ))}
+          </select>
           <a
             href={`/properties/${propertyId}/edit`}
             className="border-brand-stone rounded-md border px-3 py-2 text-sm"
           >
             Edit
           </a>
-          {property.status !== "withdrawn" ? (
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (confirm("Archive this property?")) archive.mutate();
-              }}
-              disabled={archive.isPending}
-            >
-              {archive.isPending ? "Archiving…" : "Archive"}
-            </Button>
-          ) : (
+          {property.status === "withdrawn" ? (
             <Button
               variant="outline"
               onClick={async () => {
@@ -100,7 +109,7 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
             >
               Delete
             </Button>
-          )}
+          ) : null}
         </div>
       </header>
 
