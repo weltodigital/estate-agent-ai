@@ -41,7 +41,67 @@ export async function listProperties(
       message: "Could not load properties.",
     });
   }
-  return { items: (data ?? []) as Property[], total: count ?? 0 };
+
+  const properties = (data ?? []) as Property[];
+  const assetCounts = await countPropertyAssets(
+    supabase,
+    properties.map((p) => p.id),
+  );
+  const items = properties.map((p) => ({
+    ...p,
+    stats: {
+      photo_enhancements: assetCounts.enhanced[p.id] ?? 0,
+      virtual_stagings: assetCounts.staged[p.id] ?? 0,
+      // A property has at most one description / EPC, so these read as 0 or 1.
+      ai_descriptions: p.description && p.description.trim().length > 0 ? 1 : 0,
+      floor_plans: assetCounts.floorPlans[p.id] ?? 0,
+      epc_details: p.epc_current_rating ? 1 : 0,
+    },
+  }));
+  return { items, total: count ?? 0 };
+}
+
+/**
+ * Counts the photo enhancements, virtual stagings, and floor plans attached to
+ * each of the given properties. RLS on the user client keeps it agency-scoped;
+ * we fetch the minimal columns and tally in memory rather than per-property
+ * round-trips. Description/EPC counts come straight off the property row.
+ */
+async function countPropertyAssets(
+  supabase: ReturnType<typeof getUserClient>,
+  propertyIds: string[],
+): Promise<{
+  enhanced: Record<string, number>;
+  staged: Record<string, number>;
+  floorPlans: Record<string, number>;
+}> {
+  const enhanced: Record<string, number> = {};
+  const staged: Record<string, number> = {};
+  const floorPlans: Record<string, number> = {};
+  if (propertyIds.length === 0) return { enhanced, staged, floorPlans };
+
+  const { data: photos } = await supabase
+    .from("property_photos")
+    .select("property_id, enhanced_url, staged_url")
+    .in("property_id", propertyIds);
+  for (const row of (photos ?? []) as Array<{
+    property_id: string;
+    enhanced_url: string | null;
+    staged_url: string | null;
+  }>) {
+    if (row.enhanced_url) enhanced[row.property_id] = (enhanced[row.property_id] ?? 0) + 1;
+    if (row.staged_url) staged[row.property_id] = (staged[row.property_id] ?? 0) + 1;
+  }
+
+  const { data: plans } = await supabase
+    .from("floor_plans")
+    .select("property_id")
+    .in("property_id", propertyIds);
+  for (const row of (plans ?? []) as Array<{ property_id: string }>) {
+    floorPlans[row.property_id] = (floorPlans[row.property_id] ?? 0) + 1;
+  }
+
+  return { enhanced, staged, floorPlans };
 }
 
 export async function getProperty(request: FastifyRequest, id: string): Promise<Property> {

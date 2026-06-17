@@ -7,6 +7,7 @@ import { PROPERTY_STATUSES, type PropertyStatus } from "@app/shared/constants";
 import { Button } from "@app/ui";
 import { queryKeys, propertyApi } from "@/lib/queries";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PropertyStatsBadges } from "@/components/property/property-stats-badges";
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
   draft: "Draft",
@@ -99,11 +100,14 @@ export function PropertyList() {
                 href={`/properties/${p.id}`}
                 className="hover:bg-brand-stone/30 flex items-center justify-between px-4 py-3"
               >
-                <div className="space-y-0.5">
-                  <p className="font-medium">{p.address_line_1}</p>
-                  <p className="text-brand-slate text-sm">
-                    {p.town} · {p.postcode} · {p.bedrooms} bed
-                  </p>
+                <div className="space-y-1.5">
+                  <div className="space-y-0.5">
+                    <p className="font-medium">{p.address_line_1}</p>
+                    <p className="text-brand-slate text-sm">
+                      {p.town} · {p.postcode} · {p.bedrooms} bed
+                    </p>
+                  </div>
+                  <PropertyStatsBadges stats={p.stats} />
                 </div>
                 <div className="space-y-0.5 text-right">
                   <p className="font-medium">{formatPrice(p.price_pence, p.listing_type)}</p>

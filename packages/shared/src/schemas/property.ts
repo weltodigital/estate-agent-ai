@@ -110,8 +110,27 @@ export const propertyListQuerySchema = z.object({
 });
 export type PropertyListQuery = z.infer<typeof propertyListQuerySchema>;
 
+/**
+ * Per-property counts of the AI assets produced for it, shown as icons on the
+ * property list and dashboard. descriptions/EPC are 0-or-1 (a property has at
+ * most one of each); the rest are true counts.
+ */
+export const propertyStatsSchema = z.object({
+  photo_enhancements: z.number().int().min(0),
+  virtual_stagings: z.number().int().min(0),
+  ai_descriptions: z.number().int().min(0),
+  floor_plans: z.number().int().min(0),
+  epc_details: z.number().int().min(0),
+});
+export type PropertyStats = z.infer<typeof propertyStatsSchema>;
+
+export const propertyListItemSchema = propertySchema.extend({
+  stats: propertyStatsSchema,
+});
+export type PropertyListItem = z.infer<typeof propertyListItemSchema>;
+
 export const propertyListResponseSchema = z.object({
-  items: z.array(propertySchema),
+  items: z.array(propertyListItemSchema),
   total: z.number().int().min(0),
 });
 export type PropertyListResponse = z.infer<typeof propertyListResponseSchema>;
