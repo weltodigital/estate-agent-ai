@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FileText, History, Leaf, Ruler, Sofa, Sparkles } from "lucide-react";
 import type { PropertyStatus } from "@app/shared/constants";
 import { PROPERTY_STATUSES } from "@app/shared/constants";
 import { Button } from "@app/ui";
@@ -14,12 +15,12 @@ import { FloorPlanPanel } from "./floor-plan-panel";
 import { PhotoManager } from "./photo-manager";
 
 const TABS = [
-  { key: "enhancements", label: "Enhancements" },
-  { key: "virtual_staging", label: "Virtual staging" },
-  { key: "description", label: "Description" },
-  { key: "floor_plan", label: "Floor plan" },
-  { key: "epc", label: "EPC" },
-  { key: "activity", label: "Activity" },
+  { key: "enhancements", label: "Enhancements", icon: Sparkles },
+  { key: "virtual_staging", label: "Virtual staging", icon: Sofa },
+  { key: "description", label: "Description", icon: FileText },
+  { key: "floor_plan", label: "Floor plan", icon: Ruler },
+  { key: "epc", label: "EPC", icon: Leaf },
+  { key: "activity", label: "Activity", icon: History },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -114,18 +115,19 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
       </header>
 
       <nav className="border-brand-stone flex gap-4 border-b text-sm">
-        {TABS.map((t) => (
+        {TABS.map(({ key, label, icon: Icon }) => (
           <button
-            key={t.key}
+            key={key}
             type="button"
-            onClick={() => setTab(t.key)}
-            className={`-mb-px border-b-2 px-1 py-2 ${
-              tab === t.key
+            onClick={() => setTab(key)}
+            className={`-mb-px flex items-center gap-1.5 border-b-2 px-1 py-2 ${
+              tab === key
                 ? "text-brand-ink border-[color:var(--brand-primary)] font-medium"
                 : "text-brand-walnut hover:text-brand-ink border-transparent"
             }`}
           >
-            {t.label}
+            <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+            <span>{label}</span>
           </button>
         ))}
       </nav>
