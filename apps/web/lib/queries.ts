@@ -47,7 +47,7 @@ import type {
 import { callApi } from "./api-client";
 
 export const queryKeys = {
-  properties: (query: PropertyListQuery | Record<string, never>) => ["properties", query] as const,
+  properties: (query: Partial<PropertyListQuery>) => ["properties", query] as const,
   property: (id: string) => ["property", id] as const,
   // With a category this is the exact per-tab key; without one it's the 3-part
   // prefix, so invalidating it (e.g. from StageDialog) refreshes every tab.

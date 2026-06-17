@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
 import { PROPERTY_STATUSES, type PropertyStatus } from "@app/shared/constants";
+import type { PropertySortField } from "@app/shared/schemas";
 import { Button } from "@app/ui";
 import { queryKeys, propertyApi } from "@/lib/queries";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -18,24 +19,56 @@ const STATUS_LABELS: Record<PropertyStatus, string> = {
   withdrawn: "Withdrawn",
 };
 
+// Each option packs the sort field + direction into one value for the dropdown.
+const SORT_OPTIONS: { value: string; label: string }[] = [
+  { value: "created_at:desc", label: "Newest first" },
+  { value: "created_at:asc", label: "Oldest first" },
+  { value: "price:desc", label: "Price: high to low" },
+  { value: "price:asc", label: "Price: low to high" },
+  { value: "status:asc", label: "Status" },
+  { value: "virtual_stagings:desc", label: "Most virtual stagings" },
+  { value: "photo_enhancements:desc", label: "Most enhancements" },
+];
+
+const dateFormat = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+const inputClass = "border-brand-stone bg-brand-cream h-10 rounded-md border px-3 text-sm";
+
 export function PropertyList() {
   const [status, setStatus] = useState<PropertyStatus | "all">("all");
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState("created_at:desc");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [createdFrom, setCreatedFrom] = useState("");
+  const [createdTo, setCreatedTo] = useState("");
+  const [hasStaging, setHasStaging] = useState(false);
+  const [hasEnhancements, setHasEnhancements] = useState(false);
+
+  const [sortField, order] = sort.split(":") as [PropertySortField, "asc" | "desc"];
+
+  const params = {
+    status: status === "all" ? undefined : status,
+    q: q || undefined,
+    sort: sortField,
+    order,
+    min_price: minPrice ? Math.round(Number(minPrice) * 100) : undefined,
+    max_price: maxPrice ? Math.round(Number(maxPrice) * 100) : undefined,
+    created_after: createdFrom ? `${createdFrom}T00:00:00.000Z` : undefined,
+    created_before: createdTo ? `${createdTo}T23:59:59.999Z` : undefined,
+    has_staging: hasStaging || undefined,
+    has_enhancements: hasEnhancements || undefined,
+    limit: 50,
+    offset: 0,
+  };
 
   const query = useQuery({
-    queryKey: queryKeys.properties({
-      status: status === "all" ? undefined : status,
-      q,
-      limit: 50,
-      offset: 0,
-    }),
-    queryFn: () =>
-      propertyApi.list({
-        status: status === "all" ? undefined : status,
-        q: q || undefined,
-        limit: 50,
-        offset: 0,
-      }),
+    queryKey: queryKeys.properties(params),
+    queryFn: () => propertyApi.list(params),
     placeholderData: (prev) => prev,
   });
 
@@ -51,26 +84,100 @@ export function PropertyList() {
         </Button>
       </header>
 
-      <div className="flex flex-wrap gap-3">
-        <input
-          type="search"
-          placeholder="Search address, town, postcode…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="border-brand-stone bg-brand-cream h-10 min-w-[16rem] flex-1 rounded-md border px-3 text-sm"
-        />
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as PropertyStatus | "all")}
-          className="border-brand-stone bg-brand-cream h-10 rounded-md border px-3 text-sm"
-        >
-          <option value="all">All statuses</option>
-          {PROPERTY_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-3">
+          <input
+            type="search"
+            placeholder="Search address, town, postcode…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className={`${inputClass} min-w-[16rem] flex-1`}
+          />
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as PropertyStatus | "all")}
+            className={inputClass}
+            aria-label="Filter by status"
+          >
+            <option value="all">All statuses</option>
+            {PROPERTY_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className={inputClass}
+            aria-label="Sort properties"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            placeholder="Min £"
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+            className={`${inputClass} w-28`}
+            aria-label="Minimum price in pounds"
+          />
+          <input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            placeholder="Max £"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+            className={`${inputClass} w-28`}
+            aria-label="Maximum price in pounds"
+          />
+          <label className="text-brand-walnut flex items-center gap-2 text-sm">
+            <span className="text-brand-slate">Added from</span>
+            <input
+              type="date"
+              value={createdFrom}
+              onChange={(e) => setCreatedFrom(e.target.value)}
+              className={inputClass}
+              aria-label="Created on or after"
+            />
+          </label>
+          <label className="text-brand-walnut flex items-center gap-2 text-sm">
+            <span className="text-brand-slate">to</span>
+            <input
+              type="date"
+              value={createdTo}
+              onChange={(e) => setCreatedTo(e.target.value)}
+              className={inputClass}
+              aria-label="Created on or before"
+            />
+          </label>
+          <label className="text-brand-walnut flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={hasStaging}
+              onChange={(e) => setHasStaging(e.target.checked)}
+            />
+            Has virtual staging
+          </label>
+          <label className="text-brand-walnut flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={hasEnhancements}
+              onChange={(e) => setHasEnhancements(e.target.checked)}
+            />
+            Has enhancements
+          </label>
+        </div>
       </div>
 
       {query.isError ? (
@@ -84,8 +191,8 @@ export function PropertyList() {
       ) : query.data && query.data.items.length === 0 ? (
         <EmptyState
           icon={Building2}
-          title="No properties yet"
-          subtitle="Add your first property to start building its listing."
+          title="No properties found"
+          subtitle="No listings match these filters. Try clearing them, or add a new property."
           action={
             <Button asChild>
               <a href="/properties/new">New property</a>
@@ -112,6 +219,9 @@ export function PropertyList() {
                 <div className="space-y-0.5 text-right">
                   <p className="font-medium">{formatPrice(p.price_pence, p.listing_type)}</p>
                   <p className="text-brand-slate text-xs">{STATUS_LABELS[p.status]}</p>
+                  <p className="text-brand-slate text-xs">
+                    Added {dateFormat.format(new Date(p.created_at))}
+                  </p>
                 </div>
               </a>
             </li>

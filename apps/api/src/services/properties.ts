@@ -1,5 +1,6 @@
 import type { FastifyRequest } from "fastify";
 import type { PropertyStatus } from "@app/shared/constants";
+import { PROPERTY_STATUSES } from "@app/shared/constants";
 import type {
   CreatePropertyRequest,
   Property,
@@ -21,18 +22,25 @@ export async function listProperties(
     throw unauthorised();
   }
   const supabase = getUserClient(request.user.accessToken);
-  let q = supabase
-    .from("properties")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false });
+
+  // Column-level filters run in the database to shrink the working set. The
+  // computed-count filters and sorts (stagings, enhancements) can't — they
+  // aren't columns — so they're applied in memory below over a capped set.
+  const MAX_WORKING_SET = 1000;
+  let q = supabase.from("properties").select("*");
   if (query.status) q = q.eq("status", query.status);
   if (query.branch_id) q = q.eq("branch_id", query.branch_id);
   if (query.q) {
     const term = `%${query.q.replace(/[%_]/g, "")}%`;
     q = q.or(`address_line_1.ilike.${term},town.ilike.${term},postcode.ilike.${term}`);
   }
-  q = q.range(query.offset, query.offset + query.limit - 1);
-  const { data, error, count } = await q;
+  if (query.min_price !== undefined) q = q.gte("price_pence", query.min_price);
+  if (query.max_price !== undefined) q = q.lte("price_pence", query.max_price);
+  if (query.created_after) q = q.gte("created_at", query.created_after);
+  if (query.created_before) q = q.lte("created_at", query.created_before);
+  q = q.limit(MAX_WORKING_SET);
+
+  const { data, error } = await q;
   if (error) {
     request.log.error({ err: error }, "list_properties failed");
     throw new AppError({
@@ -47,7 +55,7 @@ export async function listProperties(
     supabase,
     properties.map((p) => p.id),
   );
-  const items = properties.map((p) => ({
+  let items = properties.map((p) => ({
     ...p,
     stats: {
       photo_enhancements: assetCounts.enhanced[p.id] ?? 0,
@@ -58,7 +66,39 @@ export async function listProperties(
       epc_details: p.epc_current_rating ? 1 : 0,
     },
   }));
-  return { items, total: count ?? 0 };
+
+  if (query.has_staging) items = items.filter((it) => it.stats.virtual_stagings > 0);
+  if (query.has_enhancements) items = items.filter((it) => it.stats.photo_enhancements > 0);
+
+  // created_at is ISO-8601 with a fixed offset, so string compare = chronological.
+  const byCreatedAt = (a: (typeof items)[number], b: (typeof items)[number]) =>
+    a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0;
+  const direction = query.order === "asc" ? 1 : -1;
+  items.sort((a, b) => {
+    let cmp: number;
+    switch (query.sort) {
+      case "price":
+        cmp = a.price_pence - b.price_pence;
+        break;
+      case "status":
+        cmp = PROPERTY_STATUSES.indexOf(a.status) - PROPERTY_STATUSES.indexOf(b.status);
+        break;
+      case "virtual_stagings":
+        cmp = a.stats.virtual_stagings - b.stats.virtual_stagings;
+        break;
+      case "photo_enhancements":
+        cmp = a.stats.photo_enhancements - b.stats.photo_enhancements;
+        break;
+      default:
+        cmp = byCreatedAt(a, b);
+    }
+    // Newest-first tiebreak keeps equal keys deterministic across requests.
+    return (cmp !== 0 ? cmp : byCreatedAt(a, b)) * direction;
+  });
+
+  const total = items.length;
+  const page = items.slice(query.offset, query.offset + query.limit);
+  return { items: page, total };
 }
 
 /**

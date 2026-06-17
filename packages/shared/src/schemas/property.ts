@@ -101,10 +101,37 @@ export const generateDescriptionRequestSchema = z.object({
 });
 export type GenerateDescriptionRequest = z.infer<typeof generateDescriptionRequestSchema>;
 
+export const PROPERTY_SORT_FIELDS = [
+  "created_at",
+  "price",
+  "status",
+  "virtual_stagings",
+  "photo_enhancements",
+] as const;
+export type PropertySortField = (typeof PROPERTY_SORT_FIELDS)[number];
+
+// Query-string booleans arrive as "true"/"false"; parse them explicitly so a
+// stray "false" can't coerce to true.
+const queryBoolean = z
+  .enum(["true", "false"])
+  .transform((v) => v === "true")
+  .optional();
+
 export const propertyListQuerySchema = z.object({
   status: z.enum(PROPERTY_STATUSES).optional(),
   branch_id: z.string().uuid().optional(),
   q: z.string().max(200).optional(),
+  // Sorting. virtual_stagings/photo_enhancements are computed counts, sorted in
+  // the service rather than the database.
+  sort: z.enum(PROPERTY_SORT_FIELDS).default("created_at"),
+  order: z.enum(["asc", "desc"]).default("desc"),
+  // Filters. Price is in pence; created_after/before are ISO timestamps.
+  min_price: z.coerce.number().int().min(0).optional(),
+  max_price: z.coerce.number().int().min(0).optional(),
+  created_after: z.string().optional(),
+  created_before: z.string().optional(),
+  has_staging: queryBoolean,
+  has_enhancements: queryBoolean,
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
