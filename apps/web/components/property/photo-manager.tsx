@@ -79,7 +79,7 @@ export function PhotoManager({
   const [inFlight, setInFlight] = useState<Map<string, Set<PhotoEnhancement>>>(new Map());
   const [stageDialogPhotoId, setStageDialogPhotoId] = useState<string | null>(null);
   const [objectRemovalPhotoId, setObjectRemovalPhotoId] = useState<string | null>(null);
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ after: string; before?: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.photos(propertyId, category),
@@ -390,7 +390,7 @@ export function PhotoManager({
               key={photo.id}
               photo={photo}
               onStage={() => setStageDialogPhotoId(photo.id)}
-              onEnlarge={setLightboxSrc}
+              onEnlarge={(after, before) => setLightbox({ after, before })}
             />
           ))}
         </div>
@@ -414,7 +414,7 @@ export function PhotoManager({
                   onDelete={() => {
                     if (confirm("Delete this photo?")) remove.mutate(photo.id);
                   }}
-                  onEnlarge={setLightboxSrc}
+                  onEnlarge={(after, before) => setLightbox({ after, before })}
                 />
               ))}
             </div>
@@ -434,8 +434,12 @@ export function PhotoManager({
         />
       ) : null}
 
-      {lightboxSrc ? (
-        <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+      {lightbox ? (
+        <ImageLightbox
+          src={lightbox.after}
+          before={lightbox.before}
+          onClose={() => setLightbox(null)}
+        />
       ) : null}
     </section>
   );
@@ -513,7 +517,7 @@ function EnhancePhotoCard({
   onRemoveObjects: () => void;
   onRevert: () => void;
   onDelete: () => void;
-  onEnlarge: (src: string) => void;
+  onEnlarge: (after: string, before?: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: photo.id,
@@ -550,7 +554,7 @@ function EnhancePhotoCard({
         <img
           src={displayUrl}
           alt=""
-          onClick={() => onEnlarge(displayUrl)}
+          onClick={() => onEnlarge(displayUrl, hasEnhanced ? photo.original_url : undefined)}
           className="aspect-[4/3] w-full cursor-zoom-in object-cover"
           {...attributes}
           {...listeners}
@@ -625,7 +629,7 @@ function StagePhotoCard({
 }: {
   photo: Photo;
   onStage: () => void;
-  onEnlarge: (src: string) => void;
+  onEnlarge: (after: string, before?: string) => void;
 }) {
   const [showCompare, setShowCompare] = useState(false);
   const displayUrl = photo.staged_url ?? photo.original_url;
@@ -645,7 +649,7 @@ function StagePhotoCard({
         <img
           src={displayUrl}
           alt=""
-          onClick={() => onEnlarge(displayUrl)}
+          onClick={() => onEnlarge(displayUrl, hasStaged ? photo.original_url : undefined)}
           className="aspect-[4/3] w-full cursor-zoom-in object-cover"
         />
       )}
