@@ -42,10 +42,10 @@ export const ERROR_COPY = {
  */
 export const AI_NOTICE = {
   description:
-    "AI writes a first draft. Read it through and check every detail before you publish.",
+    "AI can make mistakes. Always read the description through and check every detail before you publish.",
   photo:
-    "AI edits these photos. Make sure each one is a fair, accurate likeness before you use it.",
+    "AI can make mistakes. Always check each photo is a fair, accurate likeness before you use it.",
   floorPlan:
-    "AI reads the sketch and can misjudge it. Check the layout and measurements before you publish.",
-  generic: "AI can get things wrong. Always check what it produces before it reaches a client.",
+    "AI can make mistakes. Always check the layout and measurements before you publish the plan.",
+  generic: "AI can make mistakes. Always check what it produces before it reaches a client.",
 } as const;
