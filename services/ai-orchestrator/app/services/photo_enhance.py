@@ -11,7 +11,9 @@ Implementations:
                          exposed or low-contrast
   - colour_temperature:  PIL grey-world white balance, only when a cast is found
   - hd_upscale:          Replicate Real-ESRGAN, only for sub-1400px photos
-  - colour_saturation:   PIL (gentle saturation boost)
+  - colour_saturation:   PIL finishing polish — vibrance + gentle contrast and
+                         clarity. Always applied, so even an already-good photo
+                         gets a visible, natural lift.
   - shadow_boost:        PIL (lift shadows only — composite a brightened copy
                          into dark regions via an inverted-luminance mask)
   - logo_watermark:      PIL (composite the agency logo into a corner; needs
@@ -119,9 +121,15 @@ def _apply_colour_temperature(image: Image.Image) -> Image.Image:
     return Image.merge("RGB", (rc.point(lut(r)), gc.point(lut(g)), bc.point(lut(b))))
 
 
-def _apply_colour_saturation(image: Image.Image) -> Image.Image:
-    # Gentle saturation lift — punchier without looking oversaturated.
-    return ImageEnhance.Color(image).enhance(1.15)
+def _apply_finishing_polish(image: Image.Image) -> Image.Image:
+    """Always-on finishing polish: a tasteful lift in vibrance, contrast, and
+    clarity so even a well-shot photo gets a visible, natural 'pop' — without
+    tipping into oversaturated/HDR territory. Tune the three factors here:
+    higher = punchier, 1.0 = no change for that dimension."""
+    out = ImageEnhance.Color(image).enhance(1.2)  # vibrance
+    out = ImageEnhance.Contrast(out).enhance(1.08)  # depth
+    out = ImageEnhance.Sharpness(out).enhance(1.25)  # clarity
+    return out
 
 
 async def _apply_upscale(image: Image.Image) -> Image.Image | None:
@@ -279,7 +287,7 @@ async def _process_enhanced(
         applied.append("colour_temperature")
 
     if "colour_saturation" in enhancements:
-        out = _apply_colour_saturation(out)
+        out = _apply_finishing_polish(out)
         applied.append("colour_saturation")
 
     if "gdpr_blur" in enhancements:
