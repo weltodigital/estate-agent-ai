@@ -120,11 +120,16 @@ async function countPropertyAssets(
   const floorPlans: Record<string, number> = {};
   if (propertyIds.length === 0) return { enhanced, staged, floorPlans };
 
-  const { data: photos } = await supabase
-    .from("property_photos")
-    .select("property_id, enhanced_url, staged_url")
-    .in("property_id", propertyIds);
-  for (const row of (photos ?? []) as Array<{
+  // Run both aggregations concurrently — they're independent round trips.
+  const [photosRes, plansRes] = await Promise.all([
+    supabase
+      .from("property_photos")
+      .select("property_id, enhanced_url, staged_url")
+      .in("property_id", propertyIds),
+    supabase.from("floor_plans").select("property_id").in("property_id", propertyIds),
+  ]);
+
+  for (const row of (photosRes.data ?? []) as Array<{
     property_id: string;
     enhanced_url: string | null;
     staged_url: string | null;
@@ -132,12 +137,7 @@ async function countPropertyAssets(
     if (row.enhanced_url) enhanced[row.property_id] = (enhanced[row.property_id] ?? 0) + 1;
     if (row.staged_url) staged[row.property_id] = (staged[row.property_id] ?? 0) + 1;
   }
-
-  const { data: plans } = await supabase
-    .from("floor_plans")
-    .select("property_id")
-    .in("property_id", propertyIds);
-  for (const row of (plans ?? []) as Array<{ property_id: string }>) {
+  for (const row of (plansRes.data ?? []) as Array<{ property_id: string }>) {
     floorPlans[row.property_id] = (floorPlans[row.property_id] ?? 0) + 1;
   }
 

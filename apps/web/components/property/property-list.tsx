@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
 import { PROPERTY_STATUSES, type PropertyStatus } from "@app/shared/constants";
@@ -64,26 +64,75 @@ export function PropertyList() {
 
   const [sortField, order] = sort.split(":") as [PropertySortField, "asc" | "desc"];
 
-  const params = {
-    status: status === "all" ? undefined : status,
-    q: q || undefined,
-    sort: sortField,
-    order,
-    min_price: minPrice ? Math.round(Number(minPrice) * 100) : undefined,
-    max_price: maxPrice ? Math.round(Number(maxPrice) * 100) : undefined,
-    created_after: createdFrom ? `${createdFrom}T00:00:00.000Z` : undefined,
-    created_before: createdTo ? `${createdTo}T23:59:59.999Z` : undefined,
-    has_staging: hasStaging || undefined,
-    has_enhancements: hasEnhancements || undefined,
-    limit: 50,
-    offset: 0,
-  };
-
+  // Fetch the agency's listings once with a stable key, then sort and filter in
+  // the browser so every control responds instantly instead of round-tripping
+  // to the API on each change. The stats needed for the count filters/sorts are
+  // already in this one response.
   const query = useQuery({
-    queryKey: queryKeys.properties(params),
-    queryFn: () => propertyApi.list(params),
+    queryKey: queryKeys.properties({ limit: 1000 }),
+    queryFn: () => propertyApi.list({ limit: 1000 }),
     placeholderData: (prev) => prev,
   });
+
+  const visible = useMemo(() => {
+    const minPence = minPrice ? Math.round(Number(minPrice) * 100) : undefined;
+    const maxPence = maxPrice ? Math.round(Number(maxPrice) * 100) : undefined;
+    const createdAfter = createdFrom ? `${createdFrom}T00:00:00.000Z` : undefined;
+    const createdBefore = createdTo ? `${createdTo}T23:59:59.999Z` : undefined;
+    const term = q.trim().toLowerCase();
+
+    const filtered = (query.data?.items ?? []).filter((p) => {
+      if (status !== "all" && p.status !== status) return false;
+      if (minPence !== undefined && p.price_pence < minPence) return false;
+      if (maxPence !== undefined && p.price_pence > maxPence) return false;
+      if (createdAfter && p.created_at < createdAfter) return false;
+      if (createdBefore && p.created_at > createdBefore) return false;
+      if (hasStaging && p.stats.virtual_stagings === 0) return false;
+      if (hasEnhancements && p.stats.photo_enhancements === 0) return false;
+      if (term && !`${p.address_line_1} ${p.town} ${p.postcode}`.toLowerCase().includes(term)) {
+        return false;
+      }
+      return true;
+    });
+
+    const byCreatedAt = (a: (typeof filtered)[number], b: (typeof filtered)[number]) =>
+      a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0;
+    const direction = order === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      let cmp: number;
+      switch (sortField) {
+        case "price":
+          cmp = a.price_pence - b.price_pence;
+          break;
+        case "status":
+          cmp = PROPERTY_STATUSES.indexOf(a.status) - PROPERTY_STATUSES.indexOf(b.status);
+          break;
+        case "virtual_stagings":
+          cmp = a.stats.virtual_stagings - b.stats.virtual_stagings;
+          break;
+        case "photo_enhancements":
+          cmp = a.stats.photo_enhancements - b.stats.photo_enhancements;
+          break;
+        default:
+          cmp = byCreatedAt(a, b);
+      }
+      return (cmp !== 0 ? cmp : byCreatedAt(a, b)) * direction;
+    });
+  }, [
+    query.data,
+    status,
+    q,
+    sortField,
+    order,
+    minPrice,
+    maxPrice,
+    createdFrom,
+    createdTo,
+    hasStaging,
+    hasEnhancements,
+  ]);
+
+  const hasAnyProperties = (query.data?.items.length ?? 0) > 0;
 
   return (
     <section className="space-y-6">
@@ -207,11 +256,15 @@ export function PropertyList() {
 
       {query.isLoading ? (
         <p className="text-brand-slate text-sm">Loading…</p>
-      ) : query.data && query.data.items.length === 0 ? (
+      ) : visible.length === 0 ? (
         <EmptyState
           icon={Building2}
-          title="No properties found"
-          subtitle="No listings match these filters. Try clearing them, or add a new property."
+          title={hasAnyProperties ? "No matching properties" : "No properties yet"}
+          subtitle={
+            hasAnyProperties
+              ? "No listings match these filters. Try clearing them."
+              : "Add your first property to start building its listing."
+          }
           action={
             <Button asChild>
               <a href="/properties/new">New property</a>
@@ -220,7 +273,7 @@ export function PropertyList() {
         />
       ) : (
         <ul className="bg-brand-cream divide-brand-stone shadow-card divide-y overflow-hidden rounded-xl">
-          {query.data?.items.map((p) => (
+          {visible.map((p) => (
             <li key={p.id}>
               <a
                 href={`/properties/${p.id}`}

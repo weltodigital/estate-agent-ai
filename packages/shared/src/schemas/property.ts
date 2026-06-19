@@ -132,7 +132,9 @@ export const propertyListQuerySchema = z.object({
   created_before: z.string().optional(),
   has_staging: queryBoolean,
   has_enhancements: queryBoolean,
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  // Cap matches the service's in-memory working set, so the list page can pull
+  // the full set in one request and sort/filter client-side.
+  limit: z.coerce.number().int().min(1).max(1000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
 export type PropertyListQuery = z.infer<typeof propertyListQuerySchema>;
