@@ -19,7 +19,7 @@ import {
   type Photo,
   type PhotoEnhancement,
 } from "@app/shared/schemas";
-import { ImagePlus, Loader2, Maximize2, Sparkles, Sun, Sunset } from "lucide-react";
+import { ImagePlus, Loader2, Sparkles, Sun, Sunset } from "lucide-react";
 import { Button, Checkbox } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -441,20 +441,6 @@ export function PhotoManager({
   );
 }
 
-/** Small overlay button that opens a photo in the full-screen lightbox. */
-function EnlargeButton({ src, onEnlarge }: { src: string; onEnlarge: (src: string) => void }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onEnlarge(src)}
-      aria-label="Enlarge photo"
-      className="bg-brand-ink/55 text-brand-cream hover:bg-brand-ink/75 absolute bottom-2 right-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md transition"
-    >
-      <Maximize2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-    </button>
-  );
-}
-
 function EnhanceDialog({
   chosen,
   onToggle,
@@ -558,20 +544,18 @@ function EnhancePhotoCard({
         </span>
       ) : null}
 
-      <div className="relative">
-        {showCompare && photo.enhanced_url ? (
-          <BeforeAfterSlider before={photo.original_url} after={photo.enhanced_url} />
-        ) : (
-          <img
-            src={displayUrl}
-            alt=""
-            className="aspect-[4/3] w-full cursor-grab object-cover"
-            {...attributes}
-            {...listeners}
-          />
-        )}
-        <EnlargeButton src={displayUrl} onEnlarge={onEnlarge} />
-      </div>
+      {showCompare && photo.enhanced_url ? (
+        <BeforeAfterSlider before={photo.original_url} after={photo.enhanced_url} />
+      ) : (
+        <img
+          src={displayUrl}
+          alt=""
+          onClick={() => onEnlarge(displayUrl)}
+          className="aspect-[4/3] w-full cursor-zoom-in object-cover"
+          {...attributes}
+          {...listeners}
+        />
+      )}
 
       <div className="space-y-1.5 px-3 py-2 text-xs">
         <div className="flex items-center justify-between gap-2">
@@ -655,14 +639,16 @@ function StagePhotoCard({
         </span>
       ) : null}
 
-      <div className="relative">
-        {showCompare && photo.staged_url ? (
-          <BeforeAfterSlider before={photo.original_url} after={photo.staged_url} />
-        ) : (
-          <img src={displayUrl} alt="" className="aspect-[4/3] w-full object-cover" />
-        )}
-        <EnlargeButton src={displayUrl} onEnlarge={onEnlarge} />
-      </div>
+      {showCompare && photo.staged_url ? (
+        <BeforeAfterSlider before={photo.original_url} after={photo.staged_url} />
+      ) : (
+        <img
+          src={displayUrl}
+          alt=""
+          onClick={() => onEnlarge(displayUrl)}
+          className="aspect-[4/3] w-full cursor-zoom-in object-cover"
+        />
+      )}
 
       <div className="flex items-center justify-between px-3 py-2 text-xs">
         <span>{photo.room_type.replace("_", " ")}</span>
