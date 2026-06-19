@@ -2,9 +2,11 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Maximize2 } from "lucide-react";
 import type { FloorPlan } from "@app/shared/schemas";
 import { Button, Input, Label } from "@app/ui";
 import { floorPlanApi, queryKeys } from "@/lib/queries";
+import { ImageLightbox } from "./image-lightbox";
 
 const EDITABLE_STATUSES = new Set(["parsed", "editing", "finalised"]);
 
@@ -21,6 +23,7 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
   void EDITABLE_STATUSES; // referenced below in JSX
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [floorLabel, setFloorLabel] = useState("Ground floor");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -183,12 +186,22 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
                   Claude is reading the sketch…
                 </div>
               ) : plan.output_svg_url ? (
-                <object
-                  data={plan.output_svg_url}
-                  type="image/svg+xml"
-                  className="border-brand-stone bg-brand-cream aspect-[4/3] w-full rounded-md border"
-                  aria-label={`${plan.floor_label} floor plan`}
-                />
+                <div className="relative">
+                  <object
+                    data={plan.output_svg_url}
+                    type="image/svg+xml"
+                    className="border-brand-stone bg-brand-cream aspect-[4/3] w-full rounded-md border"
+                    aria-label={`${plan.floor_label} floor plan`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setLightboxSrc(plan.output_png_url ?? plan.output_svg_url)}
+                    aria-label="Enlarge floor plan"
+                    className="bg-brand-ink/55 text-brand-cream hover:bg-brand-ink/75 absolute bottom-2 right-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md transition"
+                  >
+                    <Maximize2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  </button>
+                </div>
               ) : (
                 <p className="text-brand-slate text-sm">No render available.</p>
               )}
@@ -201,6 +214,10 @@ export function FloorPlanPanel({ propertyId }: { propertyId: string }) {
           ))}
         </ul>
       )}
+
+      {lightboxSrc ? (
+        <ImageLightbox src={lightboxSrc} alt="Floor plan" onClose={() => setLightboxSrc(null)} />
+      ) : null}
     </section>
   );
 }
