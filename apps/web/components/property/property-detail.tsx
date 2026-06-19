@@ -8,6 +8,8 @@ import type { PropertyStatus } from "@app/shared/constants";
 import { PROPERTY_STATUSES } from "@app/shared/constants";
 import { Button } from "@app/ui";
 import { propertyApi, queryKeys } from "@/lib/queries";
+import { AI_NOTICE } from "@/lib/copy";
+import { AiNotice } from "@/components/ui/ai-notice";
 import { ActivityPanel } from "./activity-panel";
 import { DescriptionPanel } from "./description-panel";
 import { EpcPanel } from "./epc-panel";
@@ -24,6 +26,14 @@ const TABS = [
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
+
+// AI-generating tabs each carry a "check it before you publish" reminder.
+const AI_NOTICE_BY_TAB: Partial<Record<TabKey, string>> = {
+  enhancements: AI_NOTICE.photo,
+  virtual_staging: AI_NOTICE.photo,
+  description: AI_NOTICE.description,
+  floor_plan: AI_NOTICE.floorPlan,
+};
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
   draft: "Draft",
@@ -132,7 +142,8 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
         ))}
       </nav>
 
-      <div className="pt-2">
+      <div className="space-y-4 pt-2">
+        {AI_NOTICE_BY_TAB[tab] ? <AiNotice>{AI_NOTICE_BY_TAB[tab]}</AiNotice> : null}
         {tab === "enhancements" ? (
           <PhotoManager propertyId={propertyId} category="enhancement" />
         ) : null}

@@ -35,3 +35,17 @@ export const ERROR_COPY = {
   generic: "Something went wrong. Try again?",
   loadFailed: "Couldn't load that. Try again?",
 } as const;
+
+/**
+ * Reminders that AI output needs a human check before it reaches a client or a
+ * portal. UK property listings must not mislead, so accuracy is on the agent.
+ */
+export const AI_NOTICE = {
+  description:
+    "AI writes a first draft. Read it through and check every detail before you publish.",
+  photo:
+    "AI edits these photos. Make sure each one is a fair, accurate likeness before you use it.",
+  floorPlan:
+    "AI reads the sketch and can misjudge it. Check the layout and measurements before you publish.",
+  generic: "AI can get things wrong. Always check what it produces before it reaches a client.",
+} as const;
