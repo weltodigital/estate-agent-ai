@@ -48,7 +48,7 @@ const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
   gdpr_blur: "GDPR blur (faces & plates)",
   exposure_correction: "Exposure correction",
   colour_temperature: "Colour temperature",
-  colour_saturation: "Colour & clarity",
+  colour_saturation: "Studio finish",
   shadow_boost: "Boost shadows",
   hd_upscale: "HD upscale",
   logo_watermark: "Logo watermark",

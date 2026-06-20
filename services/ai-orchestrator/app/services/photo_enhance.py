@@ -11,9 +11,10 @@ Implementations:
                          exposed or low-contrast
   - colour_temperature:  PIL grey-world white balance, only when a cast is found
   - hd_upscale:          Replicate Real-ESRGAN, only for sub-1400px photos
-  - colour_saturation:   PIL finishing polish — vibrance + gentle contrast and
-                         clarity. Always applied, so even an already-good photo
-                         gets a visible, natural lift.
+  - colour_saturation:   PIL auto-level to a house standard — measures the
+                         photo's brightness/contrast/saturation and corrects
+                         each toward a fixed target (clamped), plus clarity, so
+                         every photo finishes on the same look. Always applied.
   - shadow_boost:        PIL (lift shadows only — composite a brightened copy
                          into dark regions via an inverted-luminance mask)
   - logo_watermark:      PIL (composite the agency logo into a corner; needs
@@ -68,6 +69,13 @@ _DUSK_PROMPT = "warm golden-hour dusk lighting, sunset glow, soft warm tones, tw
 # already listing-quality, so we don't spend a Replicate call on it).
 _UPSCALE_THRESHOLD = 1400
 
+# House style. Every photo is auto-levelled toward these targets, so the amount
+# of correction varies per photo but the finished look is consistent. Measured
+# on 0-255 scales. Tune these to shift the whole library's look at once.
+_TARGET_BRIGHTNESS = 138.0  # mean luminance — bright, airy
+_TARGET_CONTRAST = 60.0  # luminance stddev — crisp, not harsh
+_TARGET_SATURATION = 95.0  # mean HSV saturation — vivid but natural
+
 
 # --- Conditional gates: auto-cleanup only applies when it genuinely helps, so
 # it never makes a good photo worse. ---
@@ -121,14 +129,28 @@ def _apply_colour_temperature(image: Image.Image) -> Image.Image:
     return Image.merge("RGB", (rc.point(lut(r)), gc.point(lut(g)), bc.point(lut(b))))
 
 
-def _apply_finishing_polish(image: Image.Image) -> Image.Image:
-    """Always-on finishing polish: a tasteful lift in vibrance, contrast, and
-    clarity so even a well-shot photo gets a visible, natural 'pop' — without
-    tipping into oversaturated/HDR territory. Tune the three factors here:
-    higher = punchier, 1.0 = no change for that dimension."""
-    out = ImageEnhance.Color(image).enhance(1.2)  # vibrance
-    out = ImageEnhance.Contrast(out).enhance(1.08)  # depth
-    out = ImageEnhance.Sharpness(out).enhance(1.25)  # clarity
+def _clamp(value: float, low: float, high: float) -> float:
+    return max(low, min(high, value))
+
+
+def _normalise_to_standard(image: Image.Image) -> Image.Image:
+    """Auto-level a photo toward the house standard. Measures the photo's
+    brightness, contrast, and saturation, then corrects each by the amount
+    needed to reach the target — so a flat, dull photo is lifted a lot and an
+    already-punchy one barely at all, but both finish on the same look. The
+    correction factors are clamped so no single photo is wildly over-corrected.
+
+    This is what makes the output consistent: the *amount* of enhancement varies
+    per photo, but the target it lands on does not."""
+    luminance = ImageStat.Stat(image.convert("L"))
+    mean = luminance.mean[0] or 1.0
+    std = luminance.stddev[0] or 1.0
+    saturation = ImageStat.Stat(image.convert("HSV")).mean[1] or 1.0
+
+    out = ImageEnhance.Brightness(image).enhance(_clamp(_TARGET_BRIGHTNESS / mean, 0.8, 1.4))
+    out = ImageEnhance.Contrast(out).enhance(_clamp(_TARGET_CONTRAST / std, 0.9, 1.6))
+    out = ImageEnhance.Color(out).enhance(_clamp(_TARGET_SATURATION / saturation, 0.85, 1.7))
+    out = ImageEnhance.Sharpness(out).enhance(1.2)  # consistent clarity
     return out
 
 
@@ -287,7 +309,7 @@ async def _process_enhanced(
         applied.append("colour_temperature")
 
     if "colour_saturation" in enhancements:
-        out = _apply_finishing_polish(out)
+        out = _normalise_to_standard(out)
         applied.append("colour_saturation")
 
     if "gdpr_blur" in enhancements:
