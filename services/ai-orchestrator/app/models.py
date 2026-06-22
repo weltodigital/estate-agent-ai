@@ -50,6 +50,7 @@ class PhotoEnhanceRequest(BaseModel):
             "colour_saturation",
             "shadow_boost",
             "hd_upscale",
+            "hd_sharpen",
             "logo_watermark",
             "dusk_shot",
         ]

@@ -79,6 +79,7 @@ export const PHOTO_ENHANCEMENTS = [
   "colour_saturation",
   "shadow_boost",
   "hd_upscale",
+  "hd_sharpen",
   "logo_watermark",
   "dusk_shot",
 ] as const;
@@ -101,6 +102,7 @@ export const AUTO_ENHANCEMENTS = [
 // enhancements" dialog (object removal stays its own per-photo mask action).
 export const CREATIVE_ENHANCEMENTS = [
   "sky_replacement",
+  "hd_sharpen",
   "object_removal",
   "dusk_shot",
   "logo_watermark",

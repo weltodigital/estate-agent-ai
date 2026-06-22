@@ -19,7 +19,7 @@ import {
   type Photo,
   type PhotoEnhancement,
 } from "@app/shared/schemas";
-import { CloudSun, ImagePlus, Loader2, Sparkles, Sun, Sunset } from "lucide-react";
+import { Aperture, CloudSun, ImagePlus, Loader2, Sparkles, Sun, Sunset } from "lucide-react";
 import { Button, Checkbox } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -32,13 +32,14 @@ import { ObjectRemovalDialog } from "./object-removal-dialog";
 // Small Lucide icon beside each creative option (neutral colours per BRANDING).
 const CREATIVE_ICONS: Partial<Record<PhotoEnhancement, typeof Sun>> = {
   sky_replacement: CloudSun,
+  hd_sharpen: Aperture,
   dusk_shot: Sunset,
   logo_watermark: Sparkles,
 };
 
 // The creative dialog offers only deliberate, billable choices. Object removal
 // is per-photo (it needs a painted mask), so it's handled on the photo card —
-// the dialog is blue sky + dusk + watermark.
+// the dialog is blue sky + HD sharpen + dusk + watermark.
 const CREATIVE_DIALOG_ENHANCEMENTS = CREATIVE_ENHANCEMENTS.filter((e) => e !== "object_removal");
 
 const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
@@ -50,6 +51,7 @@ const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
   colour_saturation: "Studio finish",
   shadow_boost: "Boost shadows",
   hd_upscale: "HD upscale",
+  hd_sharpen: "HD sharpen",
   logo_watermark: "Logo watermark",
   dusk_shot: "Dusk shot (extra image)",
 };

@@ -11,6 +11,9 @@ Implementations:
                          exposed or low-contrast
   - colour_temperature:  PIL grey-world white balance, only when a cast is found
   - hd_upscale:          Replicate Real-ESRGAN, only for sub-1400px photos
+  - hd_sharpen:          opt-in crispness — Real-ESRGAN super-resolution (when
+                         configured, for not-already-large photos) plus an
+                         unsharp-mask clarity pass. Creative, per photo.
   - colour_saturation:   PIL auto-level to a house standard — measures the
                          photo's brightness/contrast/saturation and corrects
                          each toward a fixed target (clamped), plus clarity, so
@@ -61,6 +64,7 @@ Enhancement = Literal[
     "colour_saturation",
     "shadow_boost",
     "hd_upscale",
+    "hd_sharpen",
     "logo_watermark",
     "dusk_shot",
 ]
@@ -71,6 +75,9 @@ _SKY_PROMPT = "bright clear blue sky, sunny day, blue sky with soft white clouds
 # Auto-upscale only photos whose longest side is below this (anything larger is
 # already listing-quality, so we don't spend a Replicate call on it).
 _UPSCALE_THRESHOLD = 1400
+# hd_sharpen super-resolves only below this (above it, a photo is already high-res
+# so we just sharpen rather than balloon its dimensions).
+_SHARPEN_UPSCALE_CEILING = 2400
 
 # House style. Every photo is auto-levelled toward these targets, so the amount
 # of correction varies per photo but the finished look is consistent. Measured
@@ -168,6 +175,19 @@ async def _apply_upscale(image: Image.Image) -> Image.Image | None:
     except Exception:
         logger.warning("hd_upscale: Replicate failed; skipping", exc_info=True)
         return None
+
+
+async def _apply_hd_sharpen(image: Image.Image) -> Image.Image:
+    """Make a photo crisper / 'HD'. Real-ESRGAN super-resolution when Replicate
+    is configured and the photo isn't already large (adds genuine detail), then
+    an unsharp-mask clarity pass so the result is visibly sharper even without a
+    provider. Unlike the auto hd_upscale this is opt-in and not size-gated."""
+    out = image
+    if replicate.is_configured() and max(out.size) < _SHARPEN_UPSCALE_CEILING:
+        upscaled = await _apply_upscale(out)
+        if upscaled is not None:
+            out = upscaled
+    return out.filter(ImageFilter.UnsharpMask(radius=2.0, percent=120, threshold=3))
 
 
 def _apply_shadow_boost(image: Image.Image) -> Image.Image:
@@ -317,6 +337,11 @@ async def _process_enhanced(
     if "colour_saturation" in enhancements:
         out = _normalise_to_standard(out)
         applied.append("colour_saturation")
+
+    # Opt-in HD/sharpen runs after the tonal finish so it crisps the final image.
+    if "hd_sharpen" in enhancements:
+        out = await _apply_hd_sharpen(out)
+        applied.append("hd_sharpen")
 
     if "gdpr_blur" in enhancements:
         out, blurred = await _apply_gdpr_blur(out)
