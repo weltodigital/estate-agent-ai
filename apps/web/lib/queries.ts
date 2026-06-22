@@ -35,7 +35,6 @@ import type {
   ReorderPhotosRequest,
   StagePhotoRequest,
   StagePhotoResponse,
-  SuggestStyleResponse,
   UpdateAgencyRequest,
   UpdatePhotoRequest,
   UpdatePropertyRequest,
@@ -117,8 +116,6 @@ export const photoApi = {
       { method: "POST", body: { variation_id: variationId } },
     ),
   clearStaging: (id: string) => callApi<null>(`/v1/photos/${id}/staging`, { method: "DELETE" }),
-  suggestStyle: (id: string) =>
-    callApi<SuggestStyleResponse>(`/v1/photos/${id}/suggest-style`, { method: "POST" }),
   downloadUrl: (id: string, variant: "enhanced" | "staged" | "original") =>
     callApi<PhotoDownloadResponse>(`/v1/photos/${id}/download?variant=${variant}`),
 };

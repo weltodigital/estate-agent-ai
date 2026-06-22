@@ -209,9 +209,3 @@ export const selectStagingVariationSchema = z.object({
   variation_id: z.string().uuid(),
 });
 export type SelectStagingVariationRequest = z.infer<typeof selectStagingVariationSchema>;
-
-export const suggestStyleResponseSchema = z.object({
-  room_type: z.enum(ROOM_TYPES),
-  suggested_style: z.enum(STAGING_STYLES),
-});
-export type SuggestStyleResponse = z.infer<typeof suggestStyleResponseSchema>;

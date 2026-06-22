@@ -11,7 +11,6 @@ import {
   selectStagingVariationSchema,
   stagePhotoRequestSchema,
   stagePhotoResponseSchema,
-  suggestStyleResponseSchema,
   updatePhotoSchema,
 } from "@app/shared/schemas";
 import {
@@ -27,7 +26,6 @@ import {
   enqueueStaging,
   selectStagingVariation,
 } from "../services/staging.js";
-import { suggestStyleForPhoto } from "../services/style-suggest.js";
 
 const photoParams = z.object({ id: z.string().uuid() });
 
@@ -133,10 +131,4 @@ export const photoRoutes: FastifyPluginAsyncZod = async (app) => {
     await clearStagingVariations(request, request.params.id);
     return reply.code(204).send();
   });
-
-  app.post(
-    "/photos/:id/suggest-style",
-    { schema: { params: photoParams, response: { 200: suggestStyleResponseSchema } } },
-    async (request) => suggestStyleForPhoto(request, request.params.id),
-  );
 };

@@ -98,15 +98,6 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
     },
   });
 
-  const suggest = useMutation({
-    mutationFn: () => photoApi.suggestStyle(photo.id),
-    onSuccess: (res) => {
-      setStyle(res.suggested_style);
-      queryClient.invalidateQueries({ queryKey: queryKeys.photos(photo.property_id) });
-    },
-    onError: (err) => setError(err instanceof Error ? err.message : "Could not suggest a style."),
-  });
-
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-12">
       <div className="bg-brand-cream shadow-card max-h-[calc(100vh-6rem)] w-full max-w-3xl space-y-5 overflow-y-auto rounded-xl p-6">
@@ -136,11 +127,6 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
                 </option>
               ))}
             </select>
-            {photo.suggested_style ? (
-              <span className="text-brand-slate text-xs">
-                Suggested: {STYLE_LABELS[photo.suggested_style]}
-              </span>
-            ) : null}
           </label>
           <div className="flex flex-wrap items-end gap-2">
             <label className="space-y-1 text-sm">
@@ -171,9 +157,6 @@ export function StageDialog({ photo, onClose }: { photo: Photo; onClose: () => v
                 ))}
               </select>
             </label>
-            <Button variant="outline" onClick={() => suggest.mutate()} disabled={suggest.isPending}>
-              {suggest.isPending ? "Asking Claude…" : "Suggest style"}
-            </Button>
             <Button onClick={() => generate.mutate()} disabled={generate.isPending}>
               {generate.isPending
                 ? "Queuing…"
