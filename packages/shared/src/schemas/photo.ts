@@ -85,9 +85,6 @@ export const PHOTO_ENHANCEMENTS = [
 ] as const;
 export type PhotoEnhancement = (typeof PHOTO_ENHANCEMENTS)[number];
 
-// Safe "cleanup" enhancements: auto-applied on upload (conditionally, never
-// making a photo worse), free, and reversible. The orchestrator decides per
-// image whether each actually applies.
 export const photoDownloadQuerySchema = z.object({
   variant: z.enum(["enhanced", "staged", "original"]).default("enhanced"),
 });
@@ -96,6 +93,9 @@ export type PhotoDownloadQuery = z.infer<typeof photoDownloadQuerySchema>;
 export const photoDownloadResponseSchema = z.object({ url: z.string().url() });
 export type PhotoDownloadResponse = z.infer<typeof photoDownloadResponseSchema>;
 
+// Safe "cleanup" enhancements: auto-applied on upload (conditionally, never
+// making a photo worse), free, and reversible. The orchestrator decides per
+// image whether each actually applies.
 export const AUTO_ENHANCEMENTS = [
   "gdpr_blur",
   "exposure_correction",
