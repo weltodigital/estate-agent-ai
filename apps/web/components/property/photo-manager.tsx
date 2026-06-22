@@ -733,22 +733,24 @@ function StagePhotoCard({
 
   return (
     <div className="bg-brand-cream shadow-card group relative overflow-hidden rounded-xl">
-      {hasStaged ? (
-        <span className="text-brand-cream absolute bottom-2 left-2 z-10 rounded bg-[color:var(--brand-primary)] px-2 py-0.5 text-xs">
-          Staged
-        </span>
-      ) : null}
+      <div className="relative">
+        {hasStaged ? (
+          <span className="text-brand-cream absolute bottom-2 left-2 z-10 rounded bg-[color:var(--brand-primary)] px-2 py-0.5 text-xs">
+            Staged
+          </span>
+        ) : null}
 
-      {showCompare && photo.staged_url ? (
-        <BeforeAfterSlider before={photo.original_url} after={photo.staged_url} />
-      ) : (
-        <img
-          src={displayUrl}
-          alt=""
-          onClick={() => onEnlarge(displayUrl, hasStaged ? photo.original_url : undefined)}
-          className="aspect-[4/3] w-full cursor-zoom-in object-cover"
-        />
-      )}
+        {showCompare && photo.staged_url ? (
+          <BeforeAfterSlider before={photo.original_url} after={photo.staged_url} />
+        ) : (
+          <img
+            src={displayUrl}
+            alt=""
+            onClick={() => onEnlarge(displayUrl, hasStaged ? photo.original_url : undefined)}
+            className="aspect-[4/3] w-full cursor-zoom-in object-cover"
+          />
+        )}
+      </div>
 
       <div className="flex items-center justify-between px-3 py-2 text-xs">
         <span>{photo.room_type.replace("_", " ")}</span>
