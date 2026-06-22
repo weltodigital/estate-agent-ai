@@ -17,6 +17,7 @@ import type {
   EpcLookupResponse,
   MaskUploadRequest,
   MaskUploadResponse,
+  PhotoDownloadResponse,
   FinaliseFloorPlanResponse,
   FloorPlan,
   FloorPlanParsed,
@@ -118,6 +119,8 @@ export const photoApi = {
   clearStaging: (id: string) => callApi<null>(`/v1/photos/${id}/staging`, { method: "DELETE" }),
   suggestStyle: (id: string) =>
     callApi<SuggestStyleResponse>(`/v1/photos/${id}/suggest-style`, { method: "POST" }),
+  downloadUrl: (id: string, variant: "enhanced" | "staged" | "original") =>
+    callApi<PhotoDownloadResponse>(`/v1/photos/${id}/download?variant=${variant}`),
 };
 
 export const agencyApi = {

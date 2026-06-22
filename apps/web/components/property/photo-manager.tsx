@@ -29,27 +29,21 @@ import { ImageLightbox } from "./image-lightbox";
 import { StageDialog } from "./stage-dialog";
 import { ObjectRemovalDialog } from "./object-removal-dialog";
 
+type DownloadVariant = "enhanced" | "staged" | "original";
+
 /**
- * Download an image to the user's device. Fetches it as a blob so the browser
- * saves it (the `download` attribute is ignored for cross-origin URLs); if the
- * fetch is blocked (e.g. CORS), falls back to opening it in a new tab to save.
+ * Download a photo to the user's device. Asks the API for a presigned URL that
+ * responds with `Content-Disposition: attachment` (the public r2.dev host sends
+ * no CORS headers, so a direct blob fetch can't save the file), then navigates
+ * a hidden link to it — the disposition makes the browser save rather than open.
  */
-async function downloadImage(url: string, filename: string): Promise<void> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`status ${res.status}`);
-    const blob = await res.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = objectUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(objectUrl);
-  } catch {
-    window.open(url, "_blank", "noopener");
-  }
+async function downloadPhoto(photoId: string, variant: DownloadVariant): Promise<void> {
+  const { url } = await photoApi.downloadUrl(photoId, variant);
+  const link = document.createElement("a");
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 // Small Lucide icon beside each creative option (neutral colours per BRANDING).
@@ -317,18 +311,15 @@ export function PhotoManager({
     setDownloadingAll(true);
     try {
       for (const photo of photos) {
-        const url = isStaging
-          ? (photo.staged_url ?? photo.original_url)
-          : (photo.enhanced_url ?? photo.original_url);
-        const variant = isStaging
+        const variant: DownloadVariant = isStaging
           ? photo.staged_url
             ? "staged"
             : "original"
           : photo.enhanced_url
             ? "enhanced"
             : "original";
-        await downloadImage(url, `${photo.room_type.replace(/_/g, "-")}-${variant}.jpg`);
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await downloadPhoto(photo.id, variant);
+        await new Promise((resolve) => setTimeout(resolve, 400));
       }
     } finally {
       setDownloadingAll(false);
@@ -656,12 +647,7 @@ function EnhancePhotoCard({
             ) : null}
             <button
               type="button"
-              onClick={() =>
-                downloadImage(
-                  displayUrl,
-                  `${photo.room_type.replace(/_/g, "-")}-${hasEnhanced ? "enhanced" : "original"}.jpg`,
-                )
-              }
+              onClick={() => void downloadPhoto(photo.id, hasEnhanced ? "enhanced" : "original")}
               className="text-brand-walnut underline"
             >
               Download
@@ -748,12 +734,7 @@ function StagePhotoCard({
           </button>
           <button
             type="button"
-            onClick={() =>
-              downloadImage(
-                displayUrl,
-                `${photo.room_type.replace(/_/g, "-")}-${hasStaged ? "staged" : "original"}.jpg`,
-              )
-            }
+            onClick={() => void downloadPhoto(photo.id, hasStaged ? "staged" : "original")}
             className="text-brand-walnut underline"
           >
             Download

@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { loadEnv } from "../env.js";
 
@@ -76,6 +81,26 @@ export async function createSignedPutUrl(args: {
     Bucket: bucketName(),
     Key: args.key,
     ContentType: args.contentType,
+  });
+  return getSignedUrl(getClient(), cmd, { expiresIn: args.expiresInSeconds ?? 300 });
+}
+
+/**
+ * Presigned GET URL that forces a download with the given filename. The public
+ * r2.dev host doesn't send CORS headers, so the browser can't blob-download an
+ * image directly — this hands back a URL that responds with
+ * `Content-Disposition: attachment`, which the browser saves on navigation.
+ */
+export async function createSignedDownloadUrl(args: {
+  key: string;
+  filename: string;
+  expiresInSeconds?: number;
+}): Promise<string> {
+  const safeName = args.filename.replace(/["\\]/g, "");
+  const cmd = new GetObjectCommand({
+    Bucket: bucketName(),
+    Key: args.key,
+    ResponseContentDisposition: `attachment; filename="${safeName}"`,
   });
   return getSignedUrl(getClient(), cmd, { expiresIn: args.expiresInSeconds ?? 300 });
 }

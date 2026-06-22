@@ -5,6 +5,8 @@ import type {
   MaskUploadRequest,
   MaskUploadResponse,
   Photo,
+  PhotoDownloadQuery,
+  PhotoDownloadResponse,
   UpdatePhotoRequest,
   UploadPhotoSignedRequest,
   UploadPhotoSignedResponse,
@@ -13,11 +15,57 @@ import { AppError, badRequest, notFound, unauthorised } from "../errors.js";
 import {
   buildMaskKey,
   buildPhotoKey,
+  createSignedDownloadUrl,
   createSignedPutUrl,
   deleteObject,
   publicUrl,
 } from "../integrations/r2.js";
 import { getUserClient } from "../integrations/supabase.js";
+
+export async function getPhotoDownloadUrl(
+  request: FastifyRequest,
+  photoId: string,
+  variant: PhotoDownloadQuery["variant"],
+): Promise<PhotoDownloadResponse> {
+  if (!request.user || !request.agencyId) throw unauthorised();
+  const supabase = getUserClient(request.user.accessToken);
+  const { data: photo, error } = await supabase
+    .from("property_photos")
+    .select("original_url, enhanced_url, staged_url, room_type")
+    .eq("id", photoId)
+    .maybeSingle<{
+      original_url: string;
+      enhanced_url: string | null;
+      staged_url: string | null;
+      room_type: string;
+    }>();
+  if (error) {
+    throw new AppError({
+      status: 500,
+      code: "photo_download_failed",
+      message: "Could not load photo.",
+    });
+  }
+  if (!photo) throw notFound("Photo");
+
+  // Fall back to the original when the requested variant hasn't been produced.
+  const source =
+    variant === "enhanced"
+      ? (photo.enhanced_url ?? photo.original_url)
+      : variant === "staged"
+        ? (photo.staged_url ?? photo.original_url)
+        : photo.original_url;
+  const key = keyFromPublicUrl(source);
+  if (!key) {
+    throw new AppError({
+      status: 500,
+      code: "photo_download_key_failed",
+      message: "Could not resolve the image for download.",
+    });
+  }
+  const filename = `${photo.room_type.replace(/_/g, "-")}-${variant}.jpg`;
+  return { url: await createSignedDownloadUrl({ key, filename }) };
+}
 
 export async function listPropertyPhotos(
   request: FastifyRequest,

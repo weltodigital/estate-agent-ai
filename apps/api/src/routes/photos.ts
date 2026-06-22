@@ -5,6 +5,8 @@ import {
   enhancePhotoResponseSchema,
   maskUploadRequestSchema,
   maskUploadResponseSchema,
+  photoDownloadQuerySchema,
+  photoDownloadResponseSchema,
   photoSchema,
   selectStagingVariationSchema,
   stagePhotoRequestSchema,
@@ -15,6 +17,7 @@ import {
 import {
   createMaskUpload,
   deletePhoto,
+  getPhotoDownloadUrl,
   resetPhotoEnhancements,
   updatePhoto,
 } from "../services/photos.js";
@@ -41,6 +44,20 @@ export const photoRoutes: FastifyPluginAsyncZod = async (app) => {
     await deletePhoto(request, request.params.id);
     return reply.code(204).send();
   });
+
+  // Returns a presigned URL that forces a download (the public r2.dev host has
+  // no CORS, so the browser can't save the image directly).
+  app.get(
+    "/photos/:id/download",
+    {
+      schema: {
+        params: photoParams,
+        querystring: photoDownloadQuerySchema,
+        response: { 200: photoDownloadResponseSchema },
+      },
+    },
+    async (request) => getPhotoDownloadUrl(request, request.params.id, request.query.variant),
+  );
 
   // Revert a photo to its original (clears auto + creative enhancements).
   app.delete(
