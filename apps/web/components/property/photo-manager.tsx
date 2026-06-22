@@ -19,7 +19,7 @@ import {
   type Photo,
   type PhotoEnhancement,
 } from "@app/shared/schemas";
-import { ImagePlus, Loader2, Sparkles, Sun, Sunset } from "lucide-react";
+import { CloudSun, ImagePlus, Loader2, Sparkles, Sun, Sunset } from "lucide-react";
 import { Button, Checkbox } from "@app/ui";
 import { photoApi, queryKeys } from "@/lib/queries";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -31,19 +31,18 @@ import { ObjectRemovalDialog } from "./object-removal-dialog";
 
 // Small Lucide icon beside each creative option (neutral colours per BRANDING).
 const CREATIVE_ICONS: Partial<Record<PhotoEnhancement, typeof Sun>> = {
+  sky_replacement: CloudSun,
   dusk_shot: Sunset,
   logo_watermark: Sparkles,
 };
 
 // The creative dialog offers only deliberate, billable choices. Object removal
-// is per-photo (it needs a painted mask), and sky replacement is hidden until a
-// provider is wired — so the dialog is dusk + watermark.
-const CREATIVE_DIALOG_ENHANCEMENTS = CREATIVE_ENHANCEMENTS.filter(
-  (e) => e !== "object_removal" && e !== "sky_replacement",
-);
+// is per-photo (it needs a painted mask), so it's handled on the photo card —
+// the dialog is blue sky + dusk + watermark.
+const CREATIVE_DIALOG_ENHANCEMENTS = CREATIVE_ENHANCEMENTS.filter((e) => e !== "object_removal");
 
 const ENHANCEMENT_LABELS: Record<PhotoEnhancement, string> = {
-  sky_replacement: "Sky replacement",
+  sky_replacement: "Blue sky",
   object_removal: "Object removal",
   gdpr_blur: "GDPR blur (faces & plates)",
   exposure_correction: "Exposure correction",

@@ -4,8 +4,9 @@ We call Replicate's HTTP API directly rather than adding the `replicate`
 package — it keeps the dependency set unchanged and matches the async-httpx
 convention used elsewhere in the orchestrator.
 
-Two helpers are exposed:
+Helpers exposed:
   - `relight_dusk`  — golden-hour / dusk relighting
+  - `replace_sky`   — relight toward a bright, clear blue-sky day
   - `remove_object` — LaMa inpainting (erase a masked region)
 
 Both take raw image bytes, hand the model a data URI, run the prediction to
@@ -129,6 +130,18 @@ async def relight_dusk(image_bytes: bytes, prompt: str) -> bytes:
     )
     if not outputs:
         raise ReplicateError("Relight model returned no image.")
+    return await _download(outputs[0])
+
+
+async def replace_sky(image_bytes: bytes, prompt: str) -> bytes:
+    """Relight a photo toward a bright, clear blue-sky day. Uses the same
+    relight model as dusk with a daylight prompt. Returns image bytes."""
+    outputs = await run_model(
+        get_settings().replicate_relight_model,
+        {"image": _data_uri(image_bytes), "prompt": prompt},
+    )
+    if not outputs:
+        raise ReplicateError("Sky model returned no image.")
     return await _download(outputs[0])
 
 

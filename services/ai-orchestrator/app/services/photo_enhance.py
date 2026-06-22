@@ -26,8 +26,10 @@ Implementations:
                          a warm/darker PIL approximation
   - object_removal:      Replicate LaMa inpainting using the painted mask
                          (mask_url); a no-op if no mask or Replicate is unset
-  - sky_replacement:     no provider — hidden in the UI. Kept in the enum so a
-                         future sky provider can be wired back in cleanly.
+  - sky_replacement:     swap a dull/overcast sky for a bright blue one —
+                         Replicate relight with a clear-sky prompt, falling back
+                         to a PIL blue-sky composite. Opt-in (creative), per
+                         photo.
 
 Every provider call degrades gracefully: if the key is unset or the call
 fails, the pipeline falls back so a job never hard-fails on an upstream.
@@ -42,7 +44,7 @@ import uuid
 from typing import Literal
 
 import httpx
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageStat
+from PIL import Image, ImageChops, ImageEnhance, ImageFilter, ImageOps, ImageStat
 
 from app.integrations import rekognition, replicate
 from app.integrations.hmac_sign import sign
@@ -65,6 +67,7 @@ Enhancement = Literal[
 WatermarkPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
 
 _DUSK_PROMPT = "warm golden-hour dusk lighting, sunset glow, soft warm tones, twilight sky"
+_SKY_PROMPT = "bright clear blue sky, sunny day, blue sky with soft white clouds, natural daylight"
 # Auto-upscale only photos whose longest side is below this (anything larger is
 # already listing-quality, so we don't spend a Replicate call on it).
 _UPSCALE_THRESHOLD = 1400
@@ -278,9 +281,6 @@ async def _process_enhanced(
     # consistent.
     out = image.convert("RGB") if image.mode != "RGB" else image.copy()
 
-    # sky_replacement: no provider currently (hidden in the UI), so it's a
-    # no-op here and never marked applied.
-
     # Upscale first, so every later op runs at the higher resolution. Gated on
     # size so we don't spend a Replicate call on already-large photos.
     if "hd_upscale" in enhancements and _needs_upscale(out):
@@ -294,6 +294,12 @@ async def _process_enhanced(
         if cleaned is not None:
             out = cleaned
             applied.append("object_removal")
+
+    # Blue-sky replacement (opt-in). Runs before the tonal finish so the new sky
+    # is levelled to the house standard along with the rest of the photo.
+    if "sky_replacement" in enhancements:
+        out = await _apply_sky_replacement(out)
+        applied.append("sky_replacement")
 
     # Auto-cleanup ops are gated so they only apply when they genuinely help.
     if "shadow_boost" in enhancements and _needs_shadow_boost(out):
@@ -323,6 +329,53 @@ async def _process_enhanced(
         applied.append("logo_watermark")
 
     return out, applied
+
+
+async def _apply_sky_replacement(image: Image.Image) -> Image.Image:
+    """Swap a dull/overcast sky for a bright blue one. Uses the Replicate relight
+    model with a clear-sky prompt when configured; falls back to a local PIL
+    blue-sky composite so the opt-in never silently does nothing."""
+    if replicate.is_configured():
+        try:
+            out = await replicate.replace_sky(_encode_jpeg(image), _SKY_PROMPT)
+            return Image.open(io.BytesIO(out)).convert("RGB")
+        except Exception:
+            logger.warning("sky_replacement: Replicate failed; using PIL fallback", exc_info=True)
+    return _pil_sky_replacement(image)
+
+
+def _blue_gradient(size: tuple[int, int]) -> Image.Image:
+    """A vertical blue-sky gradient: deeper blue up top, paler at the horizon."""
+    _, height = size
+    top = (74, 130, 200)
+    bottom = (179, 209, 238)
+    column = Image.new("RGB", (1, height))
+    for y in range(height):
+        t = y / max(height - 1, 1)
+        column.putpixel((0, y), tuple(round(top[i] + (bottom[i] - top[i]) * t) for i in range(3)))
+    return column.resize(size)
+
+
+def _pil_sky_replacement(image: Image.Image) -> Image.Image:
+    """Best-effort blue sky with no provider. Builds a soft mask of the bright,
+    desaturated sky — biased toward the upper image so a white wall lower down
+    isn't painted — and blends a blue gradient into it. Rough at rooflines and
+    trees, but it turns a grey sky blue."""
+    rgb = image.convert("RGB")
+    width, height = rgb.size
+    _, sat, val = rgb.convert("HSV").split()
+    bright = val.point(lambda p: 255 if p > 150 else 0)
+    desaturated = sat.point(lambda p: 255 if p < 75 else 0)
+    mask = ImageChops.multiply(bright, desaturated)
+
+    # Vertical falloff: full weight at the top, fading to nothing ~60% down.
+    falloff = Image.new("L", (1, height))
+    for y in range(height):
+        falloff.putpixel((0, y), max(0, round(255 * (1 - y / max(height - 1, 1) * 1.6))))
+    mask = ImageChops.multiply(mask, falloff.resize((width, height)))
+    mask = mask.filter(ImageFilter.GaussianBlur(8))
+
+    return Image.composite(_blue_gradient((width, height)), rgb, mask)
 
 
 async def _process_dusk(image: Image.Image, raw: bytes) -> Image.Image:
