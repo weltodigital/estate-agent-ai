@@ -99,6 +99,9 @@ export function PhotoManager({
   const [stageDialogPhotoId, setStageDialogPhotoId] = useState<string | null>(null);
   const [objectRemovalPhotoId, setObjectRemovalPhotoId] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ after: string; before?: string } | null>(null);
+  // When each photo's in-flight enhancement started, so a stuck spinner (a
+  // provider no-op/failure that marks nothing in `applied`) can be timed out.
+  const inFlightStartedRef = useRef<Map<string, number>>(new Map());
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.photos(propertyId, category),
@@ -117,6 +120,9 @@ export function PhotoManager({
     : null;
 
   function markInFlight(photoId: string, enhancement: PhotoEnhancement) {
+    if (!inFlightStartedRef.current.has(photoId)) {
+      inFlightStartedRef.current.set(photoId, Date.now());
+    }
     setInFlight((prev) => {
       const next = new Map(prev);
       const existing = next.get(photoId) ?? new Set<PhotoEnhancement>();
@@ -139,11 +145,39 @@ export function PhotoManager({
       const stillMissing = [...wanted].some((e) => !have.has(e));
       if (!stillMissing) {
         next.delete(photo.id);
+        inFlightStartedRef.current.delete(photo.id);
         changed = true;
       }
     }
     if (changed) setInFlight(next);
   }, [photos, inFlight]);
+
+  // Safety net: if an enhancement never lands (a provider no-op or upstream
+  // failure marks nothing in `applied`), the spinner would spin forever. Time
+  // it out and surface a retry rather than hang.
+  useEffect(() => {
+    if (inFlight.size === 0) return;
+    const TIMEOUT_MS = 180_000;
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const stale = [...inFlight.keys()].filter(
+        (id) => now - (inFlightStartedRef.current.get(id) ?? now) > TIMEOUT_MS,
+      );
+      if (stale.length === 0) return;
+      setInFlight((prev) => {
+        const next = new Map(prev);
+        for (const id of stale) {
+          next.delete(id);
+          inFlightStartedRef.current.delete(id);
+        }
+        return next;
+      });
+      toast.error(undefined, "That enhancement didn't finish", {
+        subtitle: "It may have failed upstream — please try again.",
+      });
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [inFlight, toast]);
 
   // Resolve the creative-enhancement toast once all awaited photos are done.
   useEffect(() => {
@@ -285,6 +319,9 @@ export function PhotoManager({
       setInFlight((prev) => {
         const next = new Map(prev);
         for (const id of ids) {
+          if (!inFlightStartedRef.current.has(id)) {
+            inFlightStartedRef.current.set(id, Date.now());
+          }
           const existing = next.get(id) ?? new Set<PhotoEnhancement>();
           for (const e of creative) existing.add(e);
           next.set(id, existing);
