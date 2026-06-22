@@ -29,6 +29,29 @@ import { ImageLightbox } from "./image-lightbox";
 import { StageDialog } from "./stage-dialog";
 import { ObjectRemovalDialog } from "./object-removal-dialog";
 
+/**
+ * Download an image to the user's device. Fetches it as a blob so the browser
+ * saves it (the `download` attribute is ignored for cross-origin URLs); if the
+ * fetch is blocked (e.g. CORS), falls back to opening it in a new tab to save.
+ */
+async function downloadImage(url: string, filename: string): Promise<void> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    window.open(url, "_blank", "noopener");
+  }
+}
+
 // Small Lucide icon beside each creative option (neutral colours per BRANDING).
 const CREATIVE_ICONS: Partial<Record<PhotoEnhancement, typeof Sun>> = {
   sky_replacement: CloudSun,
@@ -73,6 +96,7 @@ export function PhotoManager({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [downloadingAll, setDownloadingAll] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [chosen, setChosen] = useState<Set<PhotoEnhancement>>(new Set());
@@ -287,6 +311,30 @@ export function PhotoManager({
     }
   }
 
+  // Download every photo in this tab — its staged/enhanced version if it has
+  // one, else the original. Staggered so the browser doesn't drop downloads.
+  async function downloadAllPhotos() {
+    setDownloadingAll(true);
+    try {
+      for (const photo of photos) {
+        const url = isStaging
+          ? (photo.staged_url ?? photo.original_url)
+          : (photo.enhanced_url ?? photo.original_url);
+        const variant = isStaging
+          ? photo.staged_url
+            ? "staged"
+            : "original"
+          : photo.enhanced_url
+            ? "enhanced"
+            : "original";
+        await downloadImage(url, `${photo.room_type.replace(/_/g, "-")}-${variant}.jpg`);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+    } finally {
+      setDownloadingAll(false);
+    }
+  }
+
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -309,6 +357,18 @@ export function PhotoManager({
             className="hidden"
             onChange={(e) => onFiles(e.target.files)}
           />
+          {photos.length > 0 ? (
+            <Button variant="outline" onClick={downloadAllPhotos} disabled={downloadingAll}>
+              {downloadingAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+                  Downloading…
+                </>
+              ) : (
+                "Download all"
+              )}
+            </Button>
+          ) : null}
           <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
             {uploadingCount > 0 ? (
               <>
@@ -594,6 +654,18 @@ function EnhancePhotoCard({
                 Revert
               </button>
             ) : null}
+            <button
+              type="button"
+              onClick={() =>
+                downloadImage(
+                  displayUrl,
+                  `${photo.room_type.replace(/_/g, "-")}-${hasEnhanced ? "enhanced" : "original"}.jpg`,
+                )
+              }
+              className="text-brand-walnut underline"
+            >
+              Download
+            </button>
             <button type="button" onClick={onDelete} className="text-red-600 underline">
               Delete
             </button>
@@ -673,6 +745,18 @@ function StagePhotoCard({
             className="text-[color:var(--brand-primary)] underline"
           >
             {hasStaged ? "Re-stage" : "Stage"}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              downloadImage(
+                displayUrl,
+                `${photo.room_type.replace(/_/g, "-")}-${hasStaged ? "staged" : "original"}.jpg`,
+              )
+            }
+            className="text-brand-walnut underline"
+          >
+            Download
           </button>
         </div>
       </div>
