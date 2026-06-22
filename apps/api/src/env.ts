@@ -60,6 +60,10 @@ const envSchema = z.object({
   STRIPE_PRICE_BUSINESS: z.string().min(1).optional(),
   STRIPE_PRICE_AGENCY: z.string().min(1).optional(),
 
+  // Comma-separated emails granted unlimited usage (quota bypassed). For
+  // internal/comped accounts — works regardless of trial or payment status.
+  COMPED_EMAILS: z.string().optional(),
+
   // Sentry
   SENTRY_DSN: z.string().url().optional(),
   SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),

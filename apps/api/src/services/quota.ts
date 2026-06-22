@@ -1,7 +1,32 @@
 import type { SubscriptionTier, UsageEventType } from "@app/shared/constants";
 import { TIER_LIMITS } from "@app/shared/constants";
 import { AppError } from "../errors.js";
+import { loadEnv } from "../env.js";
 import { getServiceClient } from "../integrations/supabase.js";
+
+function compedEmails(): string[] {
+  return (loadEnv().COMPED_EMAILS ?? "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * Whether an agency is comped (unlimited usage) — true if any of its members'
+ * emails is in COMPED_EMAILS. For internal accounts: bypasses quota entirely,
+ * independent of subscription tier, trial, or payment.
+ */
+async function isCompedAgency(
+  supabase: ReturnType<typeof getServiceClient>,
+  agencyId: string,
+): Promise<boolean> {
+  const allowed = compedEmails();
+  if (allowed.length === 0) return false;
+  const { data } = await supabase.from("users").select("email").eq("agency_id", agencyId);
+  return ((data as Array<{ email: string }> | null) ?? []).some((member) =>
+    allowed.includes(member.email.toLowerCase()),
+  );
+}
 
 /**
  * Hard quota enforcement. Called before recording a billable usage_event
@@ -19,6 +44,9 @@ export async function assertWithinQuota(args: {
 }): Promise<void> {
   const units = args.units ?? 1;
   const supabase = getServiceClient();
+
+  // Comped (internal) agencies get unlimited usage, regardless of tier/trial.
+  if (await isCompedAgency(supabase, args.agencyId)) return;
 
   const { data: agency, error: agencyError } = await supabase
     .from("agencies")
