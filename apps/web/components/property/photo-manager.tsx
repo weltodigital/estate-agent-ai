@@ -473,7 +473,7 @@ export function PhotoManager({
           action={<Button onClick={() => fileInputRef.current?.click()}>Upload photos</Button>}
         />
       ) : isStaging ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {photos.map((photo) => (
             <StagePhotoCard
               key={photo.id}
@@ -486,7 +486,7 @@ export function PhotoManager({
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {photos.map((photo) => (
                 <EnhancePhotoCard
                   key={photo.id}
