@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-PATH="$PWD/node_modules/.bin:$PATH"
-commitlint --edit "$1"

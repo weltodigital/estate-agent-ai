@@ -1,110 +1,118 @@
-"use client";
+import "server-only";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { effectiveLimits, type PlanId, type PlanLimits } from "@privett/core";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-import type {
-  AcceptInviteRequest,
-  AcceptInviteResponse,
-  BootstrapAgencyRequest,
-  BootstrapAgencyResponse,
-} from "@app/shared/schemas";
-import { apiFetch } from "./api";
-import { getSupabaseBrowserClient } from "./supabase/client";
+export const ORG_COOKIE = "privett_org";
+
+export async function getUser() {
+  const supabase = await getSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
+
+export async function requireUser() {
+  const user = await getUser();
+  if (!user) redirect("/login");
+  return user;
+}
+
+export interface OrgContext {
+  user: { id: string; email: string };
+  org: { id: string; name: string; stripe_customer_id: string | null };
+  role: "owner" | "member";
+  isAdmin: boolean;
+  plan: { planId: PlanId; limits: PlanLimits; paid: boolean };
+  memberships: { org_id: string; name: string; role: "owner" | "member" }[];
+}
 
 /**
- * Two-step signup:
- *   1. Create the Supabase Auth user (handles email confirmation if enabled).
- *   2. Once we have a session, call /v1/auth/bootstrap-agency to create the
- *      agency, branch, and public.users row.
- *
- * If Supabase has email confirmation switched on, step 2 cannot run until the
- * user verifies. We surface that as a `needsConfirmation` outcome so the UI
- * can show "check your inbox".
+ * The signed-in user's current organisation. Users in several orgs pick one
+ * (stored in a cookie); otherwise the first. No org yet -> onboarding.
  */
-export async function signUpAndBootstrap(values: {
-  email: string;
-  password: string;
-  full_name: string;
-  agency_name: string;
-  branch_postcode: string;
-}): Promise<{ status: "ok"; result: BootstrapAgencyResponse } | { status: "needs_confirmation" }> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase.auth.signUp({
-    email: values.email,
-    password: values.password,
-    options: {
-      data: { full_name: values.full_name },
-      emailRedirectTo: `${window.location.origin}/login`,
-    },
+export async function requireOrg(): Promise<OrgContext> {
+  const user = await requireUser();
+  const supabase = await getSupabaseServerClient();
+  const { data: rows } = await supabase
+    .from("organisation_members")
+    .select("org_id, role, organisations(id, name, stripe_customer_id)")
+    .eq("user_id", user.id);
+  const memberships = (rows ?? []).map((r) => {
+    const o = r.organisations as unknown as { id: string; name: string; stripe_customer_id: string | null };
+    return { org_id: r.org_id as string, role: r.role as "owner" | "member", org: o };
   });
-  if (error) throw new Error(error.message);
+  if (!memberships.length) redirect("/onboarding");
 
-  // No session yet → email confirmation required.
-  if (!data.session) {
-    return { status: "needs_confirmation" };
-  }
+  const wanted = (await cookies()).get(ORG_COOKIE)?.value;
+  const current = memberships.find((m) => m.org_id === wanted) ?? memberships[0]!;
 
-  const body: BootstrapAgencyRequest = {
-    full_name: values.full_name,
-    agency_name: values.agency_name,
-    branch_postcode: values.branch_postcode,
+  const [{ data: profile }, plan] = await Promise.all([
+    supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle(),
+    getOrgPlan(current.org_id),
+  ]);
+
+  return {
+    user: { id: user.id, email: user.email ?? "" },
+    org: current.org,
+    role: current.role,
+    isAdmin: !!profile?.is_admin,
+    plan,
+    memberships: memberships.map((m) => ({ org_id: m.org_id, name: m.org.name, role: m.role })),
   };
-  const result = await apiFetch<BootstrapAgencyResponse>("/v1/auth/bootstrap-agency", {
-    method: "POST",
-    body,
-    accessToken: data.session.access_token,
-  });
-  return { status: "ok", result };
 }
 
-export async function signInWithPassword(email: string, password: string): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(error.message);
+export async function requireAdmin() {
+  const user = await requireUser();
+  const supabase = await getSupabaseServerClient();
+  const { data } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+  if (!data?.is_admin) redirect("/dashboard");
+  return user;
 }
 
-export async function sendMagicLink(email: string): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: `${window.location.origin}/dashboard` },
-  });
-  if (error) throw new Error(error.message);
+/** Plan limits from the org's Stripe subscriptions. Server-side source of truth. */
+export async function getOrgPlan(orgId: string) {
+  const admin = getSupabaseAdminClient();
+  const { data: subs } = await admin
+    .from("subscriptions")
+    .select("plan_id, status, branch_quantity")
+    .eq("org_id", orgId);
+  return effectiveLimits(subs ?? []);
 }
 
-export async function signOut(): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  await supabase.auth.signOut();
-}
-
-/**
- * Accept-invite flow. Mirrors signup but calls /v1/auth/accept-invite instead
- * of /v1/auth/bootstrap-agency.
- */
-export async function signUpAndAcceptInvite(values: {
-  token: string;
-  email: string;
-  password: string;
-  full_name: string;
-}): Promise<{ status: "ok"; result: AcceptInviteResponse } | { status: "needs_confirmation" }> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase.auth.signUp({
-    email: values.email,
-    password: values.password,
-    options: {
-      data: { full_name: values.full_name },
-      emailRedirectTo: `${window.location.origin}/accept-invite?token=${values.token}`,
-    },
-  });
-  if (error) throw new Error(error.message);
-
-  if (!data.session) {
-    return { status: "needs_confirmation" };
+/** Loads a branch the current user can see, or 404s. */
+export async function requireBranch(branchId: string) {
+  const ctx = await requireOrg();
+  const supabase = await getSupabaseServerClient();
+  const { data: branch } = await supabase
+    .from("branches")
+    .select("*")
+    .eq("id", branchId)
+    .eq("org_id", ctx.org.id)
+    .is("archived_at", null)
+    .maybeSingle();
+  if (!branch) {
+    const { notFound } = await import("next/navigation");
+    notFound();
   }
+  return { ...ctx, branch: branch as BranchRow };
+}
 
-  const body: AcceptInviteRequest = { token: values.token, full_name: values.full_name };
-  const result = await apiFetch<AcceptInviteResponse>("/v1/auth/accept-invite", {
-    method: "POST",
-    body,
-    accessToken: data.session.access_token,
-  });
-  return { status: "ok", result };
+export interface BranchRow {
+  id: string;
+  org_id: string;
+  name: string;
+  aliases: string[];
+  website: string | null;
+  domain: string | null;
+  town: string;
+  areas: string[];
+  postcode: string | null;
+  place_id: string | null;
+  tracking_key: string;
+  archived_at: string | null;
+  created_at: string;
 }

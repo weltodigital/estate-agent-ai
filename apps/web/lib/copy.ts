@@ -1,51 +1,18 @@
-/**
- * Repeated user-facing strings. See BRANDING.md → "Where copy lives".
- *
- * Anything that appears in more than one place, or that carries the Privett
- * voice (empty states, error messages, sign-offs, the product name), lives
- * here so copy changes happen in one file rather than scattered components.
- */
+// Repeated UI strings. See BRANDING.md for voice: UK English, short
+// sentences, no exclamation marks, no em dashes, no ranking promises.
 
 export const PRODUCT_NAME = "Privett";
+export const PRODUCT_DESCRIPTION =
+  "See how often AI assistants name your agency when sellers and landlords ask who to use, and what to fix when they don't.";
+export const PRODUCT_QUESTION =
+  "When a seller in your town asks AI who to list with, are you named? If not, why not?";
 
-/** Default site description / metadata. */
-export const PRODUCT_TAGLINE_DESCRIPTION = "Marketing software for UK estate agents.";
-
-/** Primary tagline. Use sparingly — see BRANDING.md. */
-export const PRODUCT_TAGLINE = "Marketing for property, done properly.";
-
-/** Email and product sign-off. */
-export const TEAM_SIGN_OFF = "The Privett team";
-
-/** Contact address used in marketing + transactional copy. */
-export const CONTACT_EMAIL = "hello@useprivett.com";
-
-/**
- * Empty states — Privett voice. Warm, short, points at the next action.
- */
-export const EMPTY_STATES = {
-  properties: "No listings yet. Add your first one to get started.",
-} as const;
-
-/**
- * Generic, human-readable error/recovery copy. No status codes, no shouting.
- */
-export const ERROR_COPY = {
-  saveFailed: "Couldn't save that. Try again?",
-  generic: "Something went wrong. Try again?",
-  loadFailed: "Couldn't load that. Try again?",
-} as const;
-
-/**
- * Reminders that AI output needs a human check before it reaches a client or a
- * portal. UK property listings must not mislead, so accuracy is on the agent.
- */
-export const AI_NOTICE = {
-  description:
-    "AI can make mistakes. Always read the description through and check every detail before you publish.",
-  photo:
-    "AI can make mistakes. Always check each photo is a fair, accurate likeness before you use it.",
-  floorPlan:
-    "AI can make mistakes. Always check the layout and measurements before you publish the plan.",
-  generic: "AI can make mistakes. Always check what it produces before it reaches a client.",
+export const COPY = {
+  missing: "—",
+  lowSample: "Low sample",
+  draftLabel: "Draft. Review before publishing.",
+  noPromise:
+    "We report what AI assistants say and what to fix. We can't promise how any assistant will answer.",
+  emptyScans: "No scan results yet. Your first scan usually finishes within a few minutes.",
+  genericError: "Something went wrong. Please try again.",
 } as const;

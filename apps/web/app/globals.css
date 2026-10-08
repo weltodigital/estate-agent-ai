@@ -5,10 +5,8 @@
 /*
  * Privett brand defaults — see BRANDING.md.
  *
- * These are DEFAULTS only. The authenticated app overrides --brand-primary
- * (and friends) inline per-agency from agencies.brand_colour_primary. Those
- * runtime overrides always take precedence; Privett just provides the
- * fallback values here.
+ * These are the :root defaults. Anything set inline at runtime takes
+ * precedence.
  */
 :root {
   --brand-primary: #2e3b36; /* Hedge Green */

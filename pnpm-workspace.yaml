@@ -1,4 +1,11 @@
 packages:
   - "apps/*"
   - "packages/*"
-  - "services/*"
+allowBuilds:
+  esbuild: true
+  sharp: true
+  "@tailwindcss/oxide": true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@anthropic-ai/sdk@0.132.1'
+  - lucide-react@1.53.0

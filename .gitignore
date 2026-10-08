@@ -11,17 +11,6 @@ out/
 .turbo/
 *.tsbuildinfo
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-.uv/
-.mypy_cache/
-.ruff_cache/
-.pytest_cache/
-*.egg-info/
 
 # Env
 .env

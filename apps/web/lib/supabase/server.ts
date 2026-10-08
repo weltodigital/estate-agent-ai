@@ -1,31 +1,25 @@
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createServerClient } from "@app/db/client";
 
-export function getSupabaseServerClient() {
-  const cookieStore = cookies();
+/** Supabase client acting as the signed-in user. RLS applies. */
+export async function getSupabaseServerClient() {
+  const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set(name: string, value: string, options?: Record<string, unknown>) {
-        try {
-          cookieStore.set({ name, value, ...(options ?? {}) });
-        } catch {
-          // Thrown when called during a Server Component render (cookies can
-          // only be set in a Server Action / Route Handler). Safe to ignore —
-          // Supabase calls this on a token refresh, and the browser client
-          // persists the refreshed session cookie instead.
-        }
-      },
-      remove(name: string, options?: Record<string, unknown>) {
-        try {
-          cookieStore.set({ name, value: "", ...(options ?? {}) });
-        } catch {
-          // See set(): ignored during Server Component renders.
-        }
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(toSet) {
+          try {
+            for (const { name, value, options } of toSet) cookieStore.set(name, value, options);
+          } catch {
+            // Called from a Server Component render, where cookies are
+            // read-only. Safe to ignore: middleware refreshes the session.
+          }
+        },
       },
     },
   );
