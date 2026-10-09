@@ -30,8 +30,11 @@ function tokens(s: string): string[] {
 export function matchAgent(
   agent: { name: string; domain?: string | null },
   targets: MatchTarget[],
+  /** Town and area names to ignore, so "Hunters Stourbridge" matches "Hunters". */
+  places: string[] = [],
 ): MatchResult {
-  const norm = normaliseAgentName(agent.name);
+  const normalise = (n: string) => normaliseAgentName(n, places);
+  const norm = normalise(agent.name);
   const agentDomain = normaliseDomain(agent.domain ?? null);
 
   for (const t of targets) {
@@ -40,7 +43,7 @@ export function matchAgent(
     }
   }
   for (const t of targets) {
-    const names = [t.name, ...t.aliases].map(normaliseAgentName).filter(Boolean);
+    const names = [t.name, ...t.aliases].map(normalise).filter(Boolean);
     if (names.includes(norm)) return { key: t.key, confidence: "high", reason: `name "${norm}"` };
   }
 
@@ -50,7 +53,7 @@ export function matchAgent(
   const normTokens = tokens(norm);
   let best: MatchResult = { key: null, confidence: "none", reason: "no match" };
   for (const t of targets) {
-    for (const n of [t.name, ...t.aliases].map(normaliseAgentName)) {
+    for (const n of [t.name, ...t.aliases].map(normalise)) {
       const nt = tokens(n);
       if (!nt.length || !normTokens.length) continue;
       const aInB = nt.every((x) => normTokens.includes(x));

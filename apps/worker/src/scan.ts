@@ -84,6 +84,8 @@ type KeyColumns = { is_branch: boolean; matched_competitor_id: string | null; ma
 /** How a run maps agent names and cited domains onto its subjects. */
 interface Matcher {
   targets: MatchTarget[];
+  /** Town and areas, stripped from names before matching ("Hunters Stourbridge" = "Hunters"). */
+  places: string[];
   /** Creates a new subject for an unmatched name and returns its key. */
   discover(name: string, domain: string | null): Promise<string>;
   columns(key: string | null): KeyColumns;
@@ -106,10 +108,10 @@ async function storeMatches(resultId: string, parsed: ParsedAnswer, citedUrls: s
   let needsReview = false;
 
   for (const agent of parsed.agents) {
-    const normalised = normaliseAgentName(agent.name);
+    const normalised = normaliseAgentName(agent.name, matcher.places);
     // Discovery mutates the target list, so match + discover under one lock.
     const { key, confidence } = await mutex.run(async () => {
-      const m = matchAgent({ name: agent.name, domain: agent.domain }, matcher.targets);
+      const m = matchAgent({ name: agent.name, domain: agent.domain }, matcher.targets, matcher.places);
       if (m.confidence !== "none") return { key: m.key, confidence: m.confidence };
       return { key: await matcher.discover(agent.name, agent.domain), confidence: "high" as const };
     });
@@ -315,10 +317,12 @@ function competitorMatcher(branch: BranchRow, competitors: CompetitorRow[]): Mat
     { key: "branch", name: branch.name, aliases: branch.aliases, domain: branch.domain },
     ...competitors.map((c) => ({ key: c.id, name: c.name, aliases: c.aliases, domain: c.domain })),
   ];
+  const places = [branch.town, ...branch.areas];
   return {
     targets,
+    places,
     async discover(name, domain) {
-      const normalised = normaliseAgentName(name);
+      const normalised = normaliseAgentName(name, places);
       const cleanDomain = normaliseDomain(domain);
       // Never let discovery claim the branch's own domain.
       const row = { org_id: branch.org_id, branch_id: branch.id, name, normalised_name: normalised, domain: domainMatches(cleanDomain, branch.domain) ? null : cleanDomain, status: "discovered" };
@@ -455,10 +459,12 @@ async function runLeagueScan(run: ScanRunRow, budget: RunBudget): Promise<"compl
   if (!engines.length) throw new Error("No engine API keys configured for this scan's engines");
 
   const targets: MatchTarget[] = agents.map((a) => ({ key: a.id, name: a.name, aliases: a.aliases, domain: a.domain }));
+  const places = [league.town, ...league.areas];
   const matcher: Matcher = {
     targets,
+    places,
     async discover(name, domain) {
-      const normalised = normaliseAgentName(name);
+      const normalised = normaliseAgentName(name, places);
       await db().from("league_agents").upsert(
         { league_table_id: league.id, name, normalised_name: normalised, domain: normaliseDomain(domain) },
         { onConflict: "league_table_id,normalised_name", ignoreDuplicates: true },

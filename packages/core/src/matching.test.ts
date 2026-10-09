@@ -33,3 +33,27 @@ describe("matchAgent", () => {
     expect(matchAgent({ name: "Chancellors" }, targets)).toMatchObject({ key: null, confidence: "none" });
   });
 });
+
+describe("branch suffixes and initials (seen in live scans)", () => {
+  const places = ["Stourbridge", "Wollaston"];
+  const targets = [
+    { key: "branch", name: "Lex Allan", aliases: [], domain: "lexallan.co.uk" },
+    { key: "c1", name: "Hunters Stourbridge", aliases: [], domain: null },
+    { key: "c2", name: "AP Morgan", aliases: [], domain: null },
+  ];
+  it("treats town-suffixed names as the same agency", () => {
+    expect(matchAgent({ name: "Hunters" }, targets, places)).toMatchObject({ key: "c1", confidence: "high" });
+    expect(matchAgent({ name: "Hunters Estate & Letting Agents" }, targets, places)).toMatchObject({ key: "c1", confidence: "high" });
+    expect(matchAgent({ name: "Lex Allan Lettings" }, targets, places)).toMatchObject({ key: "branch", confidence: "high" });
+  });
+  it("joins spaced initials", () => {
+    expect(normaliseAgentName("A P Morgan")).toBe("ap morgan");
+    expect(matchAgent({ name: "A P Morgan Estate Agents" }, targets, places)).toMatchObject({ key: "c2", confidence: "high" });
+  });
+  it("never strips a name to nothing", () => {
+    expect(normaliseAgentName("Stourbridge Estates", places)).toBe("stourbridge");
+  });
+  it("still flags sub-brands for review", () => {
+    expect(matchAgent({ name: "Direct by Lex Allan" }, targets, places)).toMatchObject({ key: "branch", confidence: "low" });
+  });
+});
