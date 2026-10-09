@@ -46,14 +46,14 @@ export default async function BillingPage({
 
       <Card className="mb-8">
         <CardHeader
-          title={`Current plan: ${current.name}`}
+          title={ctx.plan.paid ? `Current plan: ${current.name}` : "No plan yet"}
           action={sub ? <Badge tone={["active", "trialing"].includes(sub.status) ? "good" : "warn"}>{sub.status.replace("_", " ")}</Badge> : null}
         />
         <CardBody className="grid gap-4 text-sm sm:grid-cols-3">
           <div>
             <p className="text-ink-muted">Branches</p>
             <p className="font-mono text-heading font-medium">
-              {branches} of {ctx.plan.paid ? ctx.plan.limits.maxBranches : 0}
+              {ctx.plan.paid ? `${branches} of ${ctx.plan.limits.maxBranches}` : branches}
             </p>
           </div>
           <div>
@@ -97,7 +97,7 @@ export default async function BillingPage({
                         <Input type="number" name="quantity" min={Math.max(branches, p.limits.minBranches)} max={p.limits.maxBranches} defaultValue={Math.max(branches, p.limits.minBranches)} className="mt-1" />
                       </label>
                     ) : null}
-                    <Button className="w-full" disabled={!p.stripePriceId}>
+                    <Button className="w-full" variant={p.id === "pro" ? "primary" : "secondary"} disabled={!p.stripePriceId}>
                       {p.stripePriceId ? `Choose ${p.name}` : "Not yet available"}
                     </Button>
                   </form>
