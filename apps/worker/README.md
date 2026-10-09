@@ -48,4 +48,4 @@ pnpm --filter @privett/worker typecheck
 
 ## Deploy on Railway
 
-Create a service from this repository and point it at `apps/worker/railway.json` (Settings, Config-as-code), or set the Dockerfile path to `apps/worker/Dockerfile` with the repository root as build context. Add the environment variables above. One replica is enough to start; add replicas or raise `WORKER_CONCURRENCY` as branches grow, since runs are claimed with `SKIP LOCKED`.
+Create a service from this repository with the repository root as its root directory. Railway reads `railway.json` at the root, which builds `apps/worker/Dockerfile`; leave any custom build or start command empty. Add the environment variables above. One replica is enough to start; add replicas or raise `WORKER_CONCURRENCY` as branches grow, since runs are claimed with `SKIP LOCKED`.
