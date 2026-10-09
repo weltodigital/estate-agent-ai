@@ -1,7 +1,7 @@
 // Generates draft fix assets (area pages, FAQs) with the Anthropic API.
 
 import { DRAFT_NOTE, estimateCostUsd, getAssetModel } from "@privett/core";
-import { anthropic, FALLBACK_BETA } from "./anthropic";
+import { anthropic, fallbackParams } from "./anthropic";
 import { CALL_ESTIMATE_USD, type RunBudget } from "./cost";
 
 const SYSTEM = `You write draft website copy for UK estate and letting agents. UK English throughout. Warm, plain and specific; short sentences. Never invent facts, figures, awards, reviews or prices: use a [CHECK: ...] placeholder wherever a specific fact is needed. Never promise search rankings, AI visibility or guaranteed results. Do not use these words: stunning, nestled, boasting, sought-after, seamless, unlock, leverage. Output only the requested content.`;
@@ -15,8 +15,7 @@ export async function generateAsset(
   const res = await anthropic().beta.messages.create({
     model,
     max_tokens: 16000,
-    betas: [FALLBACK_BETA],
-    fallbacks: "default",
+    ...fallbackParams(model),
     system: SYSTEM,
     output_config: { effort: "medium" },
     messages: [{ role: "user", content: `${generate.instructions}\n\nDetails:\n${JSON.stringify(generate.input, null, 2)}` }],

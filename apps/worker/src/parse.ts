@@ -8,7 +8,7 @@
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod/v4";
 import { estimateCostUsd, getParserModel, normaliseAgentName, ParsedAnswerSchema, type ParsedAnswer } from "@privett/core";
-import { anthropic, FALLBACK_BETA } from "./anthropic";
+import { anthropic, fallbackParams } from "./anthropic";
 import type { RunBudget } from "./cost";
 import { CALL_ESTIMATE_USD } from "./cost";
 import { errMessage, log } from "./log";
@@ -62,15 +62,18 @@ export function cleanParsed(input: ParsedAnswer): ParsedAnswer {
   return { agents, notes: input.notes };
 }
 
-export async function parseAnswer(question: string, answer: string, budget: RunBudget): Promise<ParseOutcome> {
-  const model = getParserModel();
+export async function parseAnswer(
+  question: string,
+  answer: string,
+  budget: RunBudget,
+  model: string = getParserModel(),
+): Promise<ParseOutcome> {
   budget.check(CALL_ESTIMATE_USD.parse);
   try {
     const res = await anthropic().beta.messages.parse({
       model,
       max_tokens: 4000,
-      betas: [FALLBACK_BETA],
-      fallbacks: "default",
+      ...fallbackParams(model),
       system: SYSTEM,
       output_config: { effort: "low", format: betaZodOutputFormat(AnswerV4) },
       messages: [

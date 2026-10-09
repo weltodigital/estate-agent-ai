@@ -30,7 +30,7 @@ export function getEngineConfigs(env: Env = process.env): Record<EngineId, Engin
       id: "openai",
       label: "ChatGPT",
       envKey: "OPENAI_API_KEY",
-      model: env.OPENAI_MODEL ?? "gpt-5",
+      model: env.OPENAI_MODEL ?? "gpt-5-mini", // closest to free ChatGPT; ~5x cheaper than gpt-5
       rpm: num(env, "OPENAI_RPM", 60),
     },
     perplexity: {
@@ -51,7 +51,7 @@ export function getEngineConfigs(env: Env = process.env): Record<EngineId, Engin
       id: "anthropic",
       label: "Claude",
       envKey: "ANTHROPIC_API_KEY",
-      model: env.ANTHROPIC_ENGINE_MODEL ?? "claude-opus-5-5",
+      model: env.ANTHROPIC_ENGINE_MODEL ?? "claude-sonnet-5-5", // what most claude.ai users get
       rpm: num(env, "ANTHROPIC_RPM", 50),
     },
   };
@@ -89,6 +89,7 @@ export interface ModelPrice {
 
 const DEFAULT_PRICING: Record<string, ModelPrice> = {
   "gpt-5": { inputPerMTok: 1.25, outputPerMTok: 10, perRequest: 0.01 },
+  "gpt-5-mini": { inputPerMTok: 0.25, outputPerMTok: 2, perRequest: 0.01 },
   sonar: { inputPerMTok: 1, outputPerMTok: 1, perRequest: 0.008 },
   "gemini-2.5-flash": { inputPerMTok: 0.3, outputPerMTok: 2.5, perRequest: 0.035 },
   "claude-opus-5-5": { inputPerMTok: 4, outputPerMTok: 20, perRequest: 0 },

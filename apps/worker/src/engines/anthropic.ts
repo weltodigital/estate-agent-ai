@@ -2,7 +2,7 @@
 
 import type Anthropic from "@anthropic-ai/sdk";
 import { ANTHROPIC_WEB_SEARCH_PER_CALL, estimateCostUsd, type EngineAnswer } from "@privett/core";
-import { anthropic, FALLBACK_BETA } from "../anthropic";
+import { anthropic, fallbackParams } from "../anthropic";
 import { EngineError, uniqueUrls, type EngineAdapter } from "./types";
 
 type BetaMessage = Anthropic.Beta.Messages.BetaMessage;
@@ -45,8 +45,7 @@ export const runAnthropic: EngineAdapter = async (cfg, _apiKey, ctx): Promise<En
     const res = await anthropic().beta.messages.create({
       model: cfg.model,
       max_tokens: 16000,
-      betas: [FALLBACK_BETA],
-      fallbacks: "default",
+      ...fallbackParams(cfg.model),
       tools: [
         {
           type: "web_search_20260209",
