@@ -10,7 +10,7 @@ import { filterQuery, metricFilter, parseFilters, type SearchParams } from "@/li
 import { cn, formatDateTime } from "@/lib/utils";
 import { excerpt } from "@/lib/data/plain-text";
 
-export const metadata = { title: "Prompts and answers" };
+export const metadata = { title: "Answers" };
 
 const PAGE_SIZE = 25;
 

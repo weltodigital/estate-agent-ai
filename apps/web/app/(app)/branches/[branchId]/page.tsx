@@ -1,126 +1,90 @@
 import Link from "next/link";
-import { engineLabel, filterResponses, fmt, getScanSettings, weekStart } from "@privett/core";
-import { CardBody, Card, CardHeader } from "@/components/ui/card";
+import { ArrowRight } from "lucide-react";
+import { getScanSettings } from "@privett/core";
+import { Card, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Badge } from "@/components/ui/badge";
-import { FilterBar } from "@/components/dashboard/filter-bar";
-import { MetricCard } from "@/components/dashboard/metric-card";
 import { ScanProgress } from "@/components/dashboard/scan-status";
-import { TrendChart } from "@/components/dashboard/trend-chart";
 import { requireBranch } from "@/lib/auth";
 import {
-  loadAnswerTexts,
   loadBranchResults,
   loadCompetitors,
-  loadLatestGbp,
   loadRecentRuns,
   loadRecommendations,
+  loadReferrals,
   toResponses,
 } from "@/lib/data/branch-data";
-import { extractSnippet } from "@/lib/data/aggregate";
-import { filterQuery, metricFilter, parseFilters, type SearchParams } from "@/lib/data/filters";
-import { buildCards, METRIC_KEYS, perEngine, trendSeries, type MetricKey, type TrendPoint } from "@/lib/data/overview";
+import { buildSummary, EFFORT_LABEL, firstSentence, ordinal, outOfTen } from "@/lib/data/summary";
 import { COPY } from "@/lib/copy";
-import { cn } from "@/lib/utils";
-import { plainText } from "@/lib/data/plain-text";
+import { cn, formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Overview" };
 
-const TREND_WEEKS = 12;
+const DAY = 86_400_000;
+const WINDOW_DAYS = 30;
 
-export default async function BranchOverviewPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ branchId: string }>;
-  searchParams: Promise<SearchParams>;
-}) {
+// The answer first, then who beats you, what to fix and where you're missing.
+// Every figure is the same core metric the Evidence pages show in full.
+export default async function BranchOverviewPage({ params }: { params: Promise<{ branchId: string }> }) {
   const { branchId } = await params;
   const { branch } = await requireBranch(branchId);
-  const filters = parseFilters(await searchParams);
-  const { lowSampleThreshold } = getScanSettings();
   const base = `/branches/${branch.id}`;
+  const from = new Date(Date.now() - WINDOW_DAYS * DAY).toISOString();
+  const prevFrom = new Date(Date.now() - 2 * WINDOW_DAYS * DAY).toISOString();
 
-  // Load enough history for the previous period and a 12-week trend.
-  const trendFrom = new Date(Date.now() - TREND_WEEKS * 7 * 86_400_000).toISOString();
-  const loadFrom = trendFrom < filters.prevFrom ? trendFrom : filters.prevFrom;
-
-  const [rows, competitors, runs, recs] = await Promise.all([
-    loadBranchResults(branch.id, loadFrom),
+  const [rows, competitors, runs, recs, referrals] = await Promise.all([
+    loadBranchResults(branch.id, prevFrom),
     loadCompetitors(branch.id),
     loadRecentRuns(branch.id, 1),
     loadRecommendations(branch.id),
+    loadReferrals(branch.id, from),
   ]);
-  const responses = toResponses(rows);
-  const visibleCompetitors = competitors.filter((c) => c.status !== "hidden").map((c) => ({ key: c.id, name: c.name }));
-  const current = metricFilter(filters);
-  const previous = metricFilter(filters, "previous");
-  const trendFilter = { engines: current.engines, intentGroups: current.intentGroups, from: trendFrom };
   const latestRun = runs[0] ?? null;
+  const scanning = latestRun && (latestRun.status === "queued" || latestRun.status === "running");
 
-  if (!rows.length) {
+  const summary = buildSummary({
+    responses: toResponses(rows),
+    competitors: competitors.filter((c) => c.status !== "hidden").map((c) => ({ id: c.id, name: c.name })),
+    from,
+    prevFrom,
+    lowSampleThreshold: getScanSettings().lowSampleThreshold,
+  });
+
+  if (!summary.answers) {
     return (
       <div className="space-y-6">
         {latestRun ? (
           <Card>
-            <CardHeader title="Latest scan" />
             <CardBody>
               <ScanProgress run={latestRun} />
             </CardBody>
           </Card>
         ) : null}
         <EmptyState
-          title="No scan results yet"
+          title={scanning ? "Your first scan is running" : "No scan results yet"}
           action={
-            <Link href={`${base}/settings`} className="text-sm font-medium text-brand underline-offset-2 hover:underline">
-              Check your prompts and run a scan
-            </Link>
+            scanning ? null : (
+              <Link href={`${base}/settings`} className="text-sm font-medium text-brand underline-offset-2 hover:underline">
+                Check your questions and run a scan
+              </Link>
+            )
           }
         >
-          {COPY.emptyScans}
+          {scanning ? "Results appear here as the answers come in, usually within a few minutes." : COPY.emptyScans}
         </EmptyState>
       </div>
     );
   }
 
-  const { cards, top } = buildCards({ responses, current, previous, trendFilter, competitors: visibleCompetitors, lowSampleThreshold });
-  const branchMetrics = cards[0]!.metrics;
-  const engines = perEngine(responses, current, lowSampleThreshold);
-
-  const trendData = Object.fromEntries(
-    METRIC_KEYS.map((k) => [k, trendSeries(responses, top, trendFilter, k)]),
-  ) as Record<MetricKey, TrendPoint[]>;
-  const fixes = recs
-    .filter((r) => r.status === "done" && r.completed_at)
-    .map((r) => ({ week: weekStart(r.completed_at!), title: r.title }));
-
-  // "How AI describes you": a snippet per top descriptor, linked to its answer.
-  const descriptorSources = new Map<string, string>();
-  for (const r of rows) {
-    if (!branchMetrics.mentionResponseIds.includes(r.id)) continue;
-    const m = r.agent_mentions.find((a) => a.is_branch && a.match_confidence === "high");
-    for (const d of m?.descriptors ?? []) {
-      const k = d.trim().toLowerCase();
-      if (k && !descriptorSources.has(k)) descriptorSources.set(k, r.id);
-    }
-  }
-  const topDescriptors = branchMetrics.topDescriptors.slice(0, 6);
-  const texts = await loadAnswerTexts(topDescriptors.map((d) => descriptorSources.get(d.descriptor)).filter((x): x is string => !!x));
-  const describe = topDescriptors.map((d) => {
-    const id = descriptorSources.get(d.descriptor) ?? null;
-    const text = id ? texts.get(id)?.answer_text : null;
-    return { ...d, id, snippet: extractSnippet(plainText(text), [d.descriptor, branch.name, ...branch.aliases]) };
-  });
-
-  const gbp = await loadLatestGbp(branch.id, top.map((t) => t.key));
-  const evidence = (k: MetricKey) =>
-    `${base}/prompts${filterQuery(filters, { mentioned: k === "visibility" || k === "shareOfVoice" ? null : "yes" })}#answers`;
+  const now10 = outOfTen(summary.visibility);
+  const prev10 = outOfTen(summary.previousVisibility);
+  const fixes = recs.filter((r) => r.status === "todo").slice(0, 3);
+  const topScore = Math.max(...summary.ranking.map((r) => r.visibility), 1);
+  const engines = summary.byEngine.filter((e) => e.answers > 0);
+  const latestDate = latestRun?.finished_at ?? rows.at(-1)?.created_at ?? null;
 
   return (
     <div className="space-y-8">
-      <FilterBar basePath={base} filters={filters} />
-
-      {latestRun && latestRun.status !== "completed" ? (
+      {scanning && latestRun ? (
         <Card>
           <CardBody>
             <ScanProgress run={latestRun} />
@@ -128,136 +92,150 @@ export default async function BranchOverviewPage({
         </Card>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Headline metrics">
-        {cards.map((c) => (
-          <MetricCard key={c.key} card={c} evidenceHref={evidence(c.key)} days={filters.days} />
-        ))}
+      {/* 1. The answer */}
+      <section>
+        <p className="text-[22px] leading-[30px] text-ink md:text-[26px] md:leading-[34px]">
+          When people ask AI for an estate agent in {branch.town}, you&apos;re named in{" "}
+          <span className="font-semibold">
+            {now10} out of 10
+          </span>{" "}
+          answers.
+        </p>
+        <p className="mt-2 text-ink-muted">
+          {prev10 !== null && now10 !== null && prev10 !== now10 ? (
+            <span className={now10 > prev10 ? "text-up" : "text-down"}>
+              {now10 > prev10 ? "▲ Up" : "▼ Down"} from {prev10} in 10 the month before.{" "}
+            </span>
+          ) : null}
+          {summary.usualPlace ? `When AI names you, you're usually listed ${ordinal(summary.usualPlace)}. ` : null}
+          {summary.describedAs.length ? `It describes you as ${listWords(summary.describedAs)}.` : null}
+        </p>
+        {summary.lowSample ? (
+          <p className="mt-2 text-small text-warn">Based on a small number of answers so far, so expect this to move.</p>
+        ) : null}
       </section>
 
-      <Card>
-        <CardHeader title="Over time" description="Weekly, for you and the three agents AI names most. Dashed lines mark weeks you completed a fix." />
-        <CardBody>
-          <TrendChart data={trendData} series={["You", ...top.map((t) => t.name)]} fixes={fixes} />
-        </CardBody>
-      </Card>
-
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* 2. Who AI recommends */}
         <Card>
-          <CardHeader title="By engine" description={`Last ${filters.days} days.`} />
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-small text-ink-muted">
-                <tr>
-                  <th className="px-5 py-2 font-medium">Engine</th>
-                  <th className="px-3 py-2 text-right font-medium">Visibility</th>
-                  <th className="px-3 py-2 text-right font-medium">Position</th>
-                  <th className="px-3 py-2 text-right font-medium">Sentiment</th>
-                  <th className="px-5 py-2 text-right font-medium">Share of voice</th>
-                </tr>
-              </thead>
-              <tbody className="font-mono">
-                {engines.map(({ engine, metrics: m }) => (
-                  <tr key={engine} className={cn("border-t border-hairline", m.lowSample && "text-ink-muted")}>
-                    <td className="px-5 py-2">
-                      <Link href={`${base}/prompts${filterQuery(filters, { engine })}#answers`} className="hover:underline">
-                        {engineLabel(engine)}
-                      </Link>
-                      <span className="ml-2 text-small text-ink-muted">{m.responses} responses</span>
-                    </td>
-                    <td className="px-3 py-2 text-right">{fmt.pct(m.visibility)}</td>
-                    <td className="px-3 py-2 text-right">{fmt.position(m.position)}</td>
-                    <td className="px-3 py-2 text-right">{fmt.score(m.sentiment)}</td>
-                    <td className="px-5 py-2 text-right">{fmt.pct(m.shareOfVoice)}</td>
-                  </tr>
+          <CardBody>
+            <h2 className="text-heading text-ink">Who AI names most</h2>
+            <p className="mt-0.5 text-small text-ink-muted">Share of answers that name each agent.</p>
+            <ul className="mt-4 space-y-2.5">
+              {summary.ranking.map((r) => (
+                <li key={r.name} className="grid grid-cols-[minmax(0,9rem)_1fr_3rem] items-center gap-3 text-small">
+                  <span className={cn("truncate", r.isYou ? "font-semibold text-ink" : "text-ink-muted")}>
+                    {r.isYou ? "You" : r.name}
+                  </span>
+                  <span className="h-2.5 rounded-sm bg-rival-soft">
+                    <span
+                      className={cn("block h-full rounded-sm", r.isYou ? "bg-brand" : "bg-rival")}
+                      style={{ width: `${Math.max(2, (r.visibility / topScore) * 100)}%` }}
+                    />
+                  </span>
+                  <span className={cn("text-right font-mono text-data", r.isYou ? "text-ink" : "text-ink-muted")}>
+                    {Math.round(r.visibility)}%
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {engines.length > 1 ? (
+              <p className="mt-4 text-small text-ink-muted">
+                By assistant:{" "}
+                {engines.map((e, i) => (
+                  <span key={e.engine}>
+                    {i ? " · " : ""}
+                    {e.label} <span className="font-mono text-ink">{e.visibility === null ? "—" : `${Math.round(e.visibility)}%`}</span>
+                  </span>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </p>
+            ) : null}
+          </CardBody>
         </Card>
 
+        {/* 3. What to fix */}
         <Card>
-          <CardHeader title="How AI describes you" description="The words assistants use most when they name you." />
           <CardBody>
-            {describe.length ? (
-              <ul className="space-y-3">
-                {describe.map((d) => (
-                  <li key={d.descriptor}>
-                    <div className="flex items-center gap-2">
-                      <Badge>{d.descriptor}</Badge>
-                      <span className="text-small font-mono text-ink-muted">{d.count}×</span>
-                    </div>
-                    {d.snippet && d.id ? (
-                      <Link href={`${base}/responses/${d.id}`} className="mt-1 block text-sm text-ink-muted hover:text-ink">
-                        “{d.snippet}”
+            <h2 className="text-heading text-ink">Your next fixes</h2>
+            {fixes.length ? (
+              <ol className="mt-3 space-y-3">
+                {fixes.map((f, i) => (
+                  <li key={f.id} className="flex gap-3">
+                    <span className="font-mono text-data text-ink-muted">{i + 1}</span>
+                    <div className="min-w-0">
+                      <Link href={`${base}/fixes#${f.id}`} className="font-medium text-ink hover:underline">
+                        {f.title}
                       </Link>
-                    ) : null}
+                      <p className="text-small text-ink-muted">
+                        {firstSentence(f.why)} <span className="text-ink-muted">· {EFFORT_LABEL[f.effort]}</span>
+                      </p>
+                    </div>
                   </li>
                 ))}
-              </ul>
+              </ol>
             ) : (
-              <p className="text-sm text-ink-muted">No descriptors yet. They appear once AI names you.</p>
+              <p className="mt-3 text-small text-ink-muted">
+                Nothing to fix right now. Fixes appear when your answers or website show a clear gap.
+              </p>
             )}
+            <Link href={`${base}/fixes`} className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
+              All fixes <ArrowRight size={14} strokeWidth={1.5} />
+            </Link>
           </CardBody>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader
-          title="Who AI names instead"
-          description={`The agents named most in the last ${filters.days} days.`}
-          action={
-            <Link href={`${base}/competitors${filterQuery(filters)}`} className="text-sm text-brand hover:underline">
-              All competitors
-            </Link>
-          }
-        />
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-left text-small text-ink-muted">
-              <tr>
-                <th className="px-5 py-2 font-medium">Agent</th>
-                <th className="px-3 py-2 text-right font-medium">Visibility</th>
-                <th className="px-3 py-2 text-right font-medium">Position</th>
-                <th className="px-3 py-2 text-right font-medium">Share of voice</th>
-                <th className="px-5 py-2 text-right font-medium">Google reviews</th>
-              </tr>
-            </thead>
-            <tbody className="font-mono">
-              <tr className="border-t border-hairline bg-brand-tint font-medium">
-                <td className="px-5 py-2 font-sans">
-                  <span className="inline-flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-signal ring-1 ring-brand/40" aria-hidden="true" />
-                    {branch.name} <span className="text-ink-muted">(you)</span>
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-right">{fmt.pct(branchMetrics.visibility)}</td>
-                <td className="px-3 py-2 text-right">{fmt.position(branchMetrics.position)}</td>
-                <td className="px-3 py-2 text-right">{fmt.pct(branchMetrics.shareOfVoice)}</td>
-                <td className="px-5 py-2 text-right">{reviews(gbp.branch)}</td>
-              </tr>
-              {top.map((t) => (
-                <tr key={t.key} className="border-t border-hairline">
-                  <td className="px-5 py-2 font-sans">{t.name}</td>
-                  <td className="px-3 py-2 text-right">{fmt.pct(t.metrics.visibility)}</td>
-                  <td className="px-3 py-2 text-right">{fmt.position(t.metrics.position)}</td>
-                  <td className="px-3 py-2 text-right">{fmt.pct(t.metrics.shareOfVoice)}</td>
-                  <td className="px-5 py-2 text-right">{reviews(gbp.competitor.get(t.key) ?? null)}</td>
-                </tr>
+      {/* 4. Where you're missing */}
+      {summary.missing.length ? (
+        <Card>
+          <CardBody>
+            <h2 className="text-heading text-ink">Questions where you&apos;re missing</h2>
+            <p className="mt-0.5 text-small text-ink-muted">What people ask AI, and how often it names you.</p>
+            <ul className="mt-3 divide-y divide-hairline">
+              {summary.missing.map((m) => (
+                <li key={m.prompt}>
+                  <Link
+                    href={`${base}/prompts?prompt=${encodeURIComponent(m.prompt)}#answers`}
+                    className="flex items-center justify-between gap-4 py-2.5 hover:bg-surface-sunken/50"
+                  >
+                    <span className="text-ink">&ldquo;{m.prompt}&rdquo;</span>
+                    <span className="shrink-0 text-small text-ink-muted">
+                      {m.named ? `named in ${m.named} of ${m.of}` : `never named (${m.of} answers)`}
+                    </span>
+                  </Link>
+                </li>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+            </ul>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {/* 5. Website visits from AI, once the snippet is installed */}
+      {referrals.length ? (
+        <Card>
+          <CardBody className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-ink">
+              <span className="font-mono font-medium">{referrals.length}</span> visits to your website came from AI assistants in the last {WINDOW_DAYS} days.
+            </p>
+            <Link href={`${base}/referrals`} className="text-sm font-medium text-brand hover:underline">
+              See visits
+            </Link>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <p className="text-small text-ink-muted">
-        {COPY.noPromise} Responses that couldn’t be read are left out of every figure.{" "}
-        {branchMetrics.responses} of {filterResponses(responses, current).length} responses in this view were readable.
+        Based on {summary.answers} AI answers from the last {WINDOW_DAYS} days
+        {latestDate ? `, latest scan ${formatDate(latestDate)}` : ""}.{" "}
+        <Link href={`${base}/evidence`} className="font-medium text-brand hover:underline">
+          See all the evidence
+        </Link>
+        . {COPY.noPromise}
       </p>
     </div>
   );
 }
 
-function reviews(g: { found: boolean; reviewCount: number | null; rating: number | null } | null) {
-  if (!g?.found || g.reviewCount === null) return "—";
-  return `${g.reviewCount}${g.rating !== null ? ` · ${g.rating.toFixed(1)}★` : ""}`;
+function listWords(words: string[]): string {
+  return words.length > 1 ? `${words.slice(0, -1).join(", ")} and ${words.at(-1)}` : (words[0] ?? "");
 }

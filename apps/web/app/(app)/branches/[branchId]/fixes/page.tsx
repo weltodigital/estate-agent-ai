@@ -5,19 +5,12 @@ import { Evidence } from "@/components/dashboard/evidence";
 import { requireBranch } from "@/lib/auth";
 import { loadRecommendations, type RecommendationRow } from "@/lib/data/branch-data";
 import { COPY } from "@/lib/copy";
+import { EFFORT_LABEL, firstSentence } from "@/lib/data/summary";
 import { formatDate } from "@/lib/utils";
 import { setRecommendationStatus } from "./actions";
 
 export const metadata = { title: "Fixes" };
 
-const PRIORITY: Record<number, { label: string; tone: "bad" | "warn" | "neutral" }> = {
-  1: { label: "Priority 1", tone: "bad" },
-  2: { label: "Priority 2", tone: "warn" },
-  3: { label: "Priority 3", tone: "neutral" },
-  4: { label: "Priority 4", tone: "neutral" },
-  5: { label: "Priority 5", tone: "neutral" },
-};
-const EFFORT = { S: "Small job", M: "Medium job", L: "Larger job" } as const;
 const ASSET_LABEL: Record<string, string> = {
   "json-ld": "Structured data (paste into your site’s <head>)",
   robots: "robots.txt changes",
@@ -48,71 +41,87 @@ function StatusForm({ branchId, rec, status, children, primary = false }: { bran
   );
 }
 
-function FixCard({ rec, branchId }: { rec: RecommendationRow; branchId: string }) {
-  const p = PRIORITY[rec.priority] ?? PRIORITY[3]!;
+function StatusBadge({ rec }: { rec: RecommendationRow }) {
+  if (rec.status === "done" && rec.verified_result === "resolved") return <Badge tone="good">Done · confirmed</Badge>;
+  if (rec.status === "done" && rec.verified_result === "still_present") return <Badge tone="warn">Done · still showing</Badge>;
+  if (rec.status === "done") return <Badge>Done · checking next scan</Badge>;
+  if (rec.status === "todo" && rec.verified_result === "resolved") return <Badge tone="good">No longer detected</Badge>;
+  return null;
+}
+
+// One fix: a single line until opened, then the draft, the steps and the
+// evidence, with the actions at the bottom.
+function Fix({ rec, branchId, n, open = false }: { rec: RecommendationRow; branchId: string; n?: number; open?: boolean }) {
   return (
-    <article className="rounded-lg border border-hairline bg-surface-raised">
-      <div className="space-y-2 px-5 py-4">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge tone={p.tone}>{p.label}</Badge>
-          <Badge>{EFFORT[rec.effort]}</Badge>
-          {rec.status === "done" && rec.verified_result === "resolved" ? <Badge tone="good">Re-checked: resolved</Badge> : null}
-          {rec.status === "done" && rec.verified_result === "still_present" ? <Badge tone="warn">Re-checked: still present</Badge> : null}
-          {rec.status === "done" && !rec.verified_result ? <Badge>Re-checked on your next scan</Badge> : null}
-          {rec.status === "todo" && rec.verified_result === "resolved" ? <Badge tone="good">No longer detected</Badge> : null}
-        </div>
-        <h3 className="text-heading text-ink">{rec.title}</h3>
-        <p className="text-sm text-ink-muted">{rec.why}</p>
-        <p className="text-small text-ink-muted">
-          First found {formatDate(rec.first_seen_at)}
-          {rec.completed_at ? ` · marked done ${formatDate(rec.completed_at)}` : ""}
-        </p>
-      </div>
+    <details id={rec.id} open={open} className="group scroll-mt-6 rounded-lg border border-hairline bg-surface-raised">
+      <summary className="flex cursor-pointer list-none gap-3 px-5 py-4">
+        {n ? <span className="pt-0.5 font-mono text-data text-ink-muted">{n}</span> : null}
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium text-ink">{rec.title}</span>
+          <span className="mt-0.5 block text-small text-ink-muted">
+            {firstSentence(rec.why)} · {EFFORT_LABEL[rec.effort]}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-start gap-2">
+          <StatusBadge rec={rec} />
+          <span className="pt-0.5 text-small text-brand group-open:hidden">How</span>
+        </span>
+      </summary>
 
-      <details className="border-t border-hairline">
-        <summary className="cursor-pointer px-5 py-2.5 text-sm font-medium text-ink">The evidence</summary>
-        <div className="space-y-3 px-5 pb-4">
-          <Evidence data={rec.evidence_json ?? {}} />
-          <details>
-            <summary className="cursor-pointer text-small text-ink-muted">Raw data</summary>
-            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-small text-ink-muted">
-              {JSON.stringify(rec.evidence_json, null, 2)}
-            </pre>
-          </details>
-        </div>
-      </details>
+      <div className="space-y-4 border-t border-hairline px-5 py-4">
+        <p className="text-sm text-ink">{rec.why}</p>
 
-      {rec.asset_kind ? (
-        <div className="border-t border-hairline px-5 py-4">
-          <p className="mb-2 text-small font-medium text-brand">{COPY.draftLabel}</p>
-          {rec.asset_status === "pending" ? (
-            <p className="text-sm text-ink-muted">Generating…</p>
-          ) : rec.asset_status === "failed" ? (
-            <p className="text-sm text-ink-muted">We couldn’t generate this draft. It will be retried on the next scan.</p>
-          ) : rec.asset_text ? (
-            <CodeBlock text={rec.asset_text} label={ASSET_LABEL[rec.asset_kind] ?? rec.asset_kind} />
+        {rec.asset_kind ? (
+          <div>
+            <p className="mb-2 text-small font-medium text-ink">
+              {ASSET_LABEL[rec.asset_kind] ?? "Draft"} <span className="font-normal text-ink-muted">· {COPY.draftLabel}</span>
+            </p>
+            {rec.asset_status === "pending" ? (
+              <p className="text-sm text-ink-muted">Writing your draft…</p>
+            ) : rec.asset_status === "failed" ? (
+              <p className="text-sm text-ink-muted">We couldn’t write this draft. It will be retried on the next scan.</p>
+            ) : rec.asset_text ? (
+              <CodeBlock text={rec.asset_text} label={ASSET_LABEL[rec.asset_kind] ?? rec.asset_kind} />
+            ) : null}
+          </div>
+        ) : null}
+
+        <details>
+          <summary className="cursor-pointer text-small font-medium text-ink-muted">Why we suggest this: the evidence</summary>
+          <div className="mt-3 space-y-3">
+            <Evidence data={rec.evidence_json ?? {}} />
+            <p className="text-small text-ink-muted">
+              First found {formatDate(rec.first_seen_at)}
+              {rec.completed_at ? ` · marked done ${formatDate(rec.completed_at)}` : ""}
+            </p>
+            <details>
+              <summary className="cursor-pointer text-small text-ink-muted">Raw data</summary>
+              <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-small text-ink-muted">
+                {JSON.stringify(rec.evidence_json, null, 2)}
+              </pre>
+            </details>
+          </div>
+        </details>
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          {rec.status !== "done" ? (
+            <StatusForm branchId={branchId} rec={rec} status="done" primary>
+              Mark as done
+            </StatusForm>
+          ) : null}
+          {rec.status !== "todo" ? (
+            <StatusForm branchId={branchId} rec={rec} status="todo">
+              Move back to to do
+            </StatusForm>
+          ) : null}
+          {rec.status === "todo" ? (
+            <StatusForm branchId={branchId} rec={rec} status="dismissed">
+              Not relevant
+            </StatusForm>
           ) : null}
         </div>
-      ) : null}
-
-      <div className="flex flex-wrap gap-2 border-t border-hairline px-5 py-3">
-        {rec.status !== "done" ? (
-          <StatusForm branchId={branchId} rec={rec} status="done" primary>
-            Mark as done
-          </StatusForm>
-        ) : null}
-        {rec.status !== "todo" ? (
-          <StatusForm branchId={branchId} rec={rec} status="todo">
-            Move back to to do
-          </StatusForm>
-        ) : null}
-        {rec.status !== "dismissed" ? (
-          <StatusForm branchId={branchId} rec={rec} status="dismissed">
-            Dismiss
-          </StatusForm>
-        ) : null}
       </div>
-    </article>
+    </details>
   );
 }
 
@@ -120,50 +129,55 @@ export default async function FixesPage({ params }: { params: Promise<{ branchId
   const { branchId } = await params;
   const { branch } = await requireBranch(branchId);
   const recs = await loadRecommendations(branch.id);
-  const groups = [
-    { status: "todo", title: "To do", items: recs.filter((r) => r.status === "todo") },
-    { status: "done", title: "Done", items: recs.filter((r) => r.status === "done") },
-    { status: "dismissed", title: "Dismissed", items: recs.filter((r) => r.status === "dismissed") },
-  ];
+  const todo = recs.filter((r) => r.status === "todo");
+  const now = todo.filter((r) => r.priority <= 2);
+  const next = todo.filter((r) => r.priority > 2);
+  const done = recs.filter((r) => r.status === "done");
+  const dismissed = recs.filter((r) => r.status === "dismissed");
 
   if (!recs.length) {
     return (
       <EmptyState title="No fixes yet">
-        Fixes are worked out from your scan results, your website and your Google profile after each scan. Each one shows the evidence behind it.
+        Fixes are worked out from your scan results, your website and your Google profile after each scan.
       </EmptyState>
     );
   }
 
   return (
     <div className="space-y-10">
-      <p className="max-w-2xl text-sm text-ink-muted">
-        Prioritised from your own data and the gap to the agents AI names instead. Mark a fix as done and we’ll re-check it on your next scan, and mark the date on your trend chart. {COPY.noPromise}
+      <p className="max-w-2xl text-ink-muted">
+        What to change so AI has more reasons to name you, most important first. Open a fix for the steps and a draft to copy. Mark it done and we’ll check it on your next scan.
       </p>
-      {groups.map((g) =>
+
+      {[
+        { id: "now", title: "Do these first", items: now },
+        { id: "next", title: "Then these", items: next },
+      ].map((g) =>
         g.items.length ? (
-          <section key={g.status} aria-labelledby={`fixes-${g.status}`}>
-            <h2 id={`fixes-${g.status}`} className="mb-3 text-heading text-ink">
-              {g.title} <span className="text-base font-mono text-ink-muted">({g.items.length})</span>
-            </h2>
-            {g.status === "dismissed" ? (
-              <details>
-                <summary className="cursor-pointer text-sm text-ink-muted">Show dismissed fixes</summary>
-                <div className="mt-3 space-y-4">
-                  {g.items.map((r) => (
-                    <FixCard key={r.id} rec={r} branchId={branch.id} />
-                  ))}
-                </div>
-              </details>
-            ) : (
-              <div className="space-y-4">
-                {g.items.map((r) => (
-                  <FixCard key={r.id} rec={r} branchId={branch.id} />
-                ))}
-              </div>
-            )}
+          <section key={g.id} aria-labelledby={`fixes-${g.id}`} className="space-y-3">
+            <h2 id={`fixes-${g.id}`} className="text-heading text-ink">{g.title}</h2>
+            {g.items.map((r, i) => (
+              <Fix key={r.id} rec={r} branchId={branch.id} n={(g.id === "next" ? now.length : 0) + i + 1} open={g.id === "now" && i === 0} />
+            ))}
           </section>
         ) : null,
       )}
+      {!todo.length ? <p className="text-ink">You’re all caught up. New fixes appear after your next scan if we spot a gap.</p> : null}
+
+      {done.length || dismissed.length ? (
+        <details className="space-y-3">
+          <summary className="cursor-pointer text-sm font-medium text-ink-muted">
+            Done ({done.length}){dismissed.length ? ` and not relevant (${dismissed.length})` : ""}
+          </summary>
+          <div className="mt-3 space-y-3">
+            {[...done, ...dismissed].map((r) => (
+              <Fix key={r.id} rec={r} branchId={branch.id} />
+            ))}
+          </div>
+        </details>
+      ) : null}
+
+      <p className="text-small text-ink-muted">{COPY.noPromise}</p>
     </div>
   );
 }

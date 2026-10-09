@@ -18,11 +18,25 @@ function Pill({ href, active, children }: { href: string; active: boolean; child
   );
 }
 
-/** Engine, intent and date range filters. Plain links, so it works without JS. */
+/**
+ * Engine, intent and date range filters, collapsed behind one "Filter" button
+ * that summarises the current choice. Plain links, so it works without JS.
+ */
 export function FilterBar({ basePath, filters, extra = {} }: { basePath: string; filters: DashFilters; extra?: Record<string, string | null> }) {
   const q = (o: Record<string, string | null>) => basePath + filterQuery(filters, { ...extra, ...o });
+  const summary = [
+    filters.engine ? engineLabel(filters.engine) : "All assistants",
+    filters.intent ? INTENT_LABELS[filters.intent as keyof typeof INTENT_LABELS] : "All questions",
+    `Last ${filters.days} days`,
+  ].join(" · ");
+  const changed = !!filters.engine || !!filters.intent || filters.days !== 30;
   return (
-    <div className="mb-6 space-y-2">
+    <details className="group mb-6" open={changed}>
+      <summary className="ring-brand-focus inline-flex cursor-pointer list-none items-center gap-2 rounded-md border border-hairline bg-surface-raised px-3 py-1.5 text-small text-ink-muted hover:bg-brand-tint">
+        <span className="font-medium text-ink">Filter</span>
+        <span>{summary}</span>
+      </summary>
+      <div className="mt-3 space-y-2">
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="mr-1 text-small text-ink-muted">Engine</span>
         <Pill href={q({ engine: null })} active={!filters.engine}>
@@ -53,6 +67,7 @@ export function FilterBar({ basePath, filters, extra = {} }: { basePath: string;
           </Pill>
         ))}
       </div>
-    </div>
+      </div>
+    </details>
   );
 }
