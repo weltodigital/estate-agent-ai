@@ -112,7 +112,7 @@ describe("buildCitationStats", () => {
     competitor_id: null,
   });
   const run = (rows: ReturnType<typeof cite>[]) =>
-    buildCitationStats(results, mentions, rows, new Map([["c1", "Fox"]]), ["privett test"], new Map([["c1", "fox"]]));
+    buildCitationStats(results, mentions, rows, new Map([["c1", "Fox"]]), ["privett test"], [{ id: "c1", normalisedName: "fox", domain: null }], "branch.co.uk");
 
   it("credits the branch only for pages about it, not for sharing an answer", () => {
     // r1 names the branch, but the cited directory page is the town listing.

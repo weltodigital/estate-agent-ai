@@ -4,7 +4,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { requireBranch } from "@/lib/auth";
-import { citationStats, isCitationGap } from "@/lib/data/aggregate";
+import { attributeCitations, isCitationGap, normaliseAgentName } from "@privett/core";
 import { loadBranchResults, loadCitations, loadCompetitors } from "@/lib/data/branch-data";
 import { parseFilters, type SearchParams } from "@/lib/data/filters";
 import { cn } from "@/lib/utils";
@@ -40,9 +40,15 @@ export default async function CitationsPage({
       },
     ]),
   );
-  const stats = citationStats(
-    citations.map((c) => ({ scanResultId: c.scan_result_id, domain: c.domain, isOwnDomain: c.is_own_domain, competitorId: c.competitor_id && !hidden.has(c.competitor_id) ? c.competitor_id : null })),
+  // Same attribution as the fix rules (packages/core/src/citations.ts).
+  const places = [branch.town, ...branch.areas];
+  const stats = attributeCitations(
+    citations.map((c) => ({ resultId: c.scan_result_id, url: c.url, domain: c.domain, isOwnDomain: c.is_own_domain })),
     named,
+    { normalisedNames: [branch.name, ...branch.aliases].map((n) => normaliseAgentName(n, places)), domain: branch.domain },
+    competitors
+      .filter((c) => !hidden.has(c.id))
+      .map((c) => ({ id: c.id, normalisedName: normaliseAgentName(c.name, places), domain: c.domain })),
   );
   const gaps = stats.filter(isCitationGap);
   const base = `/branches/${branch.id}`;
@@ -75,7 +81,7 @@ export default async function CitationsPage({
       <Card>
         <CardHeader
           title="Where AI gets its information"
-          description={`Sites cited in answers about agents in ${branch.town}. Highlighted rows feature competitors but never you: they feed your fixes.`}
+          description={`Sites cited in answers about agents in ${branch.town}. Gaps are third-party sites cited for competitors but with no page about you: they feed your fixes.`}
           action={
             <Link href={`${base}/fixes`} className="text-sm text-brand hover:underline">
               See fixes
@@ -90,7 +96,7 @@ export default async function CitationsPage({
                   <th className="px-5 py-2 font-medium">Site</th>
                   <th className="px-3 py-2 text-right font-medium">Answers citing it</th>
                   <th className="px-3 py-2 font-medium">Cites you</th>
-                  <th className="px-5 py-2 font-medium">Competitors alongside</th>
+                  <th className="px-5 py-2 font-medium">Cited for</th>
                 </tr>
               </thead>
               <tbody>
@@ -103,6 +109,7 @@ export default async function CitationsPage({
                           {s.domain}
                         </Link>
                         {gap ? <Badge tone="warn" className="ml-2">Gap</Badge> : null}
+                        {s.isAgentSite ? <Badge className="ml-2">Agency site</Badge> : null}
                       </td>
                       <td className="px-3 py-2 text-right font-mono">{s.responses}</td>
                       <td className="px-3 py-2">{s.citesBranch ? <Badge tone="good">Yes</Badge> : <span className="text-ink-muted">No</span>}</td>

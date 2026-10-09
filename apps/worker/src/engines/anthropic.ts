@@ -3,6 +3,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { ANTHROPIC_WEB_SEARCH_PER_CALL, estimateCostUsd, type EngineAnswer } from "@privett/core";
 import { anthropic, fallbackParams } from "../anthropic";
+import { env } from "../env";
 import { EngineError, uniqueUrls, type EngineAdapter } from "./types";
 
 type BetaMessage = Anthropic.Beta.Messages.BetaMessage;
@@ -50,10 +51,11 @@ export const runAnthropic: EngineAdapter = async (cfg, _apiKey, ctx): Promise<En
         {
           type: "web_search_20260209",
           name: "web_search",
-          max_uses: 3,
+          max_uses: env.anthropicEngineMaxSearches,
           user_location: { type: "approximate", country: "GB", ...(ctx.town ? { city: ctx.town } : {}) },
         },
       ],
+      output_config: { effort: env.anthropicEngineEffort },
       messages,
     });
     responses.push(res);

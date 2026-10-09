@@ -50,7 +50,11 @@ export default async function ResponsePage({ params }: { params: Promise<{ branc
         <h2 className="mt-1 text-heading text-ink">“{r.prompt_text}”</h2>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {r.parse_status !== "ok" ? (
-            <Badge tone="warn">{r.parse_status === "engine_error" ? "Engine error" : "Couldn’t read this answer"}</Badge>
+            r.parse_status === "pending" ? (
+              <Badge>Reading this answer…</Badge>
+            ) : (
+              <Badge tone="warn">{r.parse_status === "engine_error" ? "Engine error" : "Couldn’t read this answer"}</Badge>
+            )
           ) : r.mentioned ? (
             <Badge tone="good">Names you at position {r.position ?? "—"}</Badge>
           ) : (

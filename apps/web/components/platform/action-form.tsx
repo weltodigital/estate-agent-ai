@@ -18,9 +18,10 @@ export function ActionForm({
 }) {
   const [state, formAction, pending] = useActionState(action, null);
   return (
-    <form action={formAction} aria-busy={pending}>
-      {/* Layout classes go on the fieldset: with display:contents (as before)
-          space-y-* on the form never reached the fields. */}
+    // The form is display:contents so the fieldset is the real box: it takes
+    // the layout classes (space-y-*, flex-1, ...) and sits directly in the
+    // parent's flex or grid layout.
+    <form action={formAction} aria-busy={pending} className="contents">
       <fieldset disabled={pending} className={cn("m-0 min-w-0 border-0 p-0", className)}>
         {children}
       </fieldset>

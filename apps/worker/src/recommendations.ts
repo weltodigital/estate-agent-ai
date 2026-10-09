@@ -8,7 +8,10 @@ import {
   computeSubjectMetrics,
   evaluateRules,
   getScanSettings,
+  attributeCitations,
   normaliseAgentName,
+  type CitationSubject,
+  type ResultNames,
   perPromptMetrics,
   toMetricResponses,
   type GoogleBusinessSignal,
@@ -36,29 +39,10 @@ function topCounts(names: string[], n: number): string[] {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => k);
 }
 
-/** Lower-case alphanumeric tokens of a URL's host and path ("/agents/keats-fearn" -> agents, keats, fearn). */
-function urlTokens(url: string): Set<string> {
-  try {
-    const u = new URL(url);
-    return new Set(`${u.hostname} ${decodeURIComponent(u.pathname)}`.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
-  } catch {
-    return new Set();
-  }
-}
-
-/** True if the cited page is about this agent: every token of its normalised name is in the URL. */
-function urlIsAbout(tokens: Set<string>, normalisedName: string): boolean {
-  const name = normalisedName.split(" ").filter(Boolean);
-  return name.length > 0 && name.every((t) => tokens.has(t));
-}
-
 /**
- * Per cited domain: whether any cited page is about the branch, and which
- * competitors it's cited for. A page is "about" an agent when the URL names
- * it (e.g. getagent.co.uk/.../keats-fearn). Being named in the same answer
- * isn't enough on its own: a visible agent co-occurs with every common
- * source, which hid real gaps. Competitors are also credited when they're
- * named in answers citing the domain that don't name the branch.
+ * Rule input from core's shared attribution (the dashboard uses the same), so
+ * fixes and the Citations page agree. Agencies' own websites are left out:
+ * they're never somewhere to "get listed".
  */
 export function buildCitationStats(
   results: ResultRow[],
@@ -66,43 +50,33 @@ export function buildCitationStats(
   citations: CitationRow[],
   competitorNames: Map<string, string>,
   branchNormalisedNames: string[],
-  competitorNormalised: Map<string, string>,
+  competitors: CitationSubject[],
+  branchDomain: string | null = null,
 ): RuleCitationStat[] {
   const parsedIds = new Set(results.filter((r) => r.parse_status === "ok").map((r) => r.id));
-  const mentionsByResult = new Map<string, MentionRow[]>();
+  const names = new Map<string, ResultNames>();
   for (const m of mentions) {
-    const list = mentionsByResult.get(m.scan_result_id) ?? [];
-    list.push(m);
-    mentionsByResult.set(m.scan_result_id, list);
+    if (!parsedIds.has(m.scan_result_id) || m.match_confidence !== "high") continue;
+    const n = names.get(m.scan_result_id) ?? { branch: false, competitorIds: [] };
+    if (m.is_branch) n.branch = true;
+    else if (m.matched_competitor_id && competitorNames.has(m.matched_competitor_id)) n.competitorIds.push(m.matched_competitor_id);
+    names.set(m.scan_result_id, n);
   }
-  const byDomain = new Map<string, CitationRow[]>();
-  for (const c of citations) {
-    if (c.is_own_domain || !parsedIds.has(c.scan_result_id)) continue;
-    const list = byDomain.get(c.domain) ?? [];
-    list.push(c);
-    byDomain.set(c.domain, list);
-  }
-
-  return [...byDomain.entries()].map(([domain, rows]) => {
-    let citesBranch = false;
-    const comps = new Set<string>();
-    for (const c of rows) {
-      const tokens = urlTokens(c.url);
-      if (branchNormalisedNames.some((n) => urlIsAbout(tokens, n))) citesBranch = true;
-      for (const [id, norm] of competitorNormalised) {
-        if (urlIsAbout(tokens, norm) && competitorNames.has(id)) comps.add(competitorNames.get(id)!);
-      }
-    }
-    const resultIds = new Set(rows.map((c) => c.scan_result_id));
-    for (const id of resultIds) {
-      const ms = (mentionsByResult.get(id) ?? []).filter((m) => m.match_confidence === "high");
-      if (ms.some((m) => m.is_branch)) continue;
-      for (const m of ms) {
-        if (m.matched_competitor_id && competitorNames.has(m.matched_competitor_id)) comps.add(competitorNames.get(m.matched_competitor_id)!);
-      }
-    }
-    return { domain, responses: resultIds.size, citesBranch, competitorsCited: [...comps] };
-  });
+  return attributeCitations(
+    citations
+      .filter((c) => parsedIds.has(c.scan_result_id))
+      .map((c) => ({ resultId: c.scan_result_id, url: c.url, domain: c.domain, isOwnDomain: c.is_own_domain })),
+    names,
+    { normalisedNames: branchNormalisedNames, domain: branchDomain },
+    competitors,
+  )
+    .filter((a) => !a.isAgentSite && a.domain !== branchDomain)
+    .map((a) => ({
+      domain: a.domain,
+      responses: a.responses,
+      citesBranch: a.citesBranch,
+      competitorsCited: a.competitorIds.map((id) => competitorNames.get(id)!).filter(Boolean),
+    }));
 }
 
 /** Can this rule's absence be trusted as "fixed"? Only if its inputs were available. */
@@ -194,7 +168,8 @@ export async function buildRuleContext(branch: BranchRow): Promise<RuleContext> 
       citations,
       names,
       [branch.name, ...branch.aliases].map((n) => normaliseAgentName(n, places)),
-      new Map(competitors.map((c) => [c.id, normaliseAgentName(c.name, places)])),
+      competitors.map((c) => ({ id: c.id, normalisedName: normaliseAgentName(c.name, places), domain: c.domain })),
+      branch.domain,
     ),
     branchVisibility: branchMetrics.visibility,
     totalResponses: branchMetrics.responses,

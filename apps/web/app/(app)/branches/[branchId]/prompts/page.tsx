@@ -165,7 +165,7 @@ export default async function PromptsPage({
                       <span className="text-ink-muted">{r.promptText}</span>
                       <span className="text-small text-ink-muted">{formatDateTime(r.createdAt)}</span>
                       <span className="ml-auto flex flex-wrap gap-1.5">
-                        {!r.parsed ? <Badge tone="warn">Couldn’t read</Badge> : mentionedIds.has(r.id) ? <Badge tone="good">Names you</Badge> : <Badge>Doesn’t name you</Badge>}
+                        {row.parse_status === "pending" ? <Badge>Reading…</Badge> : !r.parsed ? <Badge tone="warn">{row.parse_status === "engine_error" ? "No answer" : "Couldn’t read"}</Badge> : mentionedIds.has(r.id) ? <Badge tone="good">Names you</Badge> : <Badge>Doesn’t name you</Badge>}
                         {row.needs_review ? <Badge tone="warn">Needs review</Badge> : null}
                       </span>
                     </summary>

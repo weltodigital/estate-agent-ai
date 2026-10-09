@@ -1,27 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { citationStats, countBy, extractSnippet, isCitationGap, referralsByWeek } from "./aggregate";
-
-describe("citationStats", () => {
-  it("aggregates by domain and spots gaps", () => {
-    const stats = citationStats(
-      [
-        { scanResultId: "r1", domain: "www.allagents.co.uk", isOwnDomain: false, competitorId: null },
-        { scanResultId: "r2", domain: "allagents.co.uk", isOwnDomain: false, competitorId: "c1" },
-        { scanResultId: "r2", domain: "allagents.co.uk", isOwnDomain: false, competitorId: "c1" },
-        { scanResultId: "r3", domain: "me.co.uk", isOwnDomain: true, competitorId: null },
-      ],
-      new Map([
-        ["r1", { branch: false, competitorIds: ["c2"] }],
-        ["r3", { branch: true, competitorIds: [] }],
-      ]),
-    );
-    expect(stats[0]).toMatchObject({ domain: "allagents.co.uk", responses: 2, citesBranch: false });
-    expect(stats[0]!.competitorIds.sort()).toEqual(["c1", "c2"]);
-    expect(isCitationGap(stats[0]!)).toBe(true);
-    expect(stats[1]).toMatchObject({ domain: "me.co.uk", citesBranch: true, responsesNamingBranch: 1 });
-    expect(isCitationGap(stats[1]!)).toBe(false);
-  });
-});
+import { countBy, extractSnippet, referralsByWeek } from "./aggregate";
 
 describe("extractSnippet", () => {
   it("returns an excerpt around the first match", () => {

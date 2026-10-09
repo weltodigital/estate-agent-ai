@@ -7,7 +7,9 @@
 // answers stored but not yet parsed are parsed on the next attempt.
 
 import {
+  agencyDomainFor,
   domainMatches,
+  isNonAgentDomain,
   effectiveLimits,
   getEngineConfigs,
   getPlans,
@@ -118,9 +120,12 @@ async function storeMatches(resultId: string, parsed: ParsedAnswer, citedUrls: s
     const normalised = normaliseAgentName(agent.name, matcher.places);
     // Discovery mutates the target list, so match + discover under one lock.
     const { key, confidence } = await mutex.run(async () => {
-      const m = matchAgent({ name: agent.name, domain: agent.domain }, matcher.targets, matcher.places);
+      // The parser's domain is often the portal page an answer linked; only
+      // trust it when it looks like the agency's own site.
+      const domain = agencyDomainFor(normalised, agent.domain);
+      const m = matchAgent({ name: agent.name, domain }, matcher.targets, matcher.places);
       if (m.confidence !== "none") return { key: m.key, confidence: m.confidence };
-      return { key: await matcher.discover(agent.name, agent.domain), confidence: "high" as const };
+      return { key: await matcher.discover(agent.name, domain), confidence: "high" as const };
     });
     if (confidence === "low") needsReview = true;
     const cols = matcher.columns(key);
@@ -367,7 +372,7 @@ async function inferCompetitorDomains(runId: string, branchId: string) {
   for (const c of comps) {
     const compact = c.normalised_name.replace(/\s+/g, "");
     if (compact.length < 4) continue;
-    const hit = domains.find((d) => (d.split(".")[0] ?? "").replace(/-/g, "").includes(compact));
+    const hit = domains.find((d) => !isNonAgentDomain(d) && (d.split(".")[0] ?? "").replace(/-/g, "").includes(compact));
     if (hit) await db().from("competitors").update({ domain: hit }).eq("id", c.id);
   }
 }

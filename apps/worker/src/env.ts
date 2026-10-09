@@ -15,6 +15,9 @@ export const env = {
   placesCostPerCall: Number(process.env.PLACES_COST_PER_CALL_USD ?? 0.035),
   /** OpenAI Responses API web search tool type. */
   openaiWebSearchTool: process.env.OPENAI_WEB_SEARCH_TOOL || "web_search",
+  /** Claude engine: web searches per answer and effort. Lower is cheaper (see plans.ts margin notes). */
+  anthropicEngineMaxSearches: Number(process.env.ANTHROPIC_ENGINE_MAX_SEARCHES ?? 2),
+  anthropicEngineEffort: (process.env.ANTHROPIC_ENGINE_EFFORT ?? "medium") as "low" | "medium" | "high",
   crawlMaxPages: Number(process.env.CRAWL_MAX_PAGES ?? 15),
   userAgent: "Mozilla/5.0 (compatible; PrivettBot/1.0; +https://www.useprivett.com/bot)",
 };
