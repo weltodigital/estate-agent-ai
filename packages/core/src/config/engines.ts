@@ -37,7 +37,7 @@ export function getEngineConfigs(env: Env = process.env): Record<EngineId, Engin
       id: "perplexity",
       label: "Perplexity",
       envKey: "PERPLEXITY_API_KEY",
-      model: env.PERPLEXITY_MODEL ?? "sonar",
+      model: env.PERPLEXITY_MODEL ?? "fast", // Agent API preset (Sonar -> fast)
       rpm: num(env, "PERPLEXITY_RPM", 50),
     },
     gemini: {

@@ -26,11 +26,19 @@ const openaiFixture = {
   usage: { input_tokens: 1200, output_tokens: 300 },
 };
 
+// Agent API (/v1/responses) shape, per Perplexity's OpenAPI spec.
 const perplexityFixture = {
-  choices: [{ message: { content: "Consider Bernards or Fox & Sons." } }],
-  citations: ["https://www.allagents.co.uk/portsmouth/"],
-  search_results: [{ url: "https://bernardsea.co.uk/about" }, { url: "not a url" }],
-  usage: { prompt_tokens: 20, completion_tokens: 200 },
+  status: "completed",
+  model: "perplexity/sonar",
+  output: [
+    { type: "search_results", queries: ["best estate agent portsmouth"], results: [{ id: 1, url: "https://bernardsea.co.uk/about", title: "t", snippet: "s" }, { id: 2, url: "not a url", title: "t", snippet: "s" }] },
+    {
+      type: "message",
+      role: "assistant",
+      content: [{ type: "output_text", text: "Consider Bernards or Fox & Sons.", annotations: [{ type: "url_citation", url: "https://www.allagents.co.uk/portsmouth/" }] }],
+    },
+  ],
+  usage: { input_tokens: 20, output_tokens: 200, total_tokens: 220, cost: { currency: "USD", input_cost: 0.001, output_cost: 0.002, total_cost: 0.0061 } },
 };
 
 const geminiFixture = {
