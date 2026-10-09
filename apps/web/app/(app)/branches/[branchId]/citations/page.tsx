@@ -4,12 +4,26 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { requireBranch } from "@/lib/auth";
-import { attributeCitations, isCitationGap, normaliseAgentName } from "@privett/core";
+import { attributeCitations, CITATION_SOURCE_GUIDES, isCitationGap, normaliseAgentName } from "@privett/core";
 import { loadBranchResults, loadCitations, loadCompetitors } from "@/lib/data/branch-data";
 import { parseFilters, type SearchParams } from "@/lib/data/filters";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Citations" };
+
+function listNames(names: string[], max = 4): string {
+  if (names.length <= max) return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : (names[0] ?? "");
+  return `${names.slice(0, max).join(", ")} and ${names.length - max} more`;
+}
+
+function siteLabel(domain: string): string {
+  return CITATION_SOURCE_GUIDES[domain]?.label ?? domain;
+}
+
+function gapAdvice(domain: string): string {
+  const guide = CITATION_SOURCE_GUIDES[domain];
+  return guide ? guide.steps[0]! : "If it lists agents, add or claim your branch there.";
+}
 
 export default async function CitationsPage({
   params,
@@ -51,6 +65,8 @@ export default async function CitationsPage({
       .map((c) => ({ id: c.id, normalisedName: normaliseAgentName(c.name, places), domain: c.domain })),
   );
   const gaps = stats.filter(isCitationGap);
+  const topGaps = gaps.slice(0, 5); // stats are sorted by answers citing
+  const totalAnswers = new Set(citations.map((c) => c.scan_result_id)).size;
   const base = `/branches/${branch.id}`;
 
   return (
@@ -60,23 +76,62 @@ export default async function CitationsPage({
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardBody>
-            <p className="text-small text-ink-muted">Sites cited</p>
+            <p className="text-label uppercase text-ink-muted">Sites AI used</p>
             <p className="font-mono text-metric text-ink">{stats.length}</p>
+            <p className="mt-1 text-small text-ink-muted">Websites cited in {totalAnswers} answers about agents in {branch.town}.</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <p className="text-small text-ink-muted">Sites that cite you</p>
+            <p className="text-label uppercase text-ink-muted">With a page about you</p>
             <p className="font-mono text-metric text-ink">{stats.filter((s) => s.citesBranch).length}</p>
+            <p className="mt-1 text-small text-ink-muted">Your site, or a profile or listing that names you.</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <p className="text-small text-ink-muted">Cite competitors but not you</p>
+            <p className="text-label uppercase text-ink-muted">Gaps</p>
             <p className="font-mono text-metric text-ink">{gaps.length}</p>
+            <p className="mt-1 text-small text-ink-muted">Other sites AI used for competitors, with nothing about you.</p>
           </CardBody>
         </Card>
       </div>
+
+      {topGaps.length ? (
+        <Card>
+          <CardHeader
+            title="What to do"
+            description="The sites AI leans on most where it found nothing about you. Being present on these gives assistants something to cite."
+          />
+          <CardBody>
+            <ol className="space-y-4">
+              {topGaps.map((g, i) => {
+                const about = g.aboutIds.map((id) => names.get(id)).filter(Boolean) as string[];
+                return (
+                  <li key={g.domain} className="flex gap-3">
+                    <span className="font-mono text-data text-ink-muted">{i + 1}</span>
+                    <div>
+                      <p className="text-ink">
+                        <span className="font-medium">{siteLabel(g.domain)}</span> was used in{" "}
+                        <span className="font-mono">{g.responses}</span> answers, but none of the pages AI read there were about you.
+                      </p>
+                      <p className="mt-0.5 text-small text-ink-muted">
+                        {about.length
+                          ? `It read pages about ${listNames(about)}.`
+                          : `It read general pages, such as ${branch.town} listings, that named other agents.`}{" "}
+                        {gapAdvice(g.domain)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+            <Link href={`${base}/fixes`} className="mt-4 inline-block text-sm font-medium text-brand hover:underline">
+              See these in your fixes
+            </Link>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader
@@ -96,7 +151,7 @@ export default async function CitationsPage({
                   <th className="px-5 py-2 font-medium">Site</th>
                   <th className="px-3 py-2 text-right font-medium">Answers citing it</th>
                   <th className="px-3 py-2 font-medium">Cites you</th>
-                  <th className="px-5 py-2 font-medium">Cited for</th>
+                  <th className="px-5 py-2 font-medium">Pages about</th>
                 </tr>
               </thead>
               <tbody>
@@ -114,9 +169,10 @@ export default async function CitationsPage({
                       <td className="px-3 py-2 text-right font-mono">{s.responses}</td>
                       <td className="px-3 py-2">{s.citesBranch ? <Badge tone="good">Yes</Badge> : <span className="text-ink-muted">No</span>}</td>
                       <td className="px-5 py-2 text-small text-ink-muted">
-                        {s.competitorIds.length
-                          ? s.competitorIds.slice(0, 4).map((id) => names.get(id) ?? "Unknown").join(", ") + (s.competitorIds.length > 4 ? ` and ${s.competitorIds.length - 4} more` : "")
-                          : "—"}
+                        {(() => {
+                          const about = [...(s.citesBranch ? [`${branch.name} (you)`] : []), ...s.aboutIds.map((id) => names.get(id) ?? "Unknown")];
+                          return about.length ? listNames(about) : "General pages (no single agent)";
+                        })()}
                       </td>
                     </tr>
                   );

@@ -34,8 +34,12 @@ export function domainResemblesName(domain: string, normalisedName: string): boo
   const whole = compact(normalisedName);
   if (whole.length >= 4 && label.includes(whole)) return true;
   // Or its most distinctive word: "andrewlodge.net" for "andrew lodge".
-  const words = normalisedName.split(" ").filter((w) => w.length >= 5);
-  return words.some((w) => label.includes(w));
+  const words = normalisedName.split(" ");
+  if (words.filter((w) => w.length >= 5).some((w) => label.includes(w))) return true;
+  // Or a short word standing alone in a hyphenated label: "tlc-farnham.co.uk"
+  // for "Trueman Letting Company (TLC)".
+  const parts = new Set(((normaliseDomain(domain) ?? "").split(".")[0] ?? "").split("-"));
+  return parts.size > 1 && words.some((w) => w.length >= 3 && parts.has(w));
 }
 
 /**
@@ -78,13 +82,20 @@ export interface CitationAttribution {
   responses: number;
   /** A cited page is the branch's own site or a page about the branch. */
   citesBranch: boolean;
-  /** Competitors this source is cited for. */
+  /** Competitors this source is cited for: pages about them, plus those named in answers citing it that don't name the branch. */
   competitorIds: string[];
+  /** Competitors with a cited page about them (or whose site this is). */
+  aboutIds: string[];
   /** The site of a competitor or another agency: not somewhere to get listed. */
   isAgentSite: boolean;
   /** Distinct responses citing this domain that also name the branch. */
   responsesNamingBranch: number;
   sampleResultId: string;
+}
+
+/** One row per site: "uk.trustpilot.com" and "www.trustpilot.com" are both trustpilot.com. */
+export function siteKey(domain: string): string {
+  return (normaliseDomain(domain) ?? domain.toLowerCase()).replace(/^(uk|en|m|en-gb)\./, "");
 }
 
 function urlTokens(url: string): Set<string> {
@@ -120,7 +131,7 @@ export function attributeCitations(
 ): CitationAttribution[] {
   const byDomain = new Map<string, CitationIn[]>();
   for (const c of citations) {
-    const d = (normaliseDomain(c.domain) ?? c.domain).toLowerCase();
+    const d = siteKey(c.domain);
     const list = byDomain.get(d) ?? [];
     list.push(c);
     byDomain.set(d, list);
@@ -129,16 +140,17 @@ export function attributeCitations(
   return [...byDomain.entries()]
     .map(([domain, rows]) => {
       let citesBranch = rows.some((c) => c.isOwnDomain) || domainMatches(domain, branch.domain);
-      const comps = new Set<string>();
+      const about = new Set<string>();
       for (const c of rows) {
         const tokens = urlTokens(c.url);
         if (branch.normalisedNames.some((n) => urlIsAbout(tokens, n))) citesBranch = true;
-        for (const s of competitors) if (urlIsAbout(tokens, s.normalisedName)) comps.add(s.id);
+        for (const s of competitors) if (urlIsAbout(tokens, s.normalisedName)) about.add(s.id);
       }
       const ownerComps = competitors.filter(
         (s) => (s.domain && domainMatches(domain, s.domain)) || (!isNonAgentDomain(domain) && domainResemblesName(domain, s.normalisedName)),
       );
-      for (const s of ownerComps) comps.add(s.id);
+      for (const s of ownerComps) about.add(s.id);
+      const comps = new Set(about);
 
       const resultIds = [...new Set(rows.map((c) => c.resultId))];
       let namingBranch = 0;
@@ -156,6 +168,7 @@ export function attributeCitations(
         responses: resultIds.length,
         citesBranch,
         competitorIds: [...comps],
+        aboutIds: [...about],
         isAgentSite: ownerComps.length > 0,
         responsesNamingBranch: namingBranch,
         sampleResultId: resultIds[0]!,

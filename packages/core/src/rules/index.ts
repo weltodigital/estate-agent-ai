@@ -19,7 +19,7 @@ import {
 import type { RecommendationDraft, Rule, RuleContext } from "./types";
 
 export type * from "./types";
-export { DRAFT_NOTE } from "./assets";
+export { CITATION_SOURCE_GUIDES, DRAFT_NOTE } from "./assets";
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 

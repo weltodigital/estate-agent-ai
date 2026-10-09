@@ -12,6 +12,7 @@ describe("agency domains (from the first live paid scan)", () => {
     expect(agencyDomainFor("bourne", "bourneestateagents.com")).toBe("bourneestateagents.com");
     expect(agencyDomainFor("andrew lodge", "www.andrewlodge.net")).toBe("andrewlodge.net");
     expect(agencyDomainFor("bourne", "unrelated.co.uk")).toBeNull();
+    expect(agencyDomainFor("trueman company tlc", "tlc-farnham.co.uk")).toBe("tlc-farnham.co.uk");
   });
 });
 
@@ -53,6 +54,18 @@ describe("attributeCitations", () => {
     expect(isCitationGap(by["getagent.co.uk"]!)).toBe(true);
     expect(by["winkworth.co.uk"]).toMatchObject({ isAgentSite: true });
     expect(isCitationGap(by["winkworth.co.uk"]!)).toBe(false);
-    expect(by["bourneestateagents.com"]).toMatchObject({ isAgentSite: true, competitorIds: ["b"] });
+    expect(by["bourneestateagents.com"]).toMatchObject({ isAgentSite: true, aboutIds: ["b"] });
+    // A town listing page is about nobody, even though competitors are named alongside.
+    expect(by["getagent.co.uk"]).toMatchObject({ aboutIds: [], competitorIds: ["w"] });
+  });
+
+  it("merges country subdomains into one site", () => {
+    const stats = attributeCitations(
+      [cite("r2", "https://uk.trustpilot.com/review/x"), cite("r2", "https://www.trustpilot.com/review/y")],
+      names,
+      branch,
+      comps,
+    );
+    expect(stats.map((s) => s.domain)).toEqual(["trustpilot.com"]);
   });
 });
