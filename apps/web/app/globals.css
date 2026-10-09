@@ -4,8 +4,8 @@
 
 /*
  * Privett tokens, see BRANDING.md. Stored as RGB channels so Tailwind can
- * apply opacity (bg-brand/90). Light by default; dark follows the OS unless
- * data-theme is set on <html>.
+ * apply opacity (bg-brand/90). Light is the default; the dark theme applies
+ * only when data-theme="dark" is set on <html>.
  */
 :root,
 [data-theme="light"] {
@@ -31,27 +31,6 @@
 }
 
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --surface: 12 19 17;
-    --surface-raised: 20 29 26;
-    --surface-sunken: 8 16 13;
-    --hairline: 38 50 45;
-    --ink: 236 240 236;
-    --ink-muted: 154 167 160;
-    --brand: 79 214 156;
-    --on-brand: 6 20 15;
-    --brand-tint: 21 52 42;
-    --data-rival: 94 106 101;
-    --data-rival-soft: 46 58 53;
-    --up: 91 216 160;
-    --down: 255 138 92;
-    --warn: 242 181 68;
-    --focus: 200 241 105;
-    --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
-    color-scheme: dark;
-  }
-}
 
 [data-theme="dark"] {
   --surface: 12 19 17;
