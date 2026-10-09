@@ -9,6 +9,8 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages/core/package.json packages/core/
 COPY apps/worker/package.json apps/worker/
+# Copied only so the workspace matches the lockfile; web deps aren't installed.
+COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile --filter @privett/worker...
 
 COPY packages/core packages/core
