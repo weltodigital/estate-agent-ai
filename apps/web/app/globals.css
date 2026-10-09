@@ -26,6 +26,7 @@
   --down: 180 68 31;
   --warn: 143 98 0;
   --focus: 15 76 58;
+  --logo-mark: #0f4c3a;
   --shadow-pop: 0 8px 24px rgba(14, 26, 21, 0.12);
   color-scheme: light;
 }
@@ -48,6 +49,7 @@
   --down: 255 138 92;
   --warn: 242 181 68;
   --focus: 200 241 105;
+  --logo-mark: #ffffff;
   --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }

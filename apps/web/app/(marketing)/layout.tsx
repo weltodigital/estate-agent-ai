@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { ThemeToggle } from "@/components/brand/theme-toggle";
 import { buttonClasses } from "@/components/ui/button";
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
@@ -14,6 +15,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           <nav className="ml-auto flex items-center gap-5 text-sm text-ink-muted">
             <Link href="/#how" className="hidden hover:text-ink sm:inline">How it works</Link>
             <Link href="/pricing" className="hidden hover:text-ink sm:inline">Pricing</Link>
+            <ThemeToggle />
             <Link href="/login" className="hover:text-ink">Sign in</Link>
             <Link href="/free-scan" className={buttonClasses("primary", "sm")}>Run free scan</Link>
           </nav>

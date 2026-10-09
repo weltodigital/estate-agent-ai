@@ -149,7 +149,7 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
                 {locked > 0 ? `${locked} more fix${locked === 1 ? "" : "es"} found for your branch. ` : ""}
                 Track every week across four assistants, with every answer and fix.
               </p>
-              <Link href="/login?next=/onboarding" className={buttonClasses("primary")}>Keep these results</Link>
+              <Link href="/login?next=/onboarding" className={buttonClasses("inverse")}>Keep these results</Link>
             </div>
           ) : null}
 

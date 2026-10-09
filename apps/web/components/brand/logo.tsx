@@ -1,6 +1,7 @@
 // Privett logo: the "p" answer-bubble mark, with or without the wordmark.
-// Inline SVG so it inherits theme tokens: the mark uses `brand` (Evergreen,
-// or the dark-theme green), the dot is always Signal Lime. See BRANDING.md.
+// Inline SVG so it follows the theme: the mark is Evergreen in light and
+// white in dark (the reverse-mark rule); the dot is always Signal Lime.
+// See BRANDING.md.
 
 const MARK_PATH =
   "M14 26A20 20 0 1 1 34 46H28V56A4 4 0 0 1 24 60H18A4 4 0 0 1 14 56ZM41 26A7 7 0 1 0 27 26A7 7 0 1 0 41 26Z";
@@ -28,7 +29,7 @@ export function LogoMark({
       <path
         fillRule="evenodd"
         d={MARK_PATH}
-        fill={variant === "reverse" ? "#FFFFFF" : "rgb(var(--brand))"}
+        fill={variant === "reverse" ? "#FFFFFF" : "var(--logo-mark)"}
       />
       {showDot ? <circle cx="34" cy="26" r="4.5" fill="#C8F169" /> : null}
     </svg>

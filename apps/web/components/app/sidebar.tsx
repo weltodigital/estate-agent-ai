@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Building2, CreditCard, LayoutGrid, Shield, Users } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { OrgSwitcher } from "@/components/app/org-switcher";
+import { ThemeToggle } from "@/components/brand/theme-toggle";
 import type { OrgContext } from "@/lib/auth";
 
 export function Sidebar({ ctx, branches }: { ctx: OrgContext; branches: { id: string; name: string; town: string }[] }) {
@@ -12,6 +13,7 @@ export function Sidebar({ ctx, branches }: { ctx: OrgContext; branches: { id: st
         <Link href="/dashboard" aria-label="Privett home">
           <Logo size={22} />
         </Link>
+        <ThemeToggle />
       </div>
       <OrgSwitcher current={ctx.org.id} memberships={ctx.memberships} />
       <nav className="flex-1 space-y-6 px-3 py-4 text-sm">

@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "inverse";
 type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
@@ -9,6 +9,8 @@ const variants: Record<Variant, string> = {
   secondary: "border border-hairline bg-surface-raised text-ink hover:bg-brand-tint",
   ghost: "text-brand hover:bg-brand-tint",
   danger: "border border-down/30 bg-surface-raised text-down hover:bg-down/10",
+  // The primary action on a brand-filled band, where a brand button would vanish.
+  inverse: "bg-on-brand text-brand hover:bg-on-brand/90",
 };
 const sizes: Record<Size, string> = {
   sm: "h-8 px-3 text-[14px] leading-5",

@@ -77,11 +77,11 @@ export default function HomePage() {
       <section className="bg-brand text-on-brand">
         <div className="mx-auto max-w-6xl px-4 py-20 md:px-8">
           <h2 className="max-w-3xl text-title">See what AI says about agents in your town</h2>
-          <p className="mt-4 max-w-2xl text-rival">
+          <p className="mt-4 max-w-2xl text-on-brand/80">
             Enter your website and town. We'll show how often you're named, who is named instead, and your first fix.
           </p>
-          <Link href="/free-scan" className={buttonClasses("primary", "lg", "mt-8")}>Run free scan</Link>
-          <p className="mt-8 max-w-2xl text-small text-rival">{COPY.noPromise}</p>
+          <Link href="/free-scan" className={buttonClasses("inverse", "lg", "mt-8")}>Run free scan</Link>
+          <p className="mt-8 max-w-2xl text-small text-on-brand/70">{COPY.noPromise}</p>
         </div>
       </section>
     </>
