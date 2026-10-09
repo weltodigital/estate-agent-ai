@@ -1,48 +1,43 @@
 import type { Config } from "tailwindcss";
 
+// Privett design tokens. Colours resolve to CSS variables defined in
+// app/globals.css (light + dark). See BRANDING.md.
+const v = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
 const config: Config = {
-  content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./lib/**/*.{ts,tsx}",
-  ],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // Privett brand palette — see BRANDING.md. Literal defaults; per-agency
-        // colour overrides happen via the CSS custom properties below, not here.
-        brand: {
-          hedge: "#2E3B36",
-          "hedge-hover": "#364741", // primary button hover (~6% lighter)
-          bone: "#F5F1E8",
-          terracotta: "#B5663D",
-          "terracotta-cream": "#FAEFE2", // warm cream for text on terracotta
-          sand: "#C9B8A0",
-          ink: "#1A1F1C",
-          cream: "#FAF7F0",
-          stone: "#E4DFD0",
-          slate: "#9A968A",
-          walnut: "#4A453A",
-          // Semantic brand tokens, overridable per-agency at runtime via
-          // CSS custom properties. Default to the Privett palette.
-          primary: "var(--brand-primary)",
-          secondary: "var(--brand-secondary)",
-        },
-        // Semantic tokens point at the brand palette by default so per-agency
-        // overrides (which set these CSS custom properties inline) keep working.
-        primary: "var(--brand-primary)",
-        background: "var(--brand-background)",
-        foreground: "var(--brand-foreground)",
+        surface: { DEFAULT: v("surface"), raised: v("surface-raised"), sunken: v("surface-sunken") },
+        hairline: v("hairline"),
+        ink: { DEFAULT: v("ink"), muted: v("ink-muted") },
+        brand: { DEFAULT: v("brand"), tint: v("brand-tint") },
+        "on-brand": v("on-brand"),
+        signal: v("signal"),
+        "on-signal": v("on-signal"),
+        rival: { DEFAULT: v("data-rival"), soft: v("data-rival-soft") },
+        up: v("up"),
+        down: v("down"),
+        warn: v("warn"),
+        focus: v("focus"),
       },
       fontFamily: {
-        serif: ["var(--font-newsreader)", "Newsreader", "Georgia", "serif"],
-        sans: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-instrument)", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "ui-monospace", "SF Mono", "Menlo", "monospace"],
       },
-      boxShadow: {
-        // Barely-there lift for cards on Bone — see BRANDING.md / design pass.
-        card: "0 1px 2px rgba(26, 31, 28, 0.04), 0 4px 12px rgba(26, 31, 28, 0.04)",
-        "card-hover": "0 2px 4px rgba(26, 31, 28, 0.06), 0 8px 24px rgba(26, 31, 28, 0.06)",
+      fontSize: {
+        display: ["44px", { lineHeight: "48px", letterSpacing: "-0.025em", fontWeight: "600" }],
+        title: ["26px", { lineHeight: "32px", letterSpacing: "-0.015em", fontWeight: "600" }],
+        heading: ["17px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "600" }],
+        body: ["15px", { lineHeight: "22px" }],
+        small: ["13px", { lineHeight: "18px" }],
+        label: ["12px", { lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "600" }],
+        metric: ["36px", { lineHeight: "40px", letterSpacing: "-0.03em", fontWeight: "500" }],
+        data: ["13px", { lineHeight: "20px" }],
       },
+      borderRadius: { sm: "6px", md: "10px", lg: "16px" },
+      boxShadow: { pop: "var(--shadow-pop)" },
     },
   },
   plugins: [],

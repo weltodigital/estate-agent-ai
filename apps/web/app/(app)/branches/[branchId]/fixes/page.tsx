@@ -38,8 +38,8 @@ function StatusForm({ branchId, rec, status, children, primary = false }: { bran
       <button
         className={
           primary
-            ? "ring-brand-focus rounded-md bg-brand-hedge px-3 py-1.5 text-xs font-medium text-brand-bone hover:bg-brand-hedge-hover"
-            : "ring-brand-focus rounded-md border border-brand-stone bg-white px-3 py-1.5 text-xs font-medium text-brand-walnut hover:bg-brand-cream"
+            ? "ring-brand-focus rounded-md bg-brand px-3 py-1.5 text-small font-medium text-on-brand hover:bg-brand/90"
+            : "ring-brand-focus rounded-md border border-hairline bg-surface-raised px-3 py-1.5 text-small font-medium text-ink-muted hover:bg-brand-tint"
         }
       >
         {children}
@@ -51,7 +51,7 @@ function StatusForm({ branchId, rec, status, children, primary = false }: { bran
 function FixCard({ rec, branchId }: { rec: RecommendationRow; branchId: string }) {
   const p = PRIORITY[rec.priority] ?? PRIORITY[3]!;
   return (
-    <article className="rounded-lg border border-brand-stone bg-white shadow-card">
+    <article className="rounded-lg border border-hairline bg-surface-raised">
       <div className="space-y-2 px-5 py-4">
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge tone={p.tone}>{p.label}</Badge>
@@ -61,21 +61,21 @@ function FixCard({ rec, branchId }: { rec: RecommendationRow; branchId: string }
           {rec.status === "done" && !rec.verified_result ? <Badge>Re-checked on your next scan</Badge> : null}
           {rec.status === "todo" && rec.verified_result === "resolved" ? <Badge tone="good">No longer detected</Badge> : null}
         </div>
-        <h3 className="text-xl text-brand-ink">{rec.title}</h3>
-        <p className="text-sm text-brand-walnut">{rec.why}</p>
-        <p className="text-xs text-brand-slate">
+        <h3 className="text-heading text-ink">{rec.title}</h3>
+        <p className="text-sm text-ink-muted">{rec.why}</p>
+        <p className="text-small text-ink-muted">
           First found {formatDate(rec.first_seen_at)}
           {rec.completed_at ? ` · marked done ${formatDate(rec.completed_at)}` : ""}
         </p>
       </div>
 
-      <details className="border-t border-brand-stone">
-        <summary className="cursor-pointer px-5 py-2.5 text-sm font-medium text-brand-ink">The evidence</summary>
+      <details className="border-t border-hairline">
+        <summary className="cursor-pointer px-5 py-2.5 text-sm font-medium text-ink">The evidence</summary>
         <div className="space-y-3 px-5 pb-4">
           <Evidence data={rec.evidence_json ?? {}} />
           <details>
-            <summary className="cursor-pointer text-xs text-brand-slate">Raw data</summary>
-            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-xs text-brand-walnut">
+            <summary className="cursor-pointer text-small text-ink-muted">Raw data</summary>
+            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-small text-ink-muted">
               {JSON.stringify(rec.evidence_json, null, 2)}
             </pre>
           </details>
@@ -83,19 +83,19 @@ function FixCard({ rec, branchId }: { rec: RecommendationRow; branchId: string }
       </details>
 
       {rec.asset_kind ? (
-        <div className="border-t border-brand-stone px-5 py-4">
-          <p className="mb-2 text-xs font-medium text-brand-terracotta">{COPY.draftLabel}</p>
+        <div className="border-t border-hairline px-5 py-4">
+          <p className="mb-2 text-small font-medium text-brand">{COPY.draftLabel}</p>
           {rec.asset_status === "pending" ? (
-            <p className="text-sm text-brand-slate">Generating…</p>
+            <p className="text-sm text-ink-muted">Generating…</p>
           ) : rec.asset_status === "failed" ? (
-            <p className="text-sm text-brand-slate">We couldn’t generate this draft. It will be retried on the next scan.</p>
+            <p className="text-sm text-ink-muted">We couldn’t generate this draft. It will be retried on the next scan.</p>
           ) : rec.asset_text ? (
             <CodeBlock text={rec.asset_text} label={ASSET_LABEL[rec.asset_kind] ?? rec.asset_kind} />
           ) : null}
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2 border-t border-brand-stone px-5 py-3">
+      <div className="flex flex-wrap gap-2 border-t border-hairline px-5 py-3">
         {rec.status !== "done" ? (
           <StatusForm branchId={branchId} rec={rec} status="done" primary>
             Mark as done
@@ -136,18 +136,18 @@ export default async function FixesPage({ params }: { params: Promise<{ branchId
 
   return (
     <div className="space-y-10">
-      <p className="max-w-2xl text-sm text-brand-walnut">
+      <p className="max-w-2xl text-sm text-ink-muted">
         Prioritised from your own data and the gap to the agents AI names instead. Mark a fix as done and we’ll re-check it on your next scan, and mark the date on your trend chart. {COPY.noPromise}
       </p>
       {groups.map((g) =>
         g.items.length ? (
           <section key={g.status} aria-labelledby={`fixes-${g.status}`}>
-            <h2 id={`fixes-${g.status}`} className="mb-3 text-2xl text-brand-ink">
-              {g.title} <span className="text-base tabular-nums text-brand-slate">({g.items.length})</span>
+            <h2 id={`fixes-${g.status}`} className="mb-3 text-heading text-ink">
+              {g.title} <span className="text-base font-mono text-ink-muted">({g.items.length})</span>
             </h2>
             {g.status === "dismissed" ? (
               <details>
-                <summary className="cursor-pointer text-sm text-brand-walnut">Show dismissed fixes</summary>
+                <summary className="cursor-pointer text-sm text-ink-muted">Show dismissed fixes</summary>
                 <div className="mt-3 space-y-4">
                   {g.items.map((r) => (
                     <FixCard key={r.id} rec={r} branchId={branch.id} />

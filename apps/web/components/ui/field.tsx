@@ -2,7 +2,7 @@ import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAt
 import { cn } from "@/lib/utils";
 
 const control =
-  "ring-brand-focus w-full rounded-md border border-brand-stone bg-white px-3 py-2 text-sm text-brand-ink placeholder:text-brand-slate";
+  "ring-brand-focus w-full rounded-sm border border-hairline bg-surface-raised px-3 py-2 text-body text-ink placeholder:text-ink-muted";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className, ...p }, ref) => (
   <input ref={ref} className={cn(control, "h-10", className)} {...p} />
@@ -22,10 +22,10 @@ Select.displayName = "Select";
 export function Field({ label, hint, error, children }: { label: string; hint?: ReactNode; error?: string | null; children: ReactNode }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-sm font-medium text-brand-ink">{label}</span>
+      <span className="text-sm font-medium text-ink">{label}</span>
       {children}
-      {hint ? <span className="block text-xs text-brand-slate">{hint}</span> : null}
-      {error ? <span className="block text-xs text-red-700">{error}</span> : null}
+      {hint ? <span className="block text-small text-ink-muted">{hint}</span> : null}
+      {error ? <span className="block text-small text-down">{error}</span> : null}
     </label>
   );
 }

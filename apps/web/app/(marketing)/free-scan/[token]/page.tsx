@@ -80,93 +80,93 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
   return (
     <section className="mx-auto max-w-4xl px-4 py-14 md:px-8">
       <AutoRefresh active={inFlight} />
-      <p className="text-sm uppercase tracking-wide text-brand-slate">Free scan · {scan.town}</p>
-      <h1 className="mt-2 text-4xl text-brand-ink">{scan.agency_name}</h1>
+      <p className="text-sm uppercase tracking-wide text-ink-muted">Free scan · {scan.town}</p>
+      <h1 className="mt-2 text-display text-ink">{scan.agency_name}</h1>
 
       {inFlight ? (
-        <div className="mt-8 rounded-lg border border-brand-stone bg-brand-cream p-6">
+        <div className="mt-8 rounded-lg border border-hairline bg-surface-sunken p-6">
           <p className="font-medium">Asking AI assistants about agents in {scan.town}</p>
-          <p className="mt-1 text-sm text-brand-walnut">
+          <p className="mt-1 text-sm text-ink-muted">
             {progress?.total ? `${progress.done ?? 0} of ${progress.total} answers collected. ` : ""}This page updates by itself. It usually takes a few minutes.
           </p>
         </div>
       ) : status !== "completed" && !responses.length ? (
-        <div className="mt-8 rounded-lg border border-brand-stone bg-brand-cream p-6">
+        <div className="mt-8 rounded-lg border border-hairline bg-surface-sunken p-6">
           <p className="font-medium">We couldn't finish this scan.</p>
-          <p className="mt-1 text-sm text-brand-walnut">Please try again later, or sign up to track your branch every week.</p>
+          <p className="mt-1 text-sm text-ink-muted">Please try again later, or sign up to track your branch every week.</p>
         </div>
       ) : null}
 
       {responses.length ? (
         <>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border border-brand-stone bg-white p-6 shadow-card">
-              <p className="text-sm text-brand-slate">Visibility</p>
-              <p className="mt-1 font-serif text-6xl tabular-nums">{fmt.pct(branch.visibility)}</p>
-              <p className="mt-2 text-sm text-brand-walnut">
+            <div className="rounded-lg border border-hairline bg-surface-raised p-6">
+              <p className="text-sm text-ink-muted">Visibility</p>
+              <p className="mt-1 font-mono text-[64px] font-medium leading-none tracking-[-0.03em]">{fmt.pct(branch.visibility)}</p>
+              <p className="mt-2 text-sm text-ink-muted">
                 Named in {branch.mentions} of {branch.responses} answers{branch.position !== null ? `, at ${fmt.position(branch.position)} on average` : ""}.
               </p>
-              <p className="mt-2 text-xs text-brand-slate">A small sample: one run of each question on {[...new Set(responses.map((r) => engineLabel(r.engine)))].join(" and ")}.</p>
+              <p className="mt-2 text-small text-ink-muted">A small sample: one run of each question on {[...new Set(responses.map((r) => engineLabel(r.engine)))].join(" and ")}.</p>
             </div>
-            <div className="rounded-lg border border-brand-stone bg-white p-6 shadow-card">
-              <p className="text-sm text-brand-slate">Named instead</p>
+            <div className="rounded-lg border border-hairline bg-surface-raised p-6">
+              <p className="text-sm text-ink-muted">Named instead</p>
               {top.length ? (
                 <ol className="mt-3 space-y-2">
                   {top.map((c, i) => (
                     <li key={c.name} className="flex items-baseline gap-3">
-                      <span className="text-brand-slate">{i + 1}</span>
+                      <span className="text-ink-muted">{i + 1}</span>
                       <span className="flex-1 font-medium">{c.name}</span>
-                      <span className="tabular-nums text-sm text-brand-walnut">
+                      <span className="font-mono text-sm text-ink-muted">
                         {c.m.mentions} of {c.m.responses} answers
                       </span>
                     </li>
                   ))}
                 </ol>
               ) : (
-                <p className="mt-3 text-sm text-brand-walnut">{inFlight ? "Waiting for answers." : "No other agents were named."}</p>
+                <p className="mt-3 text-sm text-ink-muted">{inFlight ? "Waiting for answers." : "No other agents were named."}</p>
               )}
             </div>
           </div>
 
           {first ? (
-            <div className="mt-10 rounded-lg border border-brand-stone bg-white p-6 shadow-card">
-              <p className="text-sm text-brand-terracotta">Your first fix</p>
-              <h2 className="mt-1 text-2xl">{first.title}</h2>
-              <p className="mt-2 text-brand-walnut">{first.why}</p>
+            <div className="mt-10 rounded-lg border border-hairline bg-surface-raised p-6">
+              <p className="text-sm text-brand">Your first fix</p>
+              <h2 className="mt-1 text-title">{first.title}</h2>
+              <p className="mt-2 text-ink-muted">{first.why}</p>
               {first.asset_text ? (
                 <>
-                  <p className="mt-4 text-xs text-brand-slate">{COPY.draftLabel}</p>
-                  <pre className="mt-1 max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-brand-cream p-4 text-xs">{first.asset_text}</pre>
+                  <p className="mt-4 text-small text-ink-muted">{COPY.draftLabel}</p>
+                  <pre className="mt-1 max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-surface-sunken p-4 font-mono text-data">{first.asset_text}</pre>
                 </>
               ) : null}
             </div>
           ) : null}
 
           {locked > 0 || !inFlight ? (
-            <div className="mt-6 flex flex-wrap items-center gap-4 rounded-lg bg-brand-hedge p-6 text-brand-bone">
+            <div className="mt-6 flex flex-wrap items-center gap-4 rounded-lg bg-brand p-6 text-on-brand">
               <Lock size={20} strokeWidth={1.5} />
               <p className="flex-1">
                 {locked > 0 ? `${locked} more fix${locked === 1 ? "" : "es"} found for your branch. ` : ""}
                 Track every week across four assistants, with every answer and fix.
               </p>
-              <Link href="/login?next=/onboarding" className={buttonClasses("accent")}>Keep these results</Link>
+              <Link href="/login?next=/onboarding" className={buttonClasses("primary")}>Keep these results</Link>
             </div>
           ) : null}
 
           {evidence.length ? (
             <div className="mt-12">
-              <h2 className="text-2xl">The answers behind these numbers</h2>
+              <h2 className="text-title">The answers behind these numbers</h2>
               <div className="mt-4 space-y-4">
                 {evidence.map((r) => {
                   const names = (namesByResult.get(r.id) ?? []).filter(Boolean);
                   const named = responses.find((x) => x.id === r.id)?.agents.some((a) => a.subjectKey === BRANCH_KEY && a.confidence === "high");
                   return (
-                    <div key={r.id} className="rounded-lg border border-brand-stone bg-white p-4 text-sm">
-                      <p className="text-brand-slate">
+                    <div key={r.id} className="rounded-lg border border-hairline bg-surface-raised p-4 text-sm">
+                      <p className="text-ink-muted">
                         {engineLabel(r.engine)} · "{r.prompt_text}" · {named ? "You were named" : "You weren't named"}
                       </p>
                       {names.length ? <p className="mt-1">Named: {names.join(", ")}</p> : null}
-                      <p className="mt-2 text-brand-walnut">
+                      <p className="mt-2 text-ink-muted">
                         {(r.answer_text ?? "").slice(0, 400)}
                         {(r.answer_text?.length ?? 0) > 400 ? "…" : ""}
                       </p>
@@ -179,7 +179,7 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
         </>
       ) : null}
 
-      <p className="mt-12 text-xs text-brand-slate">{COPY.noPromise}</p>
+      <p className="mt-12 text-small text-ink-muted">{COPY.noPromise}</p>
     </section>
   );
 }

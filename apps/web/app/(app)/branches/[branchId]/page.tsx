@@ -71,7 +71,7 @@ export default async function BranchOverviewPage({
         <EmptyState
           title="No scan results yet"
           action={
-            <Link href={`${base}/settings`} className="text-sm font-medium text-brand-terracotta underline-offset-2 hover:underline">
+            <Link href={`${base}/settings`} className="text-sm font-medium text-brand underline-offset-2 hover:underline">
               Check your prompts and run a scan
             </Link>
           }
@@ -145,7 +145,7 @@ export default async function BranchOverviewPage({
           <CardHeader title="By engine" description={`Last ${filters.days} days.`} />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs text-brand-slate">
+              <thead className="text-left text-small text-ink-muted">
                 <tr>
                   <th className="px-5 py-2 font-medium">Engine</th>
                   <th className="px-3 py-2 text-right font-medium">Visibility</th>
@@ -154,14 +154,14 @@ export default async function BranchOverviewPage({
                   <th className="px-5 py-2 text-right font-medium">Share of voice</th>
                 </tr>
               </thead>
-              <tbody className="tabular-nums">
+              <tbody className="font-mono">
                 {engines.map(({ engine, metrics: m }) => (
-                  <tr key={engine} className={cn("border-t border-brand-stone", m.lowSample && "text-brand-slate")}>
+                  <tr key={engine} className={cn("border-t border-hairline", m.lowSample && "text-ink-muted")}>
                     <td className="px-5 py-2">
                       <Link href={`${base}/prompts${filterQuery(filters, { engine })}#answers`} className="hover:underline">
                         {engineLabel(engine)}
                       </Link>
-                      <span className="ml-2 text-xs text-brand-slate">{m.responses} responses</span>
+                      <span className="ml-2 text-small text-ink-muted">{m.responses} responses</span>
                     </td>
                     <td className="px-3 py-2 text-right">{fmt.pct(m.visibility)}</td>
                     <td className="px-3 py-2 text-right">{fmt.position(m.position)}</td>
@@ -183,10 +183,10 @@ export default async function BranchOverviewPage({
                   <li key={d.descriptor}>
                     <div className="flex items-center gap-2">
                       <Badge>{d.descriptor}</Badge>
-                      <span className="text-xs tabular-nums text-brand-slate">{d.count}×</span>
+                      <span className="text-small font-mono text-ink-muted">{d.count}×</span>
                     </div>
                     {d.snippet && d.id ? (
-                      <Link href={`${base}/responses/${d.id}`} className="mt-1 block text-sm text-brand-walnut hover:text-brand-ink">
+                      <Link href={`${base}/responses/${d.id}`} className="mt-1 block text-sm text-ink-muted hover:text-ink">
                         “{d.snippet}”
                       </Link>
                     ) : null}
@@ -194,7 +194,7 @@ export default async function BranchOverviewPage({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-brand-slate">No descriptors yet. They appear once AI names you.</p>
+              <p className="text-sm text-ink-muted">No descriptors yet. They appear once AI names you.</p>
             )}
           </CardBody>
         </Card>
@@ -205,14 +205,14 @@ export default async function BranchOverviewPage({
           title="Who AI names instead"
           description={`The agents named most in the last ${filters.days} days.`}
           action={
-            <Link href={`${base}/competitors${filterQuery(filters)}`} className="text-sm text-brand-terracotta hover:underline">
+            <Link href={`${base}/competitors${filterQuery(filters)}`} className="text-sm text-brand hover:underline">
               All competitors
             </Link>
           }
         />
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-brand-slate">
+            <thead className="text-left text-small text-ink-muted">
               <tr>
                 <th className="px-5 py-2 font-medium">Agent</th>
                 <th className="px-3 py-2 text-right font-medium">Visibility</th>
@@ -221,17 +221,22 @@ export default async function BranchOverviewPage({
                 <th className="px-5 py-2 text-right font-medium">Google reviews</th>
               </tr>
             </thead>
-            <tbody className="tabular-nums">
-              <tr className="border-t border-brand-stone bg-brand-cream font-medium">
-                <td className="px-5 py-2">{branch.name} (you)</td>
+            <tbody className="font-mono">
+              <tr className="border-t border-hairline bg-brand-tint font-medium">
+                <td className="px-5 py-2 font-sans">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-signal ring-1 ring-brand/40" aria-hidden="true" />
+                    {branch.name} <span className="text-ink-muted">(you)</span>
+                  </span>
+                </td>
                 <td className="px-3 py-2 text-right">{fmt.pct(branchMetrics.visibility)}</td>
                 <td className="px-3 py-2 text-right">{fmt.position(branchMetrics.position)}</td>
                 <td className="px-3 py-2 text-right">{fmt.pct(branchMetrics.shareOfVoice)}</td>
                 <td className="px-5 py-2 text-right">{reviews(gbp.branch)}</td>
               </tr>
               {top.map((t) => (
-                <tr key={t.key} className="border-t border-brand-stone">
-                  <td className="px-5 py-2">{t.name}</td>
+                <tr key={t.key} className="border-t border-hairline">
+                  <td className="px-5 py-2 font-sans">{t.name}</td>
                   <td className="px-3 py-2 text-right">{fmt.pct(t.metrics.visibility)}</td>
                   <td className="px-3 py-2 text-right">{fmt.position(t.metrics.position)}</td>
                   <td className="px-3 py-2 text-right">{fmt.pct(t.metrics.shareOfVoice)}</td>
@@ -243,7 +248,7 @@ export default async function BranchOverviewPage({
         </div>
       </Card>
 
-      <p className="text-xs text-brand-slate">
+      <p className="text-small text-ink-muted">
         {COPY.noPromise} Responses that couldn’t be read are left out of every figure.{" "}
         {branchMetrics.responses} of {filterResponses(responses, current).length} responses in this view were readable.
       </p>

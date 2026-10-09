@@ -9,8 +9,8 @@ function Pill({ href, active, children }: { href: string; active: boolean; child
       href={href}
       scroll={false}
       className={cn(
-        "ring-brand-focus whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium",
-        active ? "border-brand-hedge bg-brand-hedge text-brand-bone" : "border-brand-stone bg-white text-brand-walnut hover:bg-brand-cream",
+        "ring-brand-focus whitespace-nowrap rounded-full border px-3 py-1 text-small font-medium",
+        active ? "border-brand bg-brand text-on-brand" : "border-hairline bg-surface-raised text-ink-muted hover:bg-brand-tint",
       )}
     >
       {children}
@@ -24,7 +24,7 @@ export function FilterBar({ basePath, filters, extra = {} }: { basePath: string;
   return (
     <div className="mb-6 space-y-2">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs text-brand-slate">Engine</span>
+        <span className="mr-1 text-small text-ink-muted">Engine</span>
         <Pill href={q({ engine: null })} active={!filters.engine}>
           All
         </Pill>
@@ -35,7 +35,7 @@ export function FilterBar({ basePath, filters, extra = {} }: { basePath: string;
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs text-brand-slate">Questions</span>
+        <span className="mr-1 text-small text-ink-muted">Questions</span>
         <Pill href={q({ intent: null })} active={!filters.intent}>
           All
         </Pill>
@@ -46,7 +46,7 @@ export function FilterBar({ basePath, filters, extra = {} }: { basePath: string;
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs text-brand-slate">Period</span>
+        <span className="mr-1 text-small text-ink-muted">Period</span>
         {DAY_PRESETS.map((d) => (
           <Pill key={d} href={q({ days: String(d) })} active={filters.days === d}>
             Last {d} days

@@ -208,7 +208,9 @@ export function perPromptMetrics(
 
 /** Formatting helpers. Missing values are always "—", never 0. */
 export const fmt = {
-  pct: (v: number | null) => (v === null ? "—" : `${Math.round(v)}%`),
+  /** Whole percentages, one decimal under 10% (62%, 4.5%). */
+  pct: (v: number | null) =>
+    v === null ? "—" : v > 0 && v < 10 ? `${(Math.round(v * 10) / 10).toString()}%` : `${Math.round(v)}%`,
   position: (v: number | null) => (v === null ? "—" : `#${v.toFixed(1)}`),
   score: (v: number | null) => (v === null ? "—" : `${Math.round(v)}`),
   signedPts: (v: number | null) =>

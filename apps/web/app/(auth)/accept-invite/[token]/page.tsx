@@ -21,8 +21,8 @@ export default async function AcceptInvitePage({ params }: { params: Promise<{ t
   if (!invite || invite.accepted_at) {
     return (
       <>
-        <h1 className="text-2xl text-brand-ink">Invite not found</h1>
-        <p className="mt-2 text-sm text-brand-walnut">This invite has already been used or no longer exists. Ask a colleague to send a new one.</p>
+        <h1 className="text-title text-ink">Invite not found</h1>
+        <p className="mt-2 text-sm text-ink-muted">This invite has already been used or no longer exists. Ask a colleague to send a new one.</p>
       </>
     );
   }
@@ -31,14 +31,14 @@ export default async function AcceptInvitePage({ params }: { params: Promise<{ t
 
   return (
     <>
-      <h1 className="text-2xl text-brand-ink">Join {orgName}</h1>
+      <h1 className="text-title text-ink">Join {orgName}</h1>
       {emailMatches ? (
         <form action={acceptInvite} className="mt-4">
           <input type="hidden" name="token" value={token} />
           <Button className="w-full">Accept invite</Button>
         </form>
       ) : (
-        <p className="mt-2 text-sm text-brand-walnut">
+        <p className="mt-2 text-sm text-ink-muted">
           This invite was sent to {invite.email}, but you're signed in as {user.email}. Sign in with the invited address to accept it.
         </p>
       )}

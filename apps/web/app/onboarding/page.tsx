@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Wordmark } from "@/components/brand/wordmark";
+import { Logo } from "@/components/brand/logo";
 import { ActionForm } from "@/components/platform/action-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -35,10 +35,10 @@ export default async function OnboardingPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-12">
       <Link href="/" aria-label="Privett home">
-        <Wordmark size={24} />
+        <Logo size={24} />
       </Link>
-      <h1 className="mt-10 text-4xl text-brand-ink">Set up your agency</h1>
-      <p className="mt-2 text-brand-walnut">One organisation holds all your branches and colleagues.</p>
+      <h1 className="mt-10 text-title text-ink">Set up your agency</h1>
+      <p className="mt-2 text-ink-muted">One organisation holds all your branches and colleagues.</p>
 
       {scans?.length ? (
         <Card className="mt-8">
@@ -48,8 +48,8 @@ export default async function OnboardingPage() {
               <ActionForm key={s.id} action={claimFreeScan} className="flex items-center justify-between gap-4">
                 <input type="hidden" name="free_scan_id" value={s.id} />
                 <div className="text-sm">
-                  <p className="font-medium text-brand-ink">{s.agency_name}</p>
-                  <p className="text-brand-slate">
+                  <p className="font-medium text-ink">{s.agency_name}</p>
+                  <p className="text-ink-muted">
                     {s.town} · {s.domain} · {formatDate(s.created_at)}
                   </p>
                 </div>

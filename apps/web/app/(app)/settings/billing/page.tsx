@@ -37,9 +37,9 @@ export default async function BillingPage({
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader title="Plan and billing" description={sp.welcome ? "Choose a plan to start tracking your branches." : undefined} />
-      {sp.checkout && MESSAGES[sp.checkout] ? <p className="mb-4 rounded-md bg-brand-cream p-3 text-sm">{MESSAGES[sp.checkout]}</p> : null}
+      {sp.checkout && MESSAGES[sp.checkout] ? <p className="mb-4 rounded-md bg-surface-sunken p-3 text-sm">{MESSAGES[sp.checkout]}</p> : null}
       {sp.error && ERRORS[sp.error] ? (
-        <p role="alert" className="mb-4 rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+        <p role="alert" className="mb-4 rounded-md bg-warn/10 p-3 text-sm text-warn">
           {ERRORS[sp.error]}
         </p>
       ) : null}
@@ -51,22 +51,22 @@ export default async function BillingPage({
         />
         <CardBody className="grid gap-4 text-sm sm:grid-cols-3">
           <div>
-            <p className="text-brand-slate">Branches</p>
-            <p className="tabular-nums text-lg font-medium">
+            <p className="text-ink-muted">Branches</p>
+            <p className="font-mono text-heading font-medium">
               {branches} of {ctx.plan.paid ? ctx.plan.limits.maxBranches : 0}
             </p>
           </div>
           <div>
-            <p className="text-brand-slate">Questions per branch</p>
-            <p className="tabular-nums text-lg font-medium">{ctx.plan.paid ? ctx.plan.limits.promptsPerBranch : "—"}</p>
+            <p className="text-ink-muted">Questions per branch</p>
+            <p className="font-mono text-heading font-medium">{ctx.plan.paid ? ctx.plan.limits.promptsPerBranch : "—"}</p>
           </div>
           <div>
-            <p className="text-brand-slate">{sub?.cancel_at_period_end ? "Ends" : "Renews"}</p>
-            <p className="tabular-nums text-lg font-medium">{formatDate(sub?.current_period_end)}</p>
+            <p className="text-ink-muted">{sub?.cancel_at_period_end ? "Ends" : "Renews"}</p>
+            <p className="font-mono text-heading font-medium">{formatDate(sub?.current_period_end)}</p>
           </div>
         </CardBody>
         {ctx.plan.paid && isOwner ? (
-          <CardBody className="border-t border-brand-stone">
+          <CardBody className="border-t border-hairline">
             <form action="/api/stripe/portal" method="post">
               <Button variant="secondary">Manage billing, invoices and branch count</Button>
             </form>
@@ -80,8 +80,8 @@ export default async function BillingPage({
             <Card key={p.id} className="flex flex-col">
               <CardHeader title={p.name} description={p.description} />
               <CardBody className="flex flex-1 flex-col gap-4 text-sm">
-                <p className="font-serif text-2xl">{priceLabel(p.id)}</p>
-                <ul className="space-y-1 text-brand-walnut">
+                <p className="text-title">{priceLabel(p.id)}</p>
+                <ul className="space-y-1 text-ink-muted">
                   <li>Up to {p.limits.promptsPerBranch} questions per branch</li>
                   <li>{p.limits.engines.map(engineLabel).join(", ")}</li>
                   <li>{p.limits.runsPerPrompt} runs per question, every {p.limits.scanIntervalDays} days</li>
@@ -92,7 +92,7 @@ export default async function BillingPage({
                   <form action="/api/stripe/checkout" method="post" className="mt-auto space-y-2">
                     <input type="hidden" name="plan_id" value={p.id} />
                     {p.id === "multi" ? (
-                      <label className="block text-xs text-brand-slate">
+                      <label className="block text-small text-ink-muted">
                         Number of branches
                         <Input type="number" name="quantity" min={Math.max(branches, 1)} max={p.limits.maxBranches} defaultValue={Math.max(branches, 2)} className="mt-1" />
                       </label>
@@ -102,14 +102,14 @@ export default async function BillingPage({
                     </Button>
                   </form>
                 ) : (
-                  <p className="mt-auto text-xs text-brand-slate">Ask an owner of {ctx.org.name} to choose a plan.</p>
+                  <p className="mt-auto text-small text-ink-muted">Ask an owner of {ctx.org.name} to choose a plan.</p>
                 )}
               </CardBody>
             </Card>
           ))}
         </div>
       ) : null}
-      <p className="mt-8 text-xs text-brand-slate">{COPY.noPromise}</p>
+      <p className="mt-8 text-small text-ink-muted">{COPY.noPromise}</p>
     </div>
   );
 }

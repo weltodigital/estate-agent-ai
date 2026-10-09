@@ -75,7 +75,7 @@ export default async function PromptsPage({
         {promptRows.length ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs text-brand-slate">
+              <thead className="text-left text-small text-ink-muted">
                 <tr>
                   <th className="px-5 py-2 font-medium">Question</th>
                   <th className="px-3 py-2 font-medium">Type</th>
@@ -84,21 +84,21 @@ export default async function PromptsPage({
                   <th className="px-5 py-2 text-right font-medium">Position</th>
                 </tr>
               </thead>
-              <tbody className="tabular-nums">
+              <tbody className="font-mono">
                 {promptRows.map((p) => {
                   const low = !p.m || p.m.responses < 3;
                   return (
-                    <tr key={p.text} className={cn("border-t border-brand-stone", promptFilter === p.text && "bg-brand-cream")}>
+                    <tr key={p.text} className={cn("border-t border-hairline", promptFilter === p.text && "bg-surface-sunken")}>
                       <td className="px-5 py-2">
-                        <Link href={q({ prompt: p.text }) + "#answers"} className="text-brand-ink hover:underline">
+                        <Link href={q({ prompt: p.text }) + "#answers"} className="text-ink hover:underline">
                           {p.text}
                         </Link>
-                        {!p.active ? <span className="ml-2 text-xs text-brand-slate">(no longer tracked)</span> : null}
+                        {!p.active ? <span className="ml-2 text-small text-ink-muted">(no longer tracked)</span> : null}
                       </td>
-                      <td className="px-3 py-2 text-xs text-brand-walnut">{INTENT_LABELS[p.intent as IntentGroup] ?? p.intent}</td>
-                      <td className="px-3 py-2 text-right text-brand-walnut">{p.m?.responses ?? 0}</td>
-                      <td className={cn("px-3 py-2 text-right", low && "text-brand-slate")}>{fmt.pct(p.m?.visibility ?? null)}</td>
-                      <td className={cn("px-5 py-2 text-right", low && "text-brand-slate")}>{fmt.position(p.m?.position ?? null)}</td>
+                      <td className="px-3 py-2 text-small text-ink-muted">{INTENT_LABELS[p.intent as IntentGroup] ?? p.intent}</td>
+                      <td className="px-3 py-2 text-right text-ink-muted">{p.m?.responses ?? 0}</td>
+                      <td className={cn("px-3 py-2 text-right", low && "text-ink-muted")}>{fmt.pct(p.m?.visibility ?? null)}</td>
+                      <td className={cn("px-5 py-2 text-right", low && "text-ink-muted")}>{fmt.position(p.m?.position ?? null)}</td>
                     </tr>
                   );
                 })}
@@ -115,13 +115,13 @@ export default async function PromptsPage({
       <section id="answers" className="scroll-mt-6">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-2xl text-brand-ink">Every answer</h2>
-            <p className="text-sm text-brand-walnut">
-              <span className="tabular-nums">{scoped.length}</span> response{scoped.length === 1 ? "" : "s"}
+            <h2 className="text-heading text-ink">Every answer</h2>
+            <p className="text-sm text-ink-muted">
+              <span className="font-mono">{scoped.length}</span> response{scoped.length === 1 ? "" : "s"}
               {promptFilter ? (
                 <>
                   {" "}to “{promptFilter}”.{" "}
-                  <Link href={q({ prompt: null }) + "#answers"} className="text-brand-terracotta hover:underline">
+                  <Link href={q({ prompt: null }) + "#answers"} className="text-brand hover:underline">
                     Show all questions
                   </Link>
                 </>
@@ -130,7 +130,7 @@ export default async function PromptsPage({
               )}
             </p>
           </div>
-          <div className="flex gap-1.5 text-xs">
+          <div className="flex gap-1.5 text-small">
             {[
               { v: null, label: "All" },
               { v: "yes", label: "Names you" },
@@ -141,7 +141,7 @@ export default async function PromptsPage({
                 href={q({ mentioned: o.v }) + "#answers"}
                 className={cn(
                   "rounded-full border px-3 py-1 font-medium",
-                  mentioned === o.v ? "border-brand-hedge bg-brand-hedge text-brand-bone" : "border-brand-stone bg-white text-brand-walnut",
+                  mentioned === o.v ? "border-brand bg-brand text-on-brand" : "border-hairline bg-surface-raised text-ink-muted",
                 )}
               >
                 {o.label}
@@ -158,17 +158,17 @@ export default async function PromptsPage({
               const text = texts.get(r.id)?.answer_text ?? null;
               return (
                 <li key={r.id}>
-                  <details className="group rounded-lg border border-brand-stone bg-white shadow-card">
+                  <details className="group rounded-lg border border-hairline bg-surface-raised">
                     <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 text-sm">
-                      <span className="font-medium text-brand-ink">{engineLabel(r.engine)}</span>
-                      <span className="text-brand-walnut">{r.promptText}</span>
-                      <span className="text-xs text-brand-slate">{formatDateTime(r.createdAt)}</span>
+                      <span className="font-medium text-ink">{engineLabel(r.engine)}</span>
+                      <span className="text-ink-muted">{r.promptText}</span>
+                      <span className="text-small text-ink-muted">{formatDateTime(r.createdAt)}</span>
                       <span className="ml-auto flex flex-wrap gap-1.5">
                         {!r.parsed ? <Badge tone="warn">Couldn’t read</Badge> : mentionedIds.has(r.id) ? <Badge tone="good">Names you</Badge> : <Badge>Doesn’t name you</Badge>}
                         {row.needs_review ? <Badge tone="warn">Needs review</Badge> : null}
                       </span>
                     </summary>
-                    <div className="space-y-3 border-t border-brand-stone px-5 py-4 text-sm">
+                    <div className="space-y-3 border-t border-hairline px-5 py-4 text-sm">
                       {named.length ? (
                         <ol className="flex flex-wrap gap-1.5">
                           {named.map((a) => (
@@ -181,8 +181,8 @@ export default async function PromptsPage({
                           ))}
                         </ol>
                       ) : null}
-                      <p className="whitespace-pre-wrap text-brand-walnut">{text ? (text.length > 900 ? `${text.slice(0, 900)}…` : text) : "No answer text stored."}</p>
-                      <Link href={`${base}/responses/${r.id}`} className="inline-block text-brand-terracotta hover:underline">
+                      <p className="whitespace-pre-wrap rounded-md bg-surface-sunken p-3 font-mono text-data text-ink">{text ? (text.length > 900 ? `${text.slice(0, 900)}…` : text) : "No answer text stored."}</p>
+                      <Link href={`${base}/responses/${r.id}`} className="inline-block text-brand hover:underline">
                         Full answer, citations and raw data
                       </Link>
                     </div>
@@ -198,17 +198,17 @@ export default async function PromptsPage({
         {pageCount > 1 ? (
           <nav className="mt-4 flex items-center justify-between text-sm" aria-label="Pages">
             {page > 1 ? (
-              <Link href={q({ page: String(page - 1) }) + "#answers"} className="text-brand-terracotta hover:underline">
+              <Link href={q({ page: String(page - 1) }) + "#answers"} className="text-brand hover:underline">
                 Newer
               </Link>
             ) : (
               <span />
             )}
-            <span className="tabular-nums text-brand-slate">
+            <span className="font-mono text-ink-muted">
               Page {page} of {pageCount}
             </span>
             {page < pageCount ? (
-              <Link href={q({ page: String(page + 1) }) + "#answers"} className="text-brand-terracotta hover:underline">
+              <Link href={q({ page: String(page + 1) }) + "#answers"} className="text-brand hover:underline">
                 Older
               </Link>
             ) : (

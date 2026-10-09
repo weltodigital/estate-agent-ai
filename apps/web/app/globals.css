@@ -3,125 +3,122 @@
 @tailwind utilities;
 
 /*
- * Privett brand defaults — see BRANDING.md.
- *
- * These are the :root defaults. Anything set inline at runtime takes
- * precedence.
+ * Privett tokens, see BRANDING.md. Stored as RGB channels so Tailwind can
+ * apply opacity (bg-brand/90). Light by default; dark follows the OS unless
+ * data-theme is set on <html>.
  */
-:root {
-  --brand-primary: #2e3b36; /* Hedge Green */
-  --brand-secondary: #c9b8a0; /* Sand */
-  --brand-background: #f5f1e8; /* Bone */
-  --brand-foreground: #1a1f1c; /* Ink */
-
-  /* Full palette, exposed as custom properties for inline/dynamic use. */
-  --brand-hedge: #2e3b36;
-  --brand-bone: #f5f1e8;
-  --brand-terracotta: #b5663d;
-  --brand-sand: #c9b8a0;
-  --brand-ink: #1a1f1c;
-  --brand-cream: #faf7f0;
-  --brand-stone: #e4dfd0;
-  --brand-slate: #9a968a;
-  --brand-walnut: #4a453a;
+:root,
+[data-theme="light"] {
+  --surface: 247 247 242;
+  --surface-raised: 255 255 255;
+  --surface-sunken: 238 238 230;
+  --hairline: 220 221 211;
+  --ink: 14 26 21;
+  --ink-muted: 86 98 92;
+  --brand: 15 76 58;
+  --on-brand: 255 255 255;
+  --brand-tint: 227 239 232;
+  --signal: 200 241 105;
+  --on-signal: 14 26 21;
+  --data-rival: 126 135 129;
+  --data-rival-soft: 201 206 201;
+  --up: 14 122 82;
+  --down: 180 68 31;
+  --warn: 143 98 0;
+  --focus: 15 76 58;
+  --shadow-pop: 0 8px 24px rgba(14, 26, 21, 0.12);
+  color-scheme: light;
 }
 
-html,
-body {
-  height: 100%;
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: 12 19 17;
+    --surface-raised: 20 29 26;
+    --surface-sunken: 8 16 13;
+    --hairline: 38 50 45;
+    --ink: 236 240 236;
+    --ink-muted: 154 167 160;
+    --brand: 79 214 156;
+    --on-brand: 6 20 15;
+    --brand-tint: 21 52 42;
+    --data-rival: 94 106 101;
+    --data-rival-soft: 46 58 53;
+    --up: 91 216 160;
+    --down: 255 138 92;
+    --warn: 242 181 68;
+    --focus: 200 241 105;
+    --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+
+[data-theme="dark"] {
+  --surface: 12 19 17;
+  --surface-raised: 20 29 26;
+  --surface-sunken: 8 16 13;
+  --hairline: 38 50 45;
+  --ink: 236 240 236;
+  --ink-muted: 154 167 160;
+  --brand: 79 214 156;
+  --on-brand: 6 20 15;
+  --brand-tint: 21 52 42;
+  --data-rival: 94 106 101;
+  --data-rival-soft: 46 58 53;
+  --up: 91 216 160;
+  --down: 255 138 92;
+  --warn: 242 181 68;
+  --focus: 200 241 105;
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
 }
 
 body {
-  background-color: var(--brand-background);
-  color: var(--brand-foreground);
-  font-family:
-    var(--font-inter),
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-  font-weight: 400;
-  line-height: 1.6;
+  background-color: rgb(var(--surface));
+  color: rgb(var(--ink));
+  font-family: var(--font-instrument), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 22px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/*
- * Heading defaults — Newsreader for h1–h3, Inter for h4–h6. See BRANDING.md.
- * Newsreader is never used below 18px; the opsz axis (range 6–72) is pushed
- * to 72 at display sizes and 24 for medium headings.
- */
 @layer base {
   h1,
   h2,
-  h3 {
-    font-family: var(--font-newsreader), Newsreader, Georgia, serif;
-  }
-
-  h1 {
-    font-weight: 400;
-    font-variation-settings: "opsz" 72;
-    letter-spacing: -0.02em;
-  }
-
-  h2 {
-    font-weight: 400;
-    font-variation-settings: "opsz" 72;
-    letter-spacing: -0.015em;
-  }
-
-  h3 {
-    font-weight: 500;
-    font-variation-settings: "opsz" 24;
-    letter-spacing: -0.01em;
-  }
-
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-    font-weight: 500;
+  h3,
+  h4 {
+    font-weight: 600;
   }
 }
 
-/* Tabular numerals for metrics, billing, and pricing. */
+/* Every number someone compares is set in Geist Mono. */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/*
- * Brand focus ring — a soft Terracotta halo with a 2px offset (the inner ring
- * is painted in the page background so the offset reads on any surface).
- * Tailwind's default focus ring isn't subtle enough.
- */
 @layer utilities {
+  /* 2px solid focus ring with a 2px offset, per BRANDING.md. */
   .ring-brand-focus:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 2px var(--brand-background),
-      0 0 0 4px rgba(181, 102, 61, 0.3);
+    outline: 2px solid rgb(var(--focus));
+    outline-offset: 2px;
   }
 }
 
-/* Quiet, narrow scrollbars in Stone — see design pass. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--brand-stone) transparent;
+  scrollbar-color: rgb(var(--hairline)) transparent;
 }
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-*::-webkit-scrollbar-thumb {
-  background-color: var(--brand-stone);
-  border-radius: 9999px;
-  border: 2px solid transparent;
-  background-clip: content-box;
+
+/* Table headers use the `label` style on surface-sunken (BRANDING.md). */
+@layer base {
+  thead th {
+    background-color: rgb(var(--surface-sunken));
+    color: rgb(var(--ink-muted));
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
 }

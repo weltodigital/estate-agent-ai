@@ -51,11 +51,11 @@ export function FreeScanForm() {
           <input name="company_url" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
-      <Button type="submit" variant="accent" className="w-full" disabled={pending}>
+      <Button type="submit" variant="primary" className="w-full" disabled={pending}>
         {pending ? "Starting your scan" : "Run my free scan"}
       </Button>
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-down">
           {error}
         </p>
       ) : null}

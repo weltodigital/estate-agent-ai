@@ -54,20 +54,20 @@ export default async function CitationsPage({
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardBody>
-            <p className="text-xs text-brand-slate">Sites cited</p>
-            <p className="text-3xl font-medium tabular-nums text-brand-ink">{stats.length}</p>
+            <p className="text-small text-ink-muted">Sites cited</p>
+            <p className="font-mono text-metric text-ink">{stats.length}</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <p className="text-xs text-brand-slate">Sites that cite you</p>
-            <p className="text-3xl font-medium tabular-nums text-brand-ink">{stats.filter((s) => s.citesBranch).length}</p>
+            <p className="text-small text-ink-muted">Sites that cite you</p>
+            <p className="font-mono text-metric text-ink">{stats.filter((s) => s.citesBranch).length}</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <p className="text-xs text-brand-slate">Cite competitors but not you</p>
-            <p className="text-3xl font-medium tabular-nums text-brand-terracotta">{gaps.length}</p>
+            <p className="text-small text-ink-muted">Cite competitors but not you</p>
+            <p className="font-mono text-metric text-ink">{gaps.length}</p>
           </CardBody>
         </Card>
       </div>
@@ -77,7 +77,7 @@ export default async function CitationsPage({
           title="Where AI gets its information"
           description={`Sites cited in answers about agents in ${branch.town}. Highlighted rows feature competitors but never you: they feed your fixes.`}
           action={
-            <Link href={`${base}/fixes`} className="text-sm text-brand-terracotta hover:underline">
+            <Link href={`${base}/fixes`} className="text-sm text-brand hover:underline">
               See fixes
             </Link>
           }
@@ -85,7 +85,7 @@ export default async function CitationsPage({
         {stats.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="text-left text-xs text-brand-slate">
+              <thead className="text-left text-small text-ink-muted">
                 <tr>
                   <th className="px-5 py-2 font-medium">Site</th>
                   <th className="px-3 py-2 text-right font-medium">Answers citing it</th>
@@ -97,16 +97,16 @@ export default async function CitationsPage({
                 {stats.map((s) => {
                   const gap = isCitationGap(s);
                   return (
-                    <tr key={s.domain} className={cn("border-t border-brand-stone align-top", gap && "bg-brand-cream")}>
+                    <tr key={s.domain} className={cn("border-t border-hairline align-top", gap && "bg-surface-sunken")}>
                       <td className="px-5 py-2">
-                        <Link href={`${base}/responses/${s.sampleResultId}`} className="text-brand-ink hover:underline">
+                        <Link href={`${base}/responses/${s.sampleResultId}`} className="text-ink hover:underline">
                           {s.domain}
                         </Link>
                         {gap ? <Badge tone="warn" className="ml-2">Gap</Badge> : null}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{s.responses}</td>
-                      <td className="px-3 py-2">{s.citesBranch ? <Badge tone="good">Yes</Badge> : <span className="text-brand-slate">No</span>}</td>
-                      <td className="px-5 py-2 text-xs text-brand-walnut">
+                      <td className="px-3 py-2 text-right font-mono">{s.responses}</td>
+                      <td className="px-3 py-2">{s.citesBranch ? <Badge tone="good">Yes</Badge> : <span className="text-ink-muted">No</span>}</td>
+                      <td className="px-5 py-2 text-small text-ink-muted">
                         {s.competitorIds.length
                           ? s.competitorIds.slice(0, 4).map((id) => names.get(id) ?? "Unknown").join(", ") + (s.competitorIds.length > 4 ? ` and ${s.competitorIds.length - 4} more` : "")
                           : "—"}

@@ -5,7 +5,13 @@ import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContai
 import type { MetricKey, TrendPoint } from "@/lib/data/overview";
 import { cn } from "@/lib/utils";
 
-const COLOURS = ["#2E3B36", "#9A968A", "#C9B8A0", "#4A453A"]; // hedge, slate, sand, walnut
+// The agent is the only colour on the chart: their series is brand, every
+// competitor is data-rival, told apart by dash pattern (BRANDING.md).
+const BRAND = "rgb(var(--brand))";
+const RIVAL = "rgb(var(--data-rival))";
+const GRID = "rgb(var(--data-rival-soft))";
+const MUTED = "rgb(var(--ink-muted))";
+const RIVAL_DASHES = ["", "6 3", "2 3", "8 3 2 3"];
 const LABELS: Record<MetricKey, string> = {
   visibility: "Visibility",
   position: "Position",
@@ -47,8 +53,8 @@ export function TrendChart({
             aria-selected={metric === k}
             onClick={() => setMetric(k)}
             className={cn(
-              "ring-brand-focus rounded-full border px-3 py-1 text-xs font-medium",
-              metric === k ? "border-brand-hedge bg-brand-hedge text-brand-bone" : "border-brand-stone bg-white text-brand-walnut",
+              "ring-brand-focus rounded-full border px-3 py-1 text-small font-medium",
+              metric === k ? "border-brand bg-brand text-on-brand" : "border-hairline bg-surface-raised text-ink-muted",
             )}
           >
             {LABELS[k]}
@@ -56,35 +62,36 @@ export function TrendChart({
         ))}
       </div>
       {points.length < 2 ? (
-        <p className="py-10 text-center text-sm text-brand-slate">Trends appear after two weeks of scans.</p>
+        <p className="py-10 text-center text-sm text-ink-muted">Trends appear after two weeks of scans.</p>
       ) : (
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={points} margin={{ top: 8, right: 16, bottom: 0, left: -12 }}>
-              <CartesianGrid stroke="#E4DFD0" vertical={false} />
-              <XAxis dataKey="week" tickFormatter={(w: string) => weekFmt.format(new Date(w))} tick={{ fontSize: 11, fill: "#9A968A" }} stroke="#E4DFD0" />
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="week" tickFormatter={(w: string) => weekFmt.format(new Date(w))} tick={{ fontSize: 11, fill: MUTED }} stroke={GRID} />
               <YAxis
                 reversed={metric === "position"}
-                tick={{ fontSize: 11, fill: "#9A968A" }}
-                stroke="#E4DFD0"
+                tick={{ fontSize: 11, fill: MUTED }}
+                stroke={GRID}
                 domain={metric === "position" ? [1, "auto"] : [0, metric === "sentiment" ? 100 : "auto"]}
                 allowDecimals={metric === "position"}
               />
               <Tooltip
                 formatter={(v) => fmtValue(metric, v)}
                 labelFormatter={(w) => `Week of ${weekFmt.format(new Date(String(w)))}`}
-                contentStyle={{ borderColor: "#E4DFD0", borderRadius: 6, fontSize: 12 }}
+                contentStyle={{ background: "rgb(var(--surface-raised))", borderColor: "rgb(var(--hairline))", borderRadius: 10, fontSize: 12, color: "rgb(var(--ink))" }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               {markers.map((f) => (
-                <ReferenceLine key={f.week + f.title} x={f.week} stroke="#B5663D" strokeDasharray="4 3" label={{ value: "Fix done", position: "insideTopRight", fill: "#B5663D", fontSize: 10 }} />
+                <ReferenceLine key={f.week + f.title} x={f.week} stroke={MUTED} strokeDasharray="2 3" label={{ value: "Fix done", position: "insideTopRight", fill: MUTED, fontSize: 10 }} />
               ))}
               {series.map((s, i) => (
                 <Line
                   key={s}
                   type="monotone"
                   dataKey={s}
-                  stroke={COLOURS[i % COLOURS.length]}
+                  stroke={i === 0 ? BRAND : RIVAL}
+                  strokeDasharray={i === 0 ? undefined : RIVAL_DASHES[(i - 1) % RIVAL_DASHES.length]}
                   strokeWidth={i === 0 ? 2.5 : 1.5}
                   dot={false}
                   connectNulls={false}
@@ -96,10 +103,10 @@ export function TrendChart({
         </div>
       )}
       {markers.length ? (
-        <ul className="mt-3 space-y-0.5 text-xs text-brand-walnut">
+        <ul className="mt-3 space-y-0.5 text-small text-ink-muted">
           {markers.map((f) => (
             <li key={f.week + f.title}>
-              <span className="text-brand-terracotta">Fix done</span> week of {weekFmt.format(new Date(f.week))}: {f.title}
+              <span className="text-brand">Fix done</span> week of {weekFmt.format(new Date(f.week))}: {f.title}
             </li>
           ))}
         </ul>

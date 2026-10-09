@@ -48,7 +48,7 @@ add_action('wp_head', function () {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm text-brand-walnut">
+        <p className="max-w-2xl text-sm text-ink-muted">
           Visits to your website that arrive from AI assistants such as ChatGPT, Perplexity, Gemini, Copilot and Claude. We record the source, the page they
           landed on and the time. Nothing about the visitor, and no cookies.
         </p>
@@ -58,8 +58,8 @@ add_action('wp_head', function () {
               key={d}
               href={`${base}?days=${d}`}
               className={cn(
-                "rounded-full border px-3 py-1 text-xs font-medium",
-                d === days ? "border-brand-hedge bg-brand-hedge text-brand-bone" : "border-brand-stone bg-white text-brand-walnut",
+                "rounded-full border px-3 py-1 text-small font-medium",
+                d === days ? "border-brand bg-brand text-on-brand" : "border-hairline bg-surface-raised text-ink-muted",
               )}
             >
               Last {d} days
@@ -71,21 +71,21 @@ add_action('wp_head', function () {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardBody>
-            <p className="text-xs text-brand-slate">AI referral visits</p>
-            <p className="text-3xl font-medium tabular-nums text-brand-ink">{events.length}</p>
-            <p className="text-xs text-brand-slate">Last {days} days</p>
+            <p className="text-small text-ink-muted">AI referral visits</p>
+            <p className="font-mono text-metric text-ink">{events.length}</p>
+            <p className="text-small text-ink-muted">Last {days} days</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <p className="text-xs text-brand-slate">Top source</p>
-            <p className="text-3xl font-medium text-brand-ink">{bySource[0] ? (labelOf.get(bySource[0].key) ?? bySource[0].key) : "—"}</p>
+            <p className="text-small text-ink-muted">Top source</p>
+            <p className="text-title text-ink">{bySource[0] ? (labelOf.get(bySource[0].key) ?? bySource[0].key) : "—"}</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <p className="text-xs text-brand-slate">Last visit recorded</p>
-            <p className="text-lg font-medium text-brand-ink">{last ? formatDateTime(last) : "—"}</p>
+            <p className="text-small text-ink-muted">Last visit recorded</p>
+            <p className="font-mono text-heading font-medium text-ink">{last ? formatDateTime(last) : "—"}</p>
             {last ? <Badge tone="good">Snippet is working</Badge> : <Badge tone="warn">Nothing received yet</Badge>}
           </CardBody>
         </Card>
@@ -108,22 +108,22 @@ add_action('wp_head', function () {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader title="By source" />
-            <ul className="divide-y divide-brand-stone text-sm">
+            <ul className="divide-y divide-hairline text-sm">
               {bySource.map((s) => (
                 <li key={s.key} className="flex justify-between px-5 py-2">
                   <span>{labelOf.get(s.key) ?? s.key}</span>
-                  <span className="tabular-nums">{s.count}</span>
+                  <span className="font-mono">{s.count}</span>
                 </li>
               ))}
             </ul>
           </Card>
           <Card>
             <CardHeader title="By landing page" description="The pages AI sends people to." />
-            <ul className="divide-y divide-brand-stone text-sm">
+            <ul className="divide-y divide-hairline text-sm">
               {byPage.map((p) => (
                 <li key={p.key} className="flex justify-between gap-3 px-5 py-2">
-                  <span className="truncate font-mono text-xs">{p.key}</span>
-                  <span className="tabular-nums">{p.count}</span>
+                  <span className="truncate font-mono text-small">{p.key}</span>
+                  <span className="font-mono">{p.count}</span>
                 </li>
               ))}
             </ul>
@@ -135,27 +135,27 @@ add_action('wp_head', function () {
         <CardHeader title="Install the tracking snippet" description="One line, added once to every page of your website. It doesn’t slow your site down or set cookies." />
         <CardBody className="space-y-6">
           <div className="space-y-2">
-            <h4 className="text-sm text-brand-ink">Any website</h4>
-            <p className="text-sm text-brand-walnut">Paste this just before the closing &lt;/head&gt; tag, or ask your web developer to.</p>
+            <h4 className="text-sm text-ink">Any website</h4>
+            <p className="text-sm text-ink-muted">Paste this just before the closing &lt;/head&gt; tag, or ask your web developer to.</p>
             <CodeBlock text={tag} label="HTML" />
           </div>
           <div className="space-y-2">
-            <h4 className="text-sm text-brand-ink">WordPress</h4>
-            <p className="text-sm text-brand-walnut">
+            <h4 className="text-sm text-ink">WordPress</h4>
+            <p className="text-sm text-ink-muted">
               The simplest route is a header plugin such as WPCode: add a new header snippet, paste the line above and save. Or add this to your theme’s
               functions.php:
             </p>
             <CodeBlock text={wordpress} label="functions.php" />
           </div>
           <div className="space-y-2">
-            <h4 className="text-sm text-brand-ink">Google Tag Manager</h4>
-            <ol className="list-decimal space-y-1 pl-5 text-sm text-brand-walnut">
+            <h4 className="text-sm text-ink">Google Tag Manager</h4>
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-ink-muted">
               <li>In your container, add a new tag of type Custom HTML.</li>
               <li>Paste the line above into the HTML box.</li>
               <li>Set the trigger to All Pages, save, then Submit to publish.</li>
             </ol>
           </div>
-          <p className="text-xs text-brand-slate">
+          <p className="text-small text-ink-muted">
             To check it’s working, ask ChatGPT about your agency, click the link to your site, then refresh this page. Some assistants hide where visits come from, so
             treat these figures as a floor, not a total.
           </p>

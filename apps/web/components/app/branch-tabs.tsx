@@ -18,7 +18,7 @@ export function BranchTabs({ branchId }: { branchId: string }) {
   const pathname = usePathname();
   const base = `/branches/${branchId}`;
   return (
-    <nav className="-mx-1 mb-8 flex gap-1 overflow-x-auto border-b border-brand-stone">
+    <nav className="-mx-1 mb-8 flex gap-1 overflow-x-auto border-b border-hairline">
       {TABS.map((t) => {
         const href = base + t.href;
         const active = t.href === "" ? pathname === base : pathname.startsWith(href);
@@ -28,7 +28,7 @@ export function BranchTabs({ branchId }: { branchId: string }) {
             href={href}
             className={cn(
               "whitespace-nowrap border-b-2 px-3 py-2 text-sm",
-              active ? "border-brand-hedge font-medium text-brand-ink" : "border-transparent text-brand-walnut hover:text-brand-ink",
+              active ? "border-brand font-medium text-ink" : "border-transparent text-ink-muted hover:text-ink",
             )}
           >
             {t.label}

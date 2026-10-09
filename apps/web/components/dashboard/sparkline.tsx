@@ -28,7 +28,7 @@ export function Sparkline({ values, invert = false, className }: { values: (numb
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className={className} preserveAspectRatio="none" aria-hidden="true">
       {segments.map((d) => (
-        <path key={d} d={d} fill="none" stroke="var(--brand-hedge)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+        <path key={d} d={d} fill="none" stroke="rgb(var(--brand))" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       ))}
     </svg>
   );

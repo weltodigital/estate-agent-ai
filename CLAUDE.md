@@ -2,7 +2,7 @@
 
 ## WHAT
 
-Privett tracks how UK estate and letting agents show up in AI search (ChatGPT, Perplexity, Gemini, Claude) and tells them what to fix. The spec is [`docs/build-prompt-v1.md`](./docs/build-prompt-v1.md). Brand and voice: [`BRANDING.md`](./BRANDING.md). Read both before changing product behaviour or copy.
+Privett tracks how UK estate and letting agents show up in AI search (ChatGPT, Perplexity, Gemini, Claude) and tells them what to fix. The spec is [`docs/build-prompt-v1.md`](./docs/build-prompt-v1.md). Brand, design tokens and voice: [`BRANDING.md`](./BRANDING.md). Read both before changing product behaviour or copy.
 
 ## ARCHITECTURE
 
@@ -25,7 +25,8 @@ pnpm workspace, no build step for shared code.
 
 ## CONVENTIONS
 
-- TypeScript strict. UK English in all user-facing strings.
+- TypeScript strict. UK English, sentence case, no emoji in all user-facing strings.
+- Styling uses only the design tokens in `apps/web/tailwind.config.ts` / `app/globals.css` (from BRANDING.md). No raw hex in components. The agent's own data is `brand`; every competitor is `rival`. Numbers and raw AI answers are `font-mono`.
 - RLS on every table, scoped by `org_id`. The service-role client (`apps/web/lib/supabase/admin.ts`) is only for writes that need a plan-limit check first, Stripe webhooks, the public tracking endpoint, the free scan, and admin tools. Always scope by org explicitly when using it.
 - Plan limits are enforced server-side (`effectiveLimits` in core, `getOrgPlan` in web, `enqueueScan` in `apps/web/lib/scans.ts`).
 - API costs are USD (`numeric`), logged per call in `api_cost_log`. Every scan run has a budget; the worker stops when it's spent.

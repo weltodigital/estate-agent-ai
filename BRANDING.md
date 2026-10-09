@@ -1,137 +1,238 @@
-# Privett — Brand Reference
+# Privett — Brand Guidelines v1
 
-This is the canonical brand reference for Privett. Other `CLAUDE.md` files refer here. When you write or change any user-facing copy, colour, or type decision, this file is the source of truth.
+Privett shows UK estate and letting agents how they appear in AI search, and what to fix. The brand should feel like a precise instrument an agent trusts with a decision: calm, exact, quietly confident. Not a growth-hack tool, not a toy.
 
-> **Note on the logo:** the real Privett wordmark is in place — a Hedge Green serif logo (`apps/web/public/privett-logo.png`) with a Bone variant for dark backgrounds (`privett-logo-bone.png`). Both are rendered through the `<Wordmark />` component, so any future asset swap stays a one-file change.
-
----
-
-## Name and pronunciation
-
-**Privett.** Always sentence case — never `PRIVETT`, never `privett`. The domain is `useprivett.com`; in body copy always write the name as "Privett", never the URL.
-
-Pronounced **PRIH-vett**. Two syllables, soft.
-
-**One-line description:** See how often AI assistants name your agency when sellers and landlords ask who to use, and what to fix when they don't.
-
-**The question we answer:** When a seller in your town asks AI who to list with, are you named? If not, why not?
+**Tagline:** Know where you stand in AI search.
 
 ---
 
-## Voice & tone
+## 1. Logo
 
-Warm, considered, quietly confident. The voice of a thoughtful senior colleague who happens to be brilliant at marketing, not a salesperson, not a robot.
+The mark is a lowercase **p** drawn as an answer bubble. The bowl is the AI's reply, the stem is its tail, and the dot inside is the agent being named.
 
-- **UK English throughout:** colour, centre, kerbside, organisation, lounge, garden, lift.
-- **Short sentences.** Understatement is a confidence signal.
-- **Never shouty, never tech-jargony, never twee.**
-- **No exclamation marks** except in error/success toasts.
-- **No em-dashes.** Use commas, colons, or full stops instead.
-- **Never "AI-powered":** say what the thing actually does.
-- Avoid over-explanation. If a sentence runs past 20 words, cut it.
+### Files
 
-**Tagline (primary):** Be the agent AI names.
-**Tagline (alt, use sparingly):** Know what AI says about you, and what to fix.
+**Default mark** (`privett-mark-signal.svg`): Evergreen with the Signal Lime dot. Use on `surface` or `surface-raised` in the light theme.
 
-**Never promise rankings or guaranteed visibility.** We report what assistants say, how it changes over time, and what to fix. Say "often", "more likely", "tracked weekly", never "guaranteed", "rank #1" or "get recommended".
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="#0F4C3A" fill-rule="evenodd" d="M14 26A20 20 0 1 1 34 46H28V56A4 4 0 0 1 24 60H18A4 4 0 0 1 14 56ZM41 26A7 7 0 1 0 27 26A7 7 0 1 0 41 26Z"/><circle cx="34" cy="26" r="4.5" fill="#C8F169"/></svg>
+```
 
-### The words we don't use
+**One-colour mark** (`privett-mark.svg`): Evergreen only. Use under 20px and for single-colour print.
 
-These are estate-agent and proptech clichés. They never appear in Privett copy:
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="#0F4C3A" fill-rule="evenodd" d="M14 26A20 20 0 1 1 34 46H28V56A4 4 0 0 1 24 60H18A4 4 0 0 1 14 56ZM41 26A7 7 0 1 0 27 26A7 7 0 1 0 41 26Z"/></svg>
+```
 
-1. **stunning**
-2. **nestled**
-3. **boasting**
-4. **AI-powered** (say what it does instead)
-5. **revolutionary** / **next-generation** / **cutting-edge**
-6. **seamless** / **effortless**
-7. **unlock** / **supercharge** / **leverage**
-8. **intelligent** / **smart** (as a marketing adjective)
-9. Americanisms: **optimize**, **color**, **center**, **elevator**, **yard**
+**Reverse mark** (`privett-mark-reverse.svg`): white with the lime dot. Use on an Evergreen fill, in the dark theme, or on dark photography.
 
-When tempted to reach for one, describe the actual behaviour instead.
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="#FFFFFF" fill-rule="evenodd" d="M14 26A20 20 0 1 1 34 46H28V56A4 4 0 0 1 24 60H18A4 4 0 0 1 14 56ZM41 26A7 7 0 1 0 27 26A7 7 0 1 0 41 26Z"/><circle cx="34" cy="26" r="4.5" fill="#C8F169"/></svg>
+```
 
----
+**App icon** (`privett-app-icon.svg`): favicon, app icon, social avatar.
 
-## Colour palette
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#0F4C3A"/><g transform="translate(78 80) scale(5.25)"><path fill="#FFFFFF" fill-rule="evenodd" d="M14 26A20 20 0 1 1 34 46H28V56A4 4 0 0 1 24 60H18A4 4 0 0 1 14 56ZM41 26A7 7 0 1 0 27 26A7 7 0 1 0 41 26Z"/><circle cx="34" cy="26" r="4.5" fill="#C8F169"/></g></svg>
+```
 
-Brand defaults. Available in Tailwind under `theme.extend.colors.brand` and as CSS custom properties in `apps/web/app/globals.css`.
+### Wordmark and lockup
 
-| Name        | Hex       | Use                                                             | Tailwind class                                |
-| ----------- | --------- | --------------------------------------------------------------- | --------------------------------------------- |
-| Hedge Green | `#2E3B36` | Primary brand colour. Headers, primary buttons, brand surfaces. | `bg-brand-hedge` `text-brand-hedge`           |
-| Bone        | `#F5F1E8` | Canvas / page background. Warm off-white.                       | `bg-brand-bone`                               |
-| Terracotta  | `#B5663D` | Accent. CTAs, key inline links. Use sparingly.                  | `bg-brand-terracotta` `text-brand-terracotta` |
-| Sand        | `#C9B8A0` | Secondary surfaces, input fields, dividers.                     | `bg-brand-sand`                               |
-| Ink         | `#1A1F1C` | Body text, headings, icons.                                     | `text-brand-ink`                              |
+- "privett" in lowercase, Instrument Sans SemiBold, letter-spacing -0.03em.
+- Sits to the right of the mark. Font size is 0.85× the mark's height (40px mark → 34px text; 24px mark → 20px text), with a 10px gap.
+- Outline the text before sending anything to print.
 
-Supporting neutrals:
+### Rules
 
-| Name   | Hex       | Use                                      | Tailwind class       |
-| ------ | --------- | ---------------------------------------- | -------------------- |
-| Cream  | `#FAF7F0` | Subtle backgrounds, hover states on Bone | `bg-brand-cream`     |
-| Stone  | `#E4DFD0` | Borders, dividers                        | `border-brand-stone` |
-| Slate  | `#9A968A` | Muted text, secondary icons              | `text-brand-slate`   |
-| Walnut | `#4A453A` | Strong secondary text                    | `text-brand-walnut`  |
-
-The semantic tokens (`bg-primary`, `text-foreground`, `--brand-primary`, etc.) point at the brand palette as their defaults, so per-agency colour overrides keep working.
+- Clear space round the mark is half its width. Minimum size 16px.
+- Mark alone (no wordmark) in the collapsed sidebar and favicon.
+- Don't stretch, rotate, add effects, set the wordmark in capitals, or recolour the dot anything but Signal Lime.
+- Don't place the Evergreen mark on dark surfaces; use the reverse.
 
 ---
 
-## Type system
+## 2. Colour
 
-Two faces, both from Google Fonts, wired via `next/font/google` in `apps/web/app/layout.tsx` with `display: 'swap'` and CSS variables `--font-newsreader` and `--font-inter`. Tailwind's `fontFamily.serif` is Newsreader, `fontFamily.sans` is Inter.
+Two hues carry the brand: **Evergreen** and **Signal Lime**. Everything else is warm neutral.
 
-**Newsreader** — display, headings, the wordmark. Weight 400 (occasionally 500 for h3/h4 in app UI). Variable `opsz` axis ranges 6–72: use `font-variation-settings: 'opsz' 72` at display sizes (32px+) and `'opsz' 24` for medium headings (h3/h4 in-app). Tracking runs tighter than a typical serif. **Never use Newsreader below 18px.**
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `surface` | `#F7F7F2` | `#0C1311` | Page background |
+| `surface-raised` | `#FFFFFF` | `#141D1A` | Cards, panels, popovers |
+| `surface-sunken` | `#EEEEE6` | `#08100D` | Table headers, input wells, raw AI answer blocks |
+| `hairline` | `#DCDDD3` | `#26322D` | 1px borders and dividers |
+| `ink` | `#0E1A15` | `#ECF0EC` | Primary text and numbers |
+| `ink-muted` | `#56625C` | `#9AA7A0` | Secondary text, labels, axis text |
+| `brand` (Evergreen) | `#0F4C3A` | `#4FD69C` | Primary buttons, logo, links, active nav, the agent's own data |
+| `on-brand` | `#FFFFFF` | `#06140F` | Text and icons on a brand fill |
+| `brand-tint` | `#E3EFE8` | `#15342A` | Selected rows, the agent's own table row, ghost hover |
+| `signal` (Signal Lime) | `#C8F169` | `#C8F169` | Highlights only: logo dot, "you" marker, new-result badges |
+| `on-signal` | `#0E1A15` | `#0E1A15` | Text on a signal fill |
+| `data-rival` | `#7E8781` | `#5E6A65` | Every competitor series in charts |
+| `data-rival-soft` | `#C9CEC9` | `#2E3A35` | Chart tracks, empty bars, gridlines |
+| `up` | `#0E7A52` | `#5BD8A0` | Positive change, with ▲ and + |
+| `down` | `#B4441F` | `#FF8A5C` | Negative change, with ▼ and − |
+| `warn` | `#8F6200` | `#F2B544` | Low-sample and stale-data notices, with an icon |
+| `focus` | `#0F4C3A` | `#C8F169` | 2px solid focus ring, 2px offset |
 
-**Inter** — body, UI labels, navigation, numbers. Weights **400 and 500 only**. Never 600 or 700.
+### Rules
 
-| Element                   | Face           | Spec                                 |
-| ------------------------- | -------------- | ------------------------------------ |
-| h1                        | Newsreader 400 | opsz 72, tracking -0.02em            |
-| h2                        | Newsreader 400 | opsz 72, tracking -0.015em           |
-| h3                        | Newsreader 500 | opsz 24, tracking -0.01em            |
-| h4–h6                     | Inter 500      | —                                    |
-| body                      | Inter 400      | line-height 1.6                      |
-| UI labels & buttons       | Inter 500      | —                                    |
-| Numbers (metrics/billing) | Inter 500      | `font-variant-numeric: tabular-nums` |
+- Cards sit on `surface-raised` with a 1px `hairline` border. Separate with borders, not shadows.
+- One primary (`brand`) action per view.
+- `signal` is a highlighter, not a fill. Never set text in it, never use it as a section background inside the app.
+- `ink` and `ink-muted` pass 4.5:1 on every surface in both themes.
 
-**Serif vs sans:** Newsreader for anything expressive and large (headings, the wordmark, hero display, proof-point single words). Inter for everything functional (body copy, navigation, form fields, buttons, tables, numbers).
+### The data colour rule
 
----
+**The agent is the only colour on the chart.** Their series, bar and row use `brand`; every competitor uses `data-rival`, with tracks and gridlines in `data-rival-soft`. This answers "where am I?" at a glance and works for colour-blind readers, because you-versus-them never depends on telling two hues apart.
 
-## Logo usage rules
-
-The wordmark is the real Privett logo, rendered through `<Wordmark />` (`apps/web/components/brand/wordmark.tsx`) from two PNG assets in `apps/web/public/`.
-
-- **Wordmark:** a Hedge Green serif "Privett" logo (`privett-logo.png`), with a Bone variant (`privett-logo-bone.png`) for dark backgrounds. Pick via the `variant` prop; `size` sets the rendered height in px.
-- **Default size:** 24px in the header / footer / auth; 22px in the app sidebar.
-- **Clear space:** keep at least the height of the "P" clear on all sides.
-- **On-light** (Bone / Cream / white): Hedge Green logo (`variant="hedge"`, the default).
-- **On-dark** (Hedge Green / Ink): Bone logo (`variant="bone"`).
-- **Favicon / app icon** are static PNGs (`apps/web/app/icon.png`, `apple-icon.png`): a Bone "P" on a Hedge Green square.
-- **Swapping the logo asset** is a one-file change: replace the PNGs in `public/` (keep the filenames) — every placement updates at once.
-
----
-
-## Charts and data
-
-The tracked branch is always Hedge Green. Competitors use Slate, Sand and Walnut. Terracotta marks events (a fix completed). Numbers use Inter 500 with tabular figures. A missing value is shown as "—", never 0.
-
----
-
-## Iconography
-
-Lucide icons, stroke width **1.5**. Ink (`#1A1F1C`) or Slate (`#9A968A`) only. **Never green or terracotta** — icons stay neutral so the accent colours keep their meaning.
+- Change is always `up` + ▲ + sign, or `down` + ▼ + sign. Never colour alone.
+- `warn` always comes with an icon and a word ("Low sample").
+- The agent's own row in a competitor table sits on `brand-tint`.
 
 ---
 
-## Where copy lives
+## 3. Typography
 
-Every user-facing string lives in one of:
+Both fonts are free on Google Fonts.
 
-- `apps/web/app/(marketing)/` — marketing site copy
-- `apps/web/components/` — component-level UI copy
-- `apps/web/lib/copy.ts` — repeated UI strings (empty states, error messages, sign-offs, product name)
+```html
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+```
 
-Don't bury copy in components scattered across the codebase. Repeated strings belong in `lib/copy.ts`.
+- **Instrument Sans** for all reading text.
+- **Geist Mono** for every number someone compares, and for raw AI answer excerpts, so evidence always looks like evidence.
+
+| Style | Font | Size / line | Weight | Tracking | Use |
+|---|---|---|---|---|---|
+| `display` | Instrument Sans | 44 / 48 | 600 | -0.025em | Marketing headlines, free-scan result headline |
+| `title` | Instrument Sans | 26 / 32 | 600 | -0.015em | App page titles |
+| `heading` | Instrument Sans | 17 / 24 | 600 | -0.005em | Card and section headings |
+| `body` | Instrument Sans | 15 / 22 | 400 | 0 | Default UI and reading text |
+| `small` | Instrument Sans | 13 / 18 | 400 | 0 | Helper text, tooltips, table cells |
+| `label` | Instrument Sans | 12 / 16 | 600 | 0.04em, capitals | Metric labels, table headers, eyebrows |
+| `metric` | Geist Mono | 36 / 40 | 500 | -0.03em | Headline number on a metric card |
+| `data` | Geist Mono | 13 / 20 | 400 | 0 | Table numbers, deltas, chart labels, AI answer excerpts |
+
+Number formats: positions as `#2.4` (hash, one decimal); percentages without decimals unless under 10% (`62%`, `4.5%`).
+
+---
+
+## 4. Spacing, radius, shadow
+
+| Token | Value | Use |
+|---|---|---|
+| `space-1` | 4px | Icon-to-text gaps |
+| `space-2` | 8px | Gaps inside controls |
+| `space-3` | 12px | Table cell padding |
+| `space-4` | 16px | Card gutters, button padding |
+| `space-6` | 24px | Card padding |
+| `space-8` | 32px | Between page sections |
+| `space-12` | 48px | Page top padding, marketing rhythm |
+| `radius-sm` | 6px | Badges, chart bars, inputs |
+| `radius-md` | 10px | Buttons, menus, tooltips |
+| `radius-lg` | 16px | Cards and panels |
+| `radius-full` | 9999px | Pills, avatars, the "you" dot |
+| `shadow-pop` | `0 8px 24px rgba(14,26,21,.12)` (dark: `rgba(0,0,0,.5)`) | Floating layers only |
+
+---
+
+## 5. Components
+
+### Metric card
+The four headline metrics sit in one row at the top of the dashboard: **Visibility, Position, Sentiment, Share of voice**.
+
+- `label` text, the number in `metric`, a signed delta, then a footnote with the evidence ("Named in 140 of 225 responses").
+- Share of voice can show a mini ranked-bar chart: agent's bar `brand`, competitors `data-rival` on a `data-rival-soft` track.
+- Below the sample threshold, replace the delta with a `warn` "Low sample" note.
+- Clicking a card opens the responses behind the number.
+- Don't colour the big number or show a metric without its sample size.
+
+### Button
+- **Primary:** `brand` fill, `on-brand` text. One per view.
+- **Secondary:** `surface-raised`, `hairline` border, `ink` text.
+- **Ghost:** `brand` text, `brand-tint` on hover. For row actions in tables and fix lists.
+- 14/20 SemiBold, `radius-md`, padding `space-2` × `space-4`, `focus` ring.
+- Verb-first, sentence-case labels: "Run free scan", "View responses", "Mark as done".
+- Never use `signal` as a button fill.
+
+---
+
+## 6. Voice
+
+- **Write like a good surveyor's report.** Plain, specific, short sentences. UK spelling.
+- **Second person, singular agency:** "ChatGPT named you in 6 of 10 answers."
+- **Every claim carries its evidence.** State the number and its source. Mark weak samples "low sample".
+- **Never promise rankings.** Say "visibility", "how often AI names you", "the gap". Avoid "rank #1", "guaranteed", "dominate", "skyrocket".
+- **Sentence case** everywhere except `label` text.
+- **No emoji** in the product.
+- **Agent vocabulary:** instructions, valuations, vendors, landlords, branch, patch.
+
+Examples: "Who AI recommends instead" · "You're missing from 9 selling prompts" · "Add area pages for Southsea and Drayton" · "Low sample: re-scan after 3 more runs".
+
+---
+
+## 7. Imagery and icons
+
+- Show the product and the data, not stock photos of handshakes or keys.
+- Photography, where needed: real UK high streets and agency shopfronts, natural light, no heavy filters.
+- Illustration is limited to the ranked-bar motif: horizontal bars, grey for competitors, Evergreen for the agent, one lime marker.
+- Icons: **Lucide** at 1.5px stroke, 16px in tables and buttons, 20px in navigation, `ink-muted` by default and `brand` when active. A placeholder until a custom set is drawn.
+
+---
+
+## 8. CSS variables
+
+Implemented in `apps/web/app/globals.css` (as RGB channels, so Tailwind opacity modifiers work) and exposed as Tailwind colours in `apps/web/tailwind.config.ts`: `surface`, `surface-raised`, `surface-sunken`, `hairline`, `ink`, `ink-muted`, `brand`, `brand-tint`, `on-brand`, `signal`, `on-signal`, `rival`, `rival-soft`, `up`, `down`, `warn`, `focus`. Logo files are in `apps/web/public/`; the `<Logo />` and `<LogoMark />` components are in `apps/web/components/brand/logo.tsx`.
+
+```css
+:root, [data-theme="light"] {
+  --surface: #f7f7f2;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eeeee6;
+  --hairline: #dcddd3;
+  --ink: #0e1a15;
+  --ink-muted: #56625c;
+  --brand: #0f4c3a;
+  --on-brand: #ffffff;
+  --brand-tint: #e3efe8;
+  --signal: #c8f169;
+  --on-signal: #0e1a15;
+  --data-rival: #7e8781;
+  --data-rival-soft: #c9cec9;
+  --up: #0e7a52;
+  --down: #b4441f;
+  --warn: #8f6200;
+  --focus: #0f4c3a;
+  --shadow-pop: 0 8px 24px rgba(14, 26, 21, 0.12);
+}
+
+[data-theme="dark"] {
+  --surface: #0c1311;
+  --surface-raised: #141d1a;
+  --surface-sunken: #08100d;
+  --hairline: #26322d;
+  --ink: #ecf0ec;
+  --ink-muted: #9aa7a0;
+  --brand: #4fd69c;
+  --on-brand: #06140f;
+  --brand-tint: #15342a;
+  --signal: #c8f169;
+  --on-signal: #0e1a15;
+  --data-rival: #5e6a65;
+  --data-rival-soft: #2e3a35;
+  --up: #5bd8a0;
+  --down: #ff8a5c;
+  --warn: #f2b544;
+  --focus: #c8f169;
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+:root {
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-6: 24px; --space-8: 32px; --space-12: 48px;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-full: 9999px;
+}
+```

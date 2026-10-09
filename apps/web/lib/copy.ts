@@ -1,7 +1,9 @@
 // Repeated UI strings. See BRANDING.md for voice: UK English, short
-// sentences, no exclamation marks, no em dashes, no ranking promises.
+// sentences, sentence case, every claim with its evidence, no emoji, no
+// ranking promises.
 
 export const PRODUCT_NAME = "Privett";
+export const PRODUCT_TAGLINE = "Know where you stand in AI search.";
 export const PRODUCT_DESCRIPTION =
   "See how often AI assistants name your agency when sellers and landlords ask who to use, and what to fix when they don't.";
 export const PRODUCT_QUESTION =

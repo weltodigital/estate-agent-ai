@@ -21,8 +21,8 @@ function Value({ value }: { value: unknown }) {
     const cols = [...new Set(value.flatMap((o) => Object.keys(o)))];
     return (
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead className="text-left text-brand-slate">
+        <table className="w-full text-small">
+          <thead className="text-left text-ink-muted">
             <tr>
               {cols.map((c) => (
                 <th key={c} className="py-1 pr-3 font-medium">
@@ -31,11 +31,11 @@ function Value({ value }: { value: unknown }) {
               ))}
             </tr>
           </thead>
-          <tbody className="tabular-nums">
+          <tbody className="font-mono">
             {value.map((row, i) => (
-              <tr key={i} className="border-t border-brand-stone">
+              <tr key={i} className="border-t border-hairline">
                 {cols.map((c) => (
-                  <td key={c} className="py-1 pr-3 text-brand-ink">
+                  <td key={c} className="py-1 pr-3 text-ink">
                     {isPlainObject(row[c]) ? JSON.stringify(row[c]) : scalar(row[c])}
                   </td>
                 ))}
@@ -47,18 +47,18 @@ function Value({ value }: { value: unknown }) {
     );
   }
   if (isPlainObject(value)) return <Evidence data={value} nested />;
-  return <span className="tabular-nums text-brand-ink">{scalar(value)}</span>;
+  return <span className="font-mono text-ink">{scalar(value)}</span>;
 }
 
 export function Evidence({ data, nested = false }: { data: Record<string, unknown>; nested?: boolean }) {
   return (
-    <dl className={nested ? "space-y-1 border-l border-brand-stone pl-3" : "space-y-2"}>
+    <dl className={nested ? "space-y-1 border-l border-hairline pl-3" : "space-y-2"}>
       {Object.entries(data).map(([k, v]) => (
         <div key={k} className="text-sm">
-          <dt className="text-xs text-brand-slate">{label(k)}</dt>
+          <dt className="text-small text-ink-muted">{label(k)}</dt>
           <dd className="break-words">
             {typeof v === "string" && /^https?:\/\//.test(v) ? (
-              <a href={v} target="_blank" rel="noopener noreferrer nofollow" className="text-brand-ink underline-offset-2 hover:underline">
+              <a href={v} target="_blank" rel="noopener noreferrer nofollow" className="text-ink underline-offset-2 hover:underline">
                 {v}
               </a>
             ) : (

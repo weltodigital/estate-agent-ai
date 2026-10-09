@@ -1,79 +1,87 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { AlertTriangle } from "lucide-react";
+import { Delta } from "@/components/ui/badge";
 import { InfoTip } from "@/components/ui/info-tip";
 import { isImprovement, type CardData } from "@/lib/data/overview";
-import { cn } from "@/lib/utils";
 import { METRIC_COPY, sampleText } from "./metric-copy";
 import { Sparkline } from "./sparkline";
+
+// Metric card per BRANDING.md: label, number in Geist Mono (never coloured),
+// signed delta, then the evidence. Below the sample threshold the delta is
+// replaced by a low-sample notice.
+
+function evidenceLine(key: CardData["key"], m: CardData["metrics"]): string {
+  if (key === "visibility") return `Named in ${m.mentions} of ${m.responses} responses`;
+  if (key === "shareOfVoice") return `${m.mentions} of ${m.totalAgentMentions} agent mentions`;
+  if (key === "sentiment") return `Scored in ${m.sentimentSamples} responses`;
+  return `Ranked in ${m.mentions} responses`;
+}
 
 export function MetricCard({ card, evidenceHref, days }: { card: CardData; evidenceHref: string; days: number }) {
   const copy = METRIC_COPY[card.key];
   const m = card.metrics;
-  const low = m.lowSample;
   const improved = isImprovement(card.key, card.change);
-  const changeAbs = card.change === null ? null : Math.abs(card.change);
-  const changeText =
-    changeAbs === null
-      ? "No previous period to compare"
+  const abs = card.change === null ? null : Math.abs(card.change);
+  const sign = improved === null ? "" : card.key === "position" ? (card.change! < 0 ? "−" : "+") : card.change! > 0 ? "+" : "−";
+  const deltaText =
+    abs === null
+      ? "No earlier period"
       : card.key === "position"
-        ? `${changeAbs.toFixed(1)} places ${improved ? "higher" : "lower"} than the previous ${days} days`
-        : `${changeAbs.toFixed(changeAbs < 10 ? 1 : 0)}${copy.changeUnit} ${card.change! >= 0 ? "up" : "down"} on the previous ${days} days`;
+        ? `${sign}${abs.toFixed(1)} vs previous ${days} days`
+        : `${sign}${abs.toFixed(abs < 10 ? 1 : 0)}${copy.changeUnit} vs previous ${days} days`;
 
   return (
-    <div className="flex flex-col rounded-lg border border-brand-stone bg-white shadow-card">
-      <div className="flex items-center justify-between gap-2 px-5 pt-4">
+    <div className="flex flex-col rounded-lg border border-hairline bg-surface-raised">
+      <Link
+        href={evidenceHref}
+        className="ring-brand-focus group block rounded-t-lg px-6 pb-4 pt-5 hover:bg-surface-sunken/50"
+        aria-label={`View the responses behind ${copy.label}`}
+      >
         <div className="flex items-center gap-1.5">
-          <h4 className="text-sm text-brand-ink">{copy.label}</h4>
+          <span className="text-label uppercase text-ink-muted">{copy.label}</span>
           <InfoTip>
-            <span className="block font-medium text-brand-ink">{copy.formula}</span>
+            <span className="block font-medium text-ink">{copy.formula}</span>
             <span className="mt-1 block">{sampleText(card.key, m.responses, m.mentions, m.sentimentSamples)}</span>
           </InfoTip>
         </div>
-        {low ? <Badge tone="warn">Low sample</Badge> : null}
-      </div>
-
-      <Link href={evidenceHref} className="ring-brand-focus group block px-5 pb-3 pt-2" aria-label={`See the responses behind ${copy.label}`}>
-        <div className="flex items-end justify-between gap-3">
-          <span className={cn("tabular-nums text-4xl font-medium", low ? "text-brand-slate" : "text-brand-ink")}>
-            {copy.format(card.current)}
-          </span>
-          <Sparkline values={card.trend} invert={card.key === "position"} className="h-8 w-28" />
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <span className="font-mono text-metric text-ink">{copy.format(card.current)}</span>
+          <Sparkline values={card.trend} invert={card.key === "position"} className="h-8 w-24" />
         </div>
-        <p className="mt-1 flex items-center gap-1 text-xs text-brand-walnut">
-          {improved === true ? <ArrowUpRight size={14} strokeWidth={1.5} className="text-brand-ink" /> : null}
-          {improved === false ? <ArrowDownRight size={14} strokeWidth={1.5} className="text-brand-ink" /> : null}
-          <span className="tabular-nums">{changeText}</span>
-        </p>
-        <p className="mt-2 text-xs text-brand-slate group-hover:text-brand-walnut">{copy.blurb} See the evidence.</p>
+        <div className="mt-2">
+          {m.lowSample ? (
+            <span className="inline-flex items-center gap-1 text-small text-warn">
+              <AlertTriangle size={14} strokeWidth={1.5} aria-hidden="true" /> Low sample
+            </span>
+          ) : (
+            <Delta value={card.change} improved={improved} text={deltaText} />
+          )}
+        </div>
+        <p className="mt-1 font-mono text-data text-ink-muted">{evidenceLine(card.key, m)}</p>
       </Link>
 
-      {card.key === "sentiment" ? (
-        <div className="px-5 pb-3">
-          {m.topDescriptors.length ? (
-            <div className="flex flex-wrap gap-1.5">
-              {m.topDescriptors.slice(0, 3).map((d) => (
-                <Badge key={d.descriptor}>{d.descriptor}</Badge>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-brand-slate">No descriptors yet.</p>
-          )}
+      {card.key === "sentiment" && m.topDescriptors.length ? (
+        <div className="flex flex-wrap gap-1.5 px-6 pb-4">
+          {m.topDescriptors.slice(0, 3).map((d) => (
+            <span key={d.descriptor} className="rounded-sm bg-surface-sunken px-1.5 py-0.5 text-small text-ink-muted">
+              {d.descriptor}
+            </span>
+          ))}
         </div>
       ) : null}
 
-      <div className="mt-auto border-t border-brand-stone px-5 py-3">
+      <div className="mt-auto border-t border-hairline px-6 py-3">
         {card.competitors.length ? (
-          <ul className="space-y-1 text-xs">
+          <ul className="space-y-1 text-small">
             {card.competitors.map((c) => (
-              <li key={c.name} className="flex justify-between gap-2 text-brand-walnut">
+              <li key={c.name} className="flex justify-between gap-2 text-ink-muted">
                 <span className="truncate">{c.name}</span>
-                <span className="tabular-nums text-brand-ink">{copy.format(c.value)}</span>
+                <span className="font-mono text-data text-ink">{copy.format(c.value)}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-brand-slate">No competitors named in this period.</p>
+          <p className="text-small text-ink-muted">No competitors named in this period.</p>
         )}
       </div>
     </div>

@@ -26,7 +26,7 @@ function StatusButton({ branchId, competitorId, status, children }: { branchId: 
       <input type="hidden" name="branch_id" value={branchId} />
       <input type="hidden" name="competitor_id" value={competitorId} />
       <input type="hidden" name="status" value={status} />
-      <button className="ring-brand-focus rounded px-1.5 text-xs text-brand-walnut underline-offset-2 hover:underline">{children}</button>
+      <button className="ring-brand-focus rounded px-1.5 text-small text-ink-muted underline-offset-2 hover:underline">{children}</button>
     </form>
   );
 }
@@ -83,7 +83,7 @@ export default async function CompetitorsPage({
         {visible.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
-              <thead className="text-left text-xs text-brand-slate">
+              <thead className="text-left text-small text-ink-muted">
                 <tr>
                   <th className="px-5 py-2 font-medium">Agent</th>
                   <th className="px-3 py-2 text-right font-medium">Visibility</th>
@@ -95,9 +95,14 @@ export default async function CompetitorsPage({
                   <th className="px-5 py-2 font-medium" />
                 </tr>
               </thead>
-              <tbody className="tabular-nums">
-                <tr className="border-t border-brand-stone bg-brand-cream font-medium">
-                  <td className="px-5 py-2">{branch.name} (you)</td>
+              <tbody className="font-mono">
+                <tr className="border-t border-hairline bg-brand-tint font-medium">
+                  <td className="px-5 py-2 font-sans">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-signal ring-1 ring-brand/40" aria-hidden="true" />
+                    {branch.name} <span className="text-ink-muted">(you)</span>
+                  </span>
+                </td>
                   <td className={cell}>{fmt.pct(you.visibility)}</td>
                   <td className={cell}>{fmt.position(you.position)}</td>
                   <td className={cell}>{fmt.score(you.sentiment)}</td>
@@ -107,11 +112,11 @@ export default async function CompetitorsPage({
                   <td />
                 </tr>
                 {visible.map((c) => (
-                  <tr key={c.id} className={cn("border-t border-brand-stone", c.m.lowSample && "text-brand-slate")}>
-                    <td className="px-5 py-2">
-                      <span className="text-brand-ink">{c.name}</span>
+                  <tr key={c.id} className={cn("border-t border-hairline", c.m.lowSample && "text-ink-muted")}>
+                    <td className="px-5 py-2 font-sans">
+                      <span className="text-ink">{c.name}</span>
                       {c.status === "pinned" ? <Badge className="ml-2">Pinned</Badge> : null}
-                      {c.domain ? <span className="block text-xs text-brand-slate">{c.domain}</span> : null}
+                      {c.domain ? <span className="block text-small text-ink-muted">{c.domain}</span> : null}
                     </td>
                     <td className={cell}>{fmt.pct(c.m.visibility)}</td>
                     <td className={cell}>{fmt.position(c.m.position)}</td>
@@ -139,7 +144,7 @@ export default async function CompetitorsPage({
             <EmptyState title="No competitors yet">Agents named in your scan results appear here automatically.</EmptyState>
           </CardBody>
         )}
-        <p className="border-t border-brand-stone px-5 py-3 text-xs text-brand-slate">
+        <p className="border-t border-hairline px-5 py-3 text-small text-ink-muted">
           Same definitions as your headline figures, over the same responses. Greyed rows have fewer than {lowSampleThreshold} responses in this view.
         </p>
       </Card>
@@ -150,20 +155,20 @@ export default async function CompetitorsPage({
             title="Names we weren’t sure about"
             description="These partly match you or a competitor, so we haven’t counted them. If a name really is the same agency, add it as an alias in settings."
             action={
-              <Link href={`${base}/settings`} className="text-sm text-brand-terracotta hover:underline">
+              <Link href={`${base}/settings`} className="text-sm text-brand hover:underline">
                 Branch settings
               </Link>
             }
           />
-          <ul className="divide-y divide-brand-stone text-sm">
+          <ul className="divide-y divide-hairline text-sm">
             {[...unsureByName.values()].map((u) => (
               <li key={`${u.agent_name}-${u.resultId}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-2">
-                <span className="font-medium text-brand-ink">{u.agent_name}</span>
-                <span className="text-brand-walnut">
+                <span className="font-medium text-ink">{u.agent_name}</span>
+                <span className="text-ink-muted">
                   might be {u.is_branch ? "you" : (nameOf.get(u.matched_competitor_id ?? "") ?? "a competitor")}
                 </span>
-                <span className="text-xs tabular-nums text-brand-slate">{u.count}×</span>
-                <Link href={`${base}/responses/${u.resultId}`} className="ml-auto text-xs text-brand-terracotta hover:underline">
+                <span className="text-small font-mono text-ink-muted">{u.count}×</span>
+                <Link href={`${base}/responses/${u.resultId}`} className="ml-auto text-small text-brand hover:underline">
                   See an example
                 </Link>
               </li>
@@ -173,12 +178,12 @@ export default async function CompetitorsPage({
       ) : null}
 
       {hidden.length ? (
-        <details className="rounded-lg border border-brand-stone bg-white">
-          <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-brand-ink">Hidden ({hidden.length})</summary>
-          <ul className="divide-y divide-brand-stone border-t border-brand-stone text-sm">
+        <details className="rounded-lg border border-hairline bg-surface-raised">
+          <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-ink">Hidden ({hidden.length})</summary>
+          <ul className="divide-y divide-hairline border-t border-hairline text-sm">
             {hidden.map((c) => (
               <li key={c.id} className="flex items-center justify-between px-5 py-2">
-                <span className="text-brand-walnut">{c.name}</span>
+                <span className="text-ink-muted">{c.name}</span>
                 <StatusButton branchId={branch.id} competitorId={c.id} status="discovered">Unhide</StatusButton>
               </li>
             ))}

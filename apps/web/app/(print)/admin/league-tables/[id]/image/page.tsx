@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { fmt } from "@privett/core";
-import { Wordmark } from "@/components/brand/wordmark";
+import { Logo } from "@/components/brand/logo";
 import { requireAdmin } from "@/lib/auth";
 import { loadLeagueTable } from "@/lib/league";
 import { formatDate } from "@/lib/utils";
@@ -16,26 +16,26 @@ export default async function LeagueImagePage({ params }: { params: Promise<{ id
   const { table, rows, latest, responseCount } = data;
 
   return (
-    <div className="flex min-h-screen items-start justify-center bg-brand-bone p-10">
-      <div className="w-[880px] rounded-xl bg-white p-10 shadow-card">
-        <p className="text-sm uppercase tracking-wide text-brand-slate">AI visibility league table</p>
-        <h1 className="mt-1 text-5xl text-brand-ink">Estate agents in {table.town}</h1>
-        <p className="mt-2 text-brand-walnut">
+    <div className="flex min-h-screen items-start justify-center bg-surface p-10">
+      <div className="w-[880px] rounded-xl bg-surface-raised p-10">
+        <p className="text-sm uppercase tracking-wide text-ink-muted">AI visibility league table</p>
+        <h1 className="mt-1 text-display text-ink">Estate agents in {table.town}</h1>
+        <p className="mt-2 text-ink-muted">
           How often ChatGPT, Perplexity, Gemini and Claude name each agent when asked who to use. {responseCount} answers, {formatDate(latest.finished_at)}.
         </p>
         <table className="mt-8 w-full text-left">
-          <thead className="text-sm text-brand-slate">
-            <tr className="border-b-2 border-brand-hedge">
+          <thead className="text-sm text-ink-muted">
+            <tr className="border-b-2 border-brand">
               <th className="py-2 font-medium">#</th>
               <th className="py-2 font-medium">Agent</th>
               <th className="py-2 text-right font-medium">Mention rate</th>
               <th className="py-2 text-right font-medium">Share of voice</th>
             </tr>
           </thead>
-          <tbody className="tabular-nums text-lg">
+          <tbody className="font-mono text-heading font-normal">
             {rows.map((r, i) => (
-              <tr key={r.agentId} className="border-b border-brand-stone">
-                <td className="py-2.5 text-brand-slate">{i + 1}</td>
+              <tr key={r.agentId} className="border-b border-hairline">
+                <td className="py-2.5 text-ink-muted">{i + 1}</td>
                 <td className="py-2.5">{r.name}</td>
                 <td className="py-2.5 text-right font-medium">{fmt.pct(r.mentionRate)}</td>
                 <td className="py-2.5 text-right">{fmt.pct(r.shareOfVoice)}</td>
@@ -43,11 +43,11 @@ export default async function LeagueImagePage({ params }: { params: Promise<{ id
             ))}
           </tbody>
         </table>
-        <div className="mt-8 flex items-end justify-between text-xs text-brand-slate">
+        <div className="mt-8 flex items-end justify-between text-small text-ink-muted">
           <p className="max-w-md">
             Mention rate: share of answers naming the agent. Share of voice: the agent's share of all agent mentions. AI answers vary from run to run.
           </p>
-          <Wordmark size={22} />
+          <Logo size={22} />
         </div>
       </div>
     </div>

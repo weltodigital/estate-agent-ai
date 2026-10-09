@@ -51,7 +51,7 @@ export default async function LeagueTablePage({ params }: { params: Promise<{ id
           <CardHeader title="Results" description={`Based on ${responseCount} AI answers from the scan finished ${formatDateTime(latest.finished_at)}.`} />
           <CardBody className="overflow-x-auto p-0">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs text-brand-slate">
+              <thead className="text-small text-ink-muted">
                 <tr>
                   <th className="px-5 py-2 font-medium">#</th>
                   <th className="font-medium">Agent</th>
@@ -60,12 +60,12 @@ export default async function LeagueTablePage({ params }: { params: Promise<{ id
                   <th className="px-5 text-right font-medium">Avg position</th>
                 </tr>
               </thead>
-              <tbody className="tabular-nums">
+              <tbody className="font-mono">
                 {rows.map((r, i) => (
-                  <tr key={r.agentId} className="border-t border-brand-stone">
-                    <td className="px-5 py-2 text-brand-slate">{i + 1}</td>
+                  <tr key={r.agentId} className="border-t border-hairline">
+                    <td className="px-5 py-2 text-ink-muted">{i + 1}</td>
                     <td>
-                      {r.name} {r.domain ? <span className="text-brand-slate">{r.domain}</span> : null}
+                      {r.name} {r.domain ? <span className="text-ink-muted">{r.domain}</span> : null}
                     </td>
                     <td className="text-right">{fmt.pct(r.mentionRate)}</td>
                     <td className="text-right">{fmt.pct(r.shareOfVoice)}</td>
@@ -95,12 +95,12 @@ export default async function LeagueTablePage({ params }: { params: Promise<{ id
         <CardHeader title="Scan history" />
         <CardBody className="space-y-1 text-sm">
           {runs.map((r) => (
-            <p key={r.id} className="tabular-nums">
+            <p key={r.id} className="font-mono">
               {formatDateTime(r.created_at)} · <Badge>{r.status}</Badge> · {formatUsd(r.cost_usd)}
-              {r.error ? <span className="text-red-700"> · {r.error}</span> : null}
+              {r.error ? <span className="text-down"> · {r.error}</span> : null}
             </p>
           ))}
-          {!runs.length ? <p className="text-brand-slate">No scans yet.</p> : null}
+          {!runs.length ? <p className="text-ink-muted">No scans yet.</p> : null}
         </CardBody>
       </Card>
     </div>

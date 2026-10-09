@@ -56,12 +56,12 @@ export default async function BranchSettingsPage({
   return (
     <div className="space-y-8">
       {error === "prompt-limit" ? (
-        <p role="alert" className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+        <p role="alert" className="rounded-md bg-warn/10 p-3 text-sm text-warn">
           Your plan tracks up to {plan.limits.promptsPerBranch} questions per branch. Turn one off first.
         </p>
       ) : null}
       {error === "owner" ? (
-        <p role="alert" className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">Only an owner can do that.</p>
+        <p role="alert" className="rounded-md bg-warn/10 p-3 text-sm text-warn">Only an owner can do that.</p>
       ) : null}
 
       <Card>
@@ -70,13 +70,13 @@ export default async function BranchSettingsPage({
           <ActionForm action={scanNow}>
             {hidden}
             <Button type="submit" variant="secondary">Scan now</Button>
-            <p className="mt-1 text-xs text-brand-slate">
+            <p className="mt-1 text-small text-ink-muted">
               {plan.limits.manualScansPerWeek} extra scan{plan.limits.manualScansPerWeek === 1 ? "" : "s"} a week per branch, on top of the weekly scan.
             </p>
           </ActionForm>
           {runs?.length ? (
             <table className="w-full text-left text-sm">
-              <thead className="text-xs text-brand-slate">
+              <thead className="text-small text-ink-muted">
                 <tr>
                   <th className="py-1 font-medium">Started</th>
                   <th className="font-medium">Type</th>
@@ -84,9 +84,9 @@ export default async function BranchSettingsPage({
                   <th className="text-right font-medium">API cost</th>
                 </tr>
               </thead>
-              <tbody className="tabular-nums">
+              <tbody className="font-mono">
                 {runs.map((r) => (
-                  <tr key={r.id} className="border-t border-brand-stone">
+                  <tr key={r.id} className="border-t border-hairline">
                     <td className="py-1.5">{formatDateTime(r.created_at)}</td>
                     <td className="capitalize">{r.kind}</td>
                     <td>
@@ -138,11 +138,11 @@ export default async function BranchSettingsPage({
         />
         <CardBody className="space-y-2">
           {(prompts ?? []).map((p) => (
-            <div key={p.id} className="flex flex-wrap items-start gap-3 border-b border-brand-stone pb-2 last:border-0">
+            <div key={p.id} className="flex flex-wrap items-start gap-3 border-b border-hairline pb-2 last:border-0">
               <ActionForm action={updatePromptText} className="flex min-w-0 flex-1 gap-2">
                 {hidden}
                 <input type="hidden" name="prompt_id" value={p.id} />
-                <Input name="text" defaultValue={p.text} className={p.active ? "" : "text-brand-slate"} aria-label="Question" />
+                <Input name="text" defaultValue={p.text} className={p.active ? "" : "text-ink-muted"} aria-label="Question" />
                 <Button type="submit" variant="ghost" size="sm" className="h-10">Save</Button>
               </ActionForm>
               <Badge>{INTENT_LABELS[p.intent_group as keyof typeof INTENT_LABELS] ?? p.intent_group}</Badge>
@@ -157,7 +157,7 @@ export default async function BranchSettingsPage({
             </div>
           ))}
         </CardBody>
-        <CardBody className="grid gap-6 border-t border-brand-stone md:grid-cols-2">
+        <CardBody className="grid gap-6 border-t border-hairline md:grid-cols-2">
           <ActionForm action={addLibraryPrompt} className="space-y-2">
             {hidden}
             <Field label="Add from the Privett library">
@@ -194,7 +194,7 @@ export default async function BranchSettingsPage({
       <Card>
         <CardHeader title="Website tracking" description="See visits that AI assistants send to your site." />
         <CardBody>
-          <Link href={`/branches/${branch.id}/referrals`} className="text-sm text-brand-terracotta underline-offset-2 hover:underline">
+          <Link href={`/branches/${branch.id}/referrals`} className="text-sm text-brand underline-offset-2 hover:underline">
             Get your tracking snippet
           </Link>
         </CardBody>

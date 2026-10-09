@@ -19,19 +19,19 @@ export function ScanProgress({ run }: { run: ScanRunRow }) {
     <div className="space-y-1.5">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <Badge tone={STATUS[run.status].tone}>{STATUS[run.status].label}</Badge>
-        <span className="text-brand-walnut">
+        <span className="text-ink-muted">
           {run.status === "queued" ? `Scheduled ${formatDateTime(run.scheduled_for)}` : null}
           {run.status === "running" ? `${done} of ${total || "?"} responses` : null}
           {run.finished_at ? `Finished ${formatDateTime(run.finished_at)}` : null}
         </span>
-        <span className="text-xs text-brand-slate">{run.engines.map(engineLabel).join(", ")}</span>
+        <span className="text-small text-ink-muted">{run.engines.map(engineLabel).join(", ")}</span>
       </div>
       {run.status === "running" && total ? (
-        <div className="h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-brand-stone" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-          <div className="h-full bg-brand-hedge" style={{ width: `${pct}%` }} />
+        <div className="h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-rival-soft" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+          <div className="h-full bg-brand" style={{ width: `${pct}%` }} />
         </div>
       ) : null}
-      {run.status === "failed" && run.error ? <p className="text-xs text-brand-walnut">{run.error}</p> : null}
+      {run.status === "failed" && run.error ? <p className="text-small text-ink-muted">{run.error}</p> : null}
     </div>
   );
 }

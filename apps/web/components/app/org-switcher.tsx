@@ -8,14 +8,14 @@ export function OrgSwitcher({
   memberships: { org_id: string; name: string }[];
 }) {
   if (memberships.length < 2) {
-    return <p className="px-5 text-sm font-medium text-brand-walnut">{memberships[0]?.name}</p>;
+    return <p className="px-5 text-sm font-medium text-ink-muted">{memberships[0]?.name}</p>;
   }
   return (
     <form action={switchOrganisation} className="px-5">
       <select
         name="org_id"
         defaultValue={current}
-        className="w-full rounded-md border border-brand-stone bg-white px-2 py-1.5 text-sm"
+        className="w-full rounded-md border border-hairline bg-surface-raised px-2 py-1.5 text-sm"
         aria-label="Organisation"
       >
         {memberships.map((m) => (
@@ -24,7 +24,7 @@ export function OrgSwitcher({
           </option>
         ))}
       </select>
-      <button className="mt-1 text-xs text-brand-walnut underline">Switch</button>
+      <button className="mt-1 text-small text-ink-muted underline">Switch</button>
     </form>
   );
 }

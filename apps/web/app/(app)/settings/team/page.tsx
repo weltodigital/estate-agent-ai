@@ -25,14 +25,14 @@ export default async function TeamPage() {
       <PageHeader title="Team" description={`Everyone here can see every branch in ${ctx.org.name}.`} />
       <Card>
         <CardHeader title="Members" />
-        <CardBody className="divide-y divide-brand-stone p-0">
+        <CardBody className="divide-y divide-hairline p-0">
           {(members ?? []).map((m) => {
             const p = m.profiles as unknown as { email: string; full_name: string | null } | null;
             return (
               <div key={m.user_id} className="flex items-center gap-3 px-5 py-3 text-sm">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{p?.full_name ?? p?.email}</p>
-                  {p?.full_name ? <p className="truncate text-brand-slate">{p.email}</p> : null}
+                  {p?.full_name ? <p className="truncate text-ink-muted">{p.email}</p> : null}
                 </div>
                 <Badge tone={m.role === "owner" ? "brand" : "neutral"}>{m.role}</Badge>
                 {isOwner && m.user_id !== ctx.user.id ? (
@@ -67,17 +67,17 @@ export default async function TeamPage() {
               <div className="space-y-3">
                 <h4 className="text-sm">Pending invites</h4>
                 {invites.map((i) => (
-                  <div key={i.id} className="rounded-md border border-brand-stone p-3 text-sm">
+                  <div key={i.id} className="rounded-md border border-hairline p-3 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{i.email}</span>
                       <Badge>{i.role}</Badge>
-                      <span className="text-brand-slate">{formatDate(i.created_at)}</span>
+                      <span className="text-ink-muted">{formatDate(i.created_at)}</span>
                       <form action={revokeInvite} className="ml-auto">
                         <input type="hidden" name="invite_id" value={i.id} />
                         <Button variant="ghost" size="sm">Revoke</Button>
                       </form>
                     </div>
-                    <Input readOnly value={appUrl(`/accept-invite/${i.token}`)} className="mt-2 font-mono text-xs" aria-label="Invite link" />
+                    <Input readOnly value={appUrl(`/accept-invite/${i.token}`)} className="mt-2 font-mono text-small" aria-label="Invite link" />
                   </div>
                 ))}
               </div>

@@ -46,16 +46,16 @@ export default async function LeagueTablesPage() {
       </Card>
       <Card>
         <CardHeader title="All league tables" />
-        <CardBody className="divide-y divide-brand-stone p-0">
+        <CardBody className="divide-y divide-hairline p-0">
           {(tables ?? []).map((t) => (
-            <Link key={t.id} href={`/admin/league-tables/${t.id}`} className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-brand-cream">
+            <Link key={t.id} href={`/admin/league-tables/${t.id}`} className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-brand-tint">
               <span className="font-medium">{t.town}</span>
-              <span className="text-brand-slate">{(t.league_agents as unknown as { count: number }[])?.[0]?.count ?? 0} agents</span>
+              <span className="text-ink-muted">{(t.league_agents as unknown as { count: number }[])?.[0]?.count ?? 0} agents</span>
               <Badge className="ml-auto">{t.status}</Badge>
-              <span className="tabular-nums text-brand-slate">{formatDate(t.created_at)}</span>
+              <span className="font-mono text-ink-muted">{formatDate(t.created_at)}</span>
             </Link>
           ))}
-          {!tables?.length ? <p className="px-5 py-4 text-sm text-brand-slate">None yet.</p> : null}
+          {!tables?.length ? <p className="px-5 py-4 text-sm text-ink-muted">None yet.</p> : null}
         </CardBody>
       </Card>
     </div>

@@ -23,11 +23,11 @@ export function ActionForm({
         {children}
       </fieldset>
       {state?.error ? (
-        <p role="alert" className="mt-2 text-sm text-red-700">
+        <p role="alert" className="mt-2 text-sm text-down">
           {state.error}
         </p>
       ) : null}
-      {state?.ok ? <p className="mt-2 text-sm text-emerald-800">{state.ok}</p> : null}
+      {state?.ok ? <p className="mt-2 text-sm text-up">{state.ok}</p> : null}
     </form>
   );
 }
