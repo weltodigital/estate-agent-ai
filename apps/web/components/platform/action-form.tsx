@@ -18,8 +18,10 @@ export function ActionForm({
 }) {
   const [state, formAction, pending] = useActionState(action, null);
   return (
-    <form action={formAction} className={cn(className)} aria-busy={pending}>
-      <fieldset disabled={pending} className="contents">
+    <form action={formAction} aria-busy={pending}>
+      {/* Layout classes go on the fieldset: with display:contents (as before)
+          space-y-* on the form never reached the fields. */}
+      <fieldset disabled={pending} className={cn("m-0 min-w-0 border-0 p-0", className)}>
         {children}
       </fieldset>
       {state?.error ? (
