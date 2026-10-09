@@ -75,7 +75,7 @@ export default async function BillingPage({
       </Card>
 
       {!ctx.plan.paid ? (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {purchasablePlans().map((p) => (
             <Card key={p.id} className="flex flex-col">
               <CardHeader title={p.name} description={p.description} />
@@ -91,10 +91,10 @@ export default async function BillingPage({
                 {isOwner ? (
                   <form action="/api/stripe/checkout" method="post" className="mt-auto space-y-2">
                     <input type="hidden" name="plan_id" value={p.id} />
-                    {p.id === "multi" ? (
+                    {p.limits.maxBranches > 1 ? (
                       <label className="block text-small text-ink-muted">
                         Number of branches
-                        <Input type="number" name="quantity" min={Math.max(branches, 1)} max={p.limits.maxBranches} defaultValue={Math.max(branches, 2)} className="mt-1" />
+                        <Input type="number" name="quantity" min={Math.max(branches, p.limits.minBranches)} max={p.limits.maxBranches} defaultValue={Math.max(branches, p.limits.minBranches)} className="mt-1" />
                       </label>
                     ) : null}
                     <Button className="w-full" disabled={!p.stripePriceId}>

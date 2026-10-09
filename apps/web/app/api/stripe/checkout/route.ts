@@ -20,9 +20,15 @@ export async function POST(request: Request) {
 
   const branches = await countActiveBranches(ctx.org.id);
   const requested = Number(form.get("quantity") ?? 1);
-  const quantity = plan.id === "pro"
-    ? 1
-    : Math.min(Math.max(Number.isFinite(requested) ? Math.floor(requested) : 1, branches, 1), plan.limits.maxBranches);
+  // Single-branch plans are quantity 1. Agency bills every branch, at least
+  // its minimum (2) and never fewer than the branches already set up.
+  const quantity =
+    plan.limits.maxBranches === 1
+      ? 1
+      : Math.min(
+          Math.max(Number.isFinite(requested) ? Math.floor(requested) : 0, branches, plan.limits.minBranches),
+          plan.limits.maxBranches,
+        );
 
   const stripe = getStripe();
   let customerId = ctx.org.stripe_customer_id;

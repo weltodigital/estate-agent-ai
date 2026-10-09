@@ -13,7 +13,7 @@ const METRICS = [
 const STEPS = [
   {
     title: "We ask the questions your clients ask",
-    body: "Around twenty questions per branch, like \"best estate agent in Southsea\" or \"reliable letting agent for landlords in Portsmouth\". Each one goes to ChatGPT, Perplexity, Gemini and Claude, several times, every week.",
+    body: "Up to 18 questions per branch, like \"best estate agent in Southsea\" or \"reliable letting agent for landlords in Portsmouth\". Each one goes to up to four assistants (ChatGPT, Perplexity, Gemini and Claude), several times, every week.",
   },
   {
     title: "We read every answer",

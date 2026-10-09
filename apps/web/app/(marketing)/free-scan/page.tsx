@@ -16,7 +16,7 @@ export default function FreeScanPage() {
           <li>Your first fix, with the evidence behind it</li>
         </ul>
         <p className="mt-6 text-sm text-ink-muted">
-          It's a small sample, so treat it as a first look. Paid plans ask around twenty questions across four assistants, three times each, every week.
+          It's a small sample, so treat it as a first look. Paid plans ask 12 to 18 questions per branch on up to four assistants, three times each, every week.
         </p>
       </div>
       <div className="rounded-lg border border-hairline bg-surface-raised p-6">

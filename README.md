@@ -60,7 +60,7 @@ supabase db push                         # applies supabase/migrations
 
 ### Stripe
 
-1. Create two recurring prices: Pro (per branch) and Multi-branch (per branch, tiered). Put their ids in `STRIPE_PRICE_PRO` / `STRIPE_PRICE_MULTI`.
+1. Create three monthly recurring, per-unit prices: Starter £39, Pro £99 and Agency £79 (quantity = branches, minimum 2). Put their ids in `STRIPE_PRICE_STARTER` / `STRIPE_PRICE_PRO` / `STRIPE_PRICE_AGENCY`. Plan limits live in `packages/core/src/config/plans.ts`.
 2. Add a webhook endpoint at `<APP_URL>/api/stripe/webhook` for `checkout.session.completed` and `customer.subscription.created|updated|deleted`. Put its signing secret in `STRIPE_WEBHOOK_SECRET`.
 3. Enable the customer portal.
 

@@ -1,14 +1,16 @@
-// Plans and their limits. Prices are TBD and live in Stripe; this file maps
+// Plans and their limits. Prices live in Stripe (display labels in env); this file maps
 // Stripe price ids (from env) to a plan and holds the limits we enforce
 // server-side. Never trust the client for any of these.
 
 import type { EngineId } from "./engines";
 
-export type PlanId = "free" | "pro" | "multi";
+export type PlanId = "free" | "starter" | "pro" | "agency";
 
 export interface PlanLimits {
   /** Max active branches. For per-branch plans this is the purchased quantity, capped here. */
   maxBranches: number;
+  /** Minimum billable branches (Agency starts at 2). */
+  minBranches: number;
   promptsPerBranch: number;
   /** Minimum days between scheduled scans. */
   scanIntervalDays: number;
@@ -34,6 +36,10 @@ type Env = Record<string, string | undefined>;
 
 const ALL_ENGINES: EngineId[] = ["openai", "perplexity", "gemini", "anthropic"];
 
+// Sized for ~70%+ gross margin at measured/estimated per-answer costs
+// (ChatGPT ~$0.034, Gemini ~$0.037, Claude ~$0.07, Perplexity ~$0.002):
+// Starter ~£10, Pro ~£28, Agency ~£22 per branch per month incl. Stripe fees.
+// Budgets are ~1.5x the expected cost of one scan.
 export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
   return {
     free: {
@@ -43,6 +49,7 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
       perBranch: false,
       limits: {
         maxBranches: 1,
+        minBranches: 1,
         promptsPerBranch: 5,
         scanIntervalDays: 36500, // once
         manualScansPerWeek: 0,
@@ -51,36 +58,55 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
         scanBudgetUsd: Number(env.FREE_SCAN_BUDGET_USD ?? 0.75),
       },
     },
+    starter: {
+      id: "starter",
+      name: "Starter",
+      description: "Weekly tracking on ChatGPT, Perplexity and Gemini for one branch.",
+      stripePriceId: env.STRIPE_PRICE_STARTER,
+      perBranch: true,
+      limits: {
+        maxBranches: 1,
+        minBranches: 1,
+        promptsPerBranch: 12,
+        scanIntervalDays: 7,
+        manualScansPerWeek: 1,
+        engines: ["openai", "perplexity", "gemini"],
+        runsPerPrompt: 3,
+        scanBudgetUsd: Number(env.STARTER_SCAN_BUDGET_USD ?? 4),
+      },
+    },
     pro: {
       id: "pro",
       name: "Pro",
-      description: "Weekly tracking and fixes for one branch.",
+      description: "Weekly tracking on all four assistants for one branch, with more questions.",
       stripePriceId: env.STRIPE_PRICE_PRO,
       perBranch: true,
       limits: {
         maxBranches: 1,
-        promptsPerBranch: 25,
+        minBranches: 1,
+        promptsPerBranch: 18,
         scanIntervalDays: 7,
         manualScansPerWeek: 1,
         engines: ALL_ENGINES,
         runsPerPrompt: 3,
-        scanBudgetUsd: Number(env.PAID_SCAN_BUDGET_USD ?? 15),
+        scanBudgetUsd: Number(env.PRO_SCAN_BUDGET_USD ?? 12),
       },
     },
-    multi: {
-      id: "multi",
-      name: "Multi-branch",
-      description: "Every branch tracked weekly, with tiered per-branch pricing.",
-      stripePriceId: env.STRIPE_PRICE_MULTI,
+    agency: {
+      id: "agency",
+      name: "Agency",
+      description: "Every branch tracked weekly on all four assistants, billed per branch.",
+      stripePriceId: env.STRIPE_PRICE_AGENCY,
       perBranch: true,
       limits: {
         maxBranches: 50,
-        promptsPerBranch: 25,
+        minBranches: 2,
+        promptsPerBranch: 14,
         scanIntervalDays: 7,
         manualScansPerWeek: 1,
         engines: ALL_ENGINES,
         runsPerPrompt: 3,
-        scanBudgetUsd: Number(env.PAID_SCAN_BUDGET_USD ?? 15),
+        scanBudgetUsd: Number(env.AGENCY_SCAN_BUDGET_USD ?? 10),
       },
     },
   };
@@ -112,7 +138,7 @@ export function effectiveLimits(
     (ACTIVE_SUBSCRIPTION_STATUSES as readonly string[]).includes(s.status),
   );
   const best =
-    active.find((s) => s.plan_id === "multi") ?? active.find((s) => s.plan_id === "pro") ?? null;
+    (["agency", "pro", "starter"] as const).map((id) => active.find((s) => s.plan_id === id)).find(Boolean) ?? null;
   if (!best) return { planId: "free", limits: plans.free.limits, paid: false };
   const plan = plans[best.plan_id as PlanId];
   return {

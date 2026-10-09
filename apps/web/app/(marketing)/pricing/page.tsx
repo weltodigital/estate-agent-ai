@@ -11,7 +11,7 @@ export default function PricingPage() {
     <section className="mx-auto max-w-5xl px-4 py-16 md:px-8">
       <h1 className="text-display text-ink">Pricing</h1>
       <p className="mt-3 max-w-2xl text-ink-muted">Priced per branch, billed monthly. Cancel any time.</p>
-      <div className="mt-10 grid gap-6 md:grid-cols-3">
+      <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-hairline bg-surface-raised p-6">
           <h3 className="text-heading">Free scan</h3>
           <p className="mt-2 text-title">Free</p>
@@ -30,7 +30,7 @@ export default function PricingPage() {
               <li>Competitors, citations and every raw answer</li>
               <li>Fixes with ready-to-paste drafts</li>
               <li>AI referral tracking for your website</li>
-              {p.id === "multi" ? <li>Up to {p.limits.maxBranches} branches, several users</li> : null}
+              {p.id === "agency" ? <li>From {p.limits.minBranches} branches, with your whole team</li> : null}
             </ul>
             <Link href="/login?next=/onboarding" className={buttonClasses("primary", "md", "mt-6 w-full")}>Get started</Link>
           </div>
