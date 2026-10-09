@@ -1,0 +1,137 @@
+# Privett — Brand Reference
+
+This is the canonical brand reference for Privett. Other `CLAUDE.md` files refer here. When you write or change any user-facing copy, colour, or type decision, this file is the source of truth.
+
+> **Note on the logo:** the real Privett wordmark is in place — a Hedge Green serif logo (`apps/web/public/privett-logo.png`) with a Bone variant for dark backgrounds (`privett-logo-bone.png`). Both are rendered through the `<Wordmark />` component, so any future asset swap stays a one-file change.
+
+---
+
+## Name and pronunciation
+
+**Privett.** Always sentence case — never `PRIVETT`, never `privett`. The domain is `useprivett.com`; in body copy always write the name as "Privett", never the URL.
+
+Pronounced **PRIH-vett**. Two syllables, soft.
+
+**One-line description:** See how often AI assistants name your agency when sellers and landlords ask who to use, and what to fix when they don't.
+
+**The question we answer:** When a seller in your town asks AI who to list with, are you named? If not, why not?
+
+---
+
+## Voice & tone
+
+Warm, considered, quietly confident. The voice of a thoughtful senior colleague who happens to be brilliant at marketing, not a salesperson, not a robot.
+
+- **UK English throughout:** colour, centre, kerbside, organisation, lounge, garden, lift.
+- **Short sentences.** Understatement is a confidence signal.
+- **Never shouty, never tech-jargony, never twee.**
+- **No exclamation marks** except in error/success toasts.
+- **No em-dashes.** Use commas, colons, or full stops instead.
+- **Never "AI-powered":** say what the thing actually does.
+- Avoid over-explanation. If a sentence runs past 20 words, cut it.
+
+**Tagline (primary):** Be the agent AI names.
+**Tagline (alt, use sparingly):** Know what AI says about you, and what to fix.
+
+**Never promise rankings or guaranteed visibility.** We report what assistants say, how it changes over time, and what to fix. Say "often", "more likely", "tracked weekly", never "guaranteed", "rank #1" or "get recommended".
+
+### The words we don't use
+
+These are estate-agent and proptech clichés. They never appear in Privett copy:
+
+1. **stunning**
+2. **nestled**
+3. **boasting**
+4. **AI-powered** (say what it does instead)
+5. **revolutionary** / **next-generation** / **cutting-edge**
+6. **seamless** / **effortless**
+7. **unlock** / **supercharge** / **leverage**
+8. **intelligent** / **smart** (as a marketing adjective)
+9. Americanisms: **optimize**, **color**, **center**, **elevator**, **yard**
+
+When tempted to reach for one, describe the actual behaviour instead.
+
+---
+
+## Colour palette
+
+Brand defaults. Available in Tailwind under `theme.extend.colors.brand` and as CSS custom properties in `apps/web/app/globals.css`.
+
+| Name        | Hex       | Use                                                             | Tailwind class                                |
+| ----------- | --------- | --------------------------------------------------------------- | --------------------------------------------- |
+| Hedge Green | `#2E3B36` | Primary brand colour. Headers, primary buttons, brand surfaces. | `bg-brand-hedge` `text-brand-hedge`           |
+| Bone        | `#F5F1E8` | Canvas / page background. Warm off-white.                       | `bg-brand-bone`                               |
+| Terracotta  | `#B5663D` | Accent. CTAs, key inline links. Use sparingly.                  | `bg-brand-terracotta` `text-brand-terracotta` |
+| Sand        | `#C9B8A0` | Secondary surfaces, input fields, dividers.                     | `bg-brand-sand`                               |
+| Ink         | `#1A1F1C` | Body text, headings, icons.                                     | `text-brand-ink`                              |
+
+Supporting neutrals:
+
+| Name   | Hex       | Use                                      | Tailwind class       |
+| ------ | --------- | ---------------------------------------- | -------------------- |
+| Cream  | `#FAF7F0` | Subtle backgrounds, hover states on Bone | `bg-brand-cream`     |
+| Stone  | `#E4DFD0` | Borders, dividers                        | `border-brand-stone` |
+| Slate  | `#9A968A` | Muted text, secondary icons              | `text-brand-slate`   |
+| Walnut | `#4A453A` | Strong secondary text                    | `text-brand-walnut`  |
+
+The semantic tokens (`bg-primary`, `text-foreground`, `--brand-primary`, etc.) point at the brand palette as their defaults, so per-agency colour overrides keep working.
+
+---
+
+## Type system
+
+Two faces, both from Google Fonts, wired via `next/font/google` in `apps/web/app/layout.tsx` with `display: 'swap'` and CSS variables `--font-newsreader` and `--font-inter`. Tailwind's `fontFamily.serif` is Newsreader, `fontFamily.sans` is Inter.
+
+**Newsreader** — display, headings, the wordmark. Weight 400 (occasionally 500 for h3/h4 in app UI). Variable `opsz` axis ranges 6–72: use `font-variation-settings: 'opsz' 72` at display sizes (32px+) and `'opsz' 24` for medium headings (h3/h4 in-app). Tracking runs tighter than a typical serif. **Never use Newsreader below 18px.**
+
+**Inter** — body, UI labels, navigation, numbers. Weights **400 and 500 only**. Never 600 or 700.
+
+| Element                   | Face           | Spec                                 |
+| ------------------------- | -------------- | ------------------------------------ |
+| h1                        | Newsreader 400 | opsz 72, tracking -0.02em            |
+| h2                        | Newsreader 400 | opsz 72, tracking -0.015em           |
+| h3                        | Newsreader 500 | opsz 24, tracking -0.01em            |
+| h4–h6                     | Inter 500      | —                                    |
+| body                      | Inter 400      | line-height 1.6                      |
+| UI labels & buttons       | Inter 500      | —                                    |
+| Numbers (metrics/billing) | Inter 500      | `font-variant-numeric: tabular-nums` |
+
+**Serif vs sans:** Newsreader for anything expressive and large (headings, the wordmark, hero display, proof-point single words). Inter for everything functional (body copy, navigation, form fields, buttons, tables, numbers).
+
+---
+
+## Logo usage rules
+
+The wordmark is the real Privett logo, rendered through `<Wordmark />` (`apps/web/components/brand/wordmark.tsx`) from two PNG assets in `apps/web/public/`.
+
+- **Wordmark:** a Hedge Green serif "Privett" logo (`privett-logo.png`), with a Bone variant (`privett-logo-bone.png`) for dark backgrounds. Pick via the `variant` prop; `size` sets the rendered height in px.
+- **Default size:** 24px in the header / footer / auth; 22px in the app sidebar.
+- **Clear space:** keep at least the height of the "P" clear on all sides.
+- **On-light** (Bone / Cream / white): Hedge Green logo (`variant="hedge"`, the default).
+- **On-dark** (Hedge Green / Ink): Bone logo (`variant="bone"`).
+- **Favicon / app icon** are static PNGs (`apps/web/app/icon.png`, `apple-icon.png`): a Bone "P" on a Hedge Green square.
+- **Swapping the logo asset** is a one-file change: replace the PNGs in `public/` (keep the filenames) — every placement updates at once.
+
+---
+
+## Charts and data
+
+The tracked branch is always Hedge Green. Competitors use Slate, Sand and Walnut. Terracotta marks events (a fix completed). Numbers use Inter 500 with tabular figures. A missing value is shown as "—", never 0.
+
+---
+
+## Iconography
+
+Lucide icons, stroke width **1.5**. Ink (`#1A1F1C`) or Slate (`#9A968A`) only. **Never green or terracotta** — icons stay neutral so the accent colours keep their meaning.
+
+---
+
+## Where copy lives
+
+Every user-facing string lives in one of:
+
+- `apps/web/app/(marketing)/` — marketing site copy
+- `apps/web/components/` — component-level UI copy
+- `apps/web/lib/copy.ts` — repeated UI strings (empty states, error messages, sign-offs, product name)
+
+Don't bury copy in components scattered across the codebase. Repeated strings belong in `lib/copy.ts`.

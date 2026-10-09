@@ -139,8 +139,21 @@ create policy profiles_select on public.profiles for select using (
   )
   or public.is_admin()
 );
-create policy profiles_update on public.profiles for update using (id = auth.uid())
-  with check (id = auth.uid() and is_admin = (select p.is_admin from public.profiles p where p.id = auth.uid()));
+create policy profiles_update on public.profiles for update using (id = auth.uid()) with check (id = auth.uid());
+
+-- Users may edit their own profile but never grant themselves admin. (A
+-- policy can't compare against the old row without recursing into profiles.)
+create or replace function public.guard_profile_update()
+returns trigger language plpgsql as $$
+begin
+  if auth.role() = 'authenticated' and new.is_admin is distinct from old.is_admin then
+    raise exception 'is_admin can only be changed by an administrator';
+  end if;
+  return new;
+end;
+$$;
+create trigger profiles_guard before update on public.profiles
+  for each row execute function public.guard_profile_update();
 
 create policy organisations_select on public.organisations for select using (public.is_org_member(id) or public.is_admin());
 create policy organisations_update on public.organisations for update using (public.is_org_owner(id));

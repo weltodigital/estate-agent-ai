@@ -7,7 +7,6 @@
 --   * API costs are USD (providers bill in USD), stored as numeric(12,6).
 --   * Plan prices live in Stripe + packages/core config, not here.
 
-create extension if not exists pgcrypto;
 
 -- ---------------------------------------------------------------------------
 -- Identity and tenancy
