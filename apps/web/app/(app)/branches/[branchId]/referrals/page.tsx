@@ -12,7 +12,7 @@ import { DAY_PRESETS, type SearchParams } from "@/lib/data/filters";
 import { snippetTag } from "@/lib/data/snippet";
 import { appUrl, cn, formatDateTime } from "@/lib/utils";
 
-export const metadata = { title: "AI referrals" };
+export const metadata = { title: "Website visits" };
 
 export default async function ReferralsPage({
   params,
