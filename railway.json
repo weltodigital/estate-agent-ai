@@ -3,7 +3,7 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "apps/worker/Dockerfile",
-    "watchPatterns": ["apps/worker/**", "packages/core/**"]
+    "watchPatterns": ["apps/worker/**", "packages/core/**", "railway.json", "pnpm-lock.yaml"]
   },
   "deploy": {
     "restartPolicyType": "ALWAYS",
