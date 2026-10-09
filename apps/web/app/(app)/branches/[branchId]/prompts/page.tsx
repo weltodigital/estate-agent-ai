@@ -8,6 +8,7 @@ import { requireBranch } from "@/lib/auth";
 import { loadActivePrompts, loadAnswerTexts, loadBranchResults, toResponses } from "@/lib/data/branch-data";
 import { filterQuery, metricFilter, parseFilters, type SearchParams } from "@/lib/data/filters";
 import { cn, formatDateTime } from "@/lib/utils";
+import { excerpt } from "@/lib/data/plain-text";
 
 export const metadata = { title: "Prompts and answers" };
 
@@ -181,7 +182,7 @@ export default async function PromptsPage({
                           ))}
                         </ol>
                       ) : null}
-                      <p className="whitespace-pre-wrap rounded-md bg-surface-sunken p-3 font-mono text-data text-ink">{text ? (text.length > 900 ? `${text.slice(0, 900)}…` : text) : "No answer text stored."}</p>
+                      <p className="whitespace-pre-wrap rounded-md bg-surface-sunken p-3 font-mono text-data text-ink">{text ? excerpt(text, 900) : "No answer text stored."}</p>
                       <Link href={`${base}/responses/${r.id}`} className="inline-block text-brand hover:underline">
                         Full answer, citations and raw data
                       </Link>

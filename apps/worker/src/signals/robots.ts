@@ -53,3 +53,34 @@ export function blockedAiBots(txt: string, bots: string[]): { bot: string; rule:
   }
   return out;
 }
+
+function ruleRegex(path: string): RegExp {
+  // robots.txt patterns: prefix match, "*" wildcard, "$" end anchor.
+  const anchored = path.endsWith("$");
+  const body = (anchored ? path.slice(0, -1) : path)
+    .split("*")
+    .map((s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+    .join(".*");
+  return new RegExp(`^${body}${anchored ? "$" : ""}`);
+}
+
+/**
+ * Whether `agent` may fetch `path` under this robots.txt: the most specific
+ * group naming the agent (else "*"), longest matching rule wins, Allow wins
+ * ties. No robots.txt or no matching rule means allowed.
+ */
+export function isPathAllowed(txt: string | null, agent: string, path: string): boolean {
+  if (!txt) return true;
+  const groups = parseRobots(txt);
+  const a = agent.toLowerCase();
+  const specific = groups.filter((g) => g.agents.some((x) => x !== "*" && a.includes(x)));
+  const applicable = specific.length ? specific : groups.filter((g) => g.agents.includes("*"));
+  let best: { type: "allow" | "disallow"; len: number } | null = null;
+  for (const r of applicable.flatMap((g) => g.rules)) {
+    if (!r.path) continue; // "Disallow:" with no path allows everything
+    if (!ruleRegex(r.path).test(path)) continue;
+    const len = r.path.length;
+    if (!best || len > best.len || (len === best.len && r.type === "allow")) best = { type: r.type, len };
+  }
+  return best?.type !== "disallow";
+}

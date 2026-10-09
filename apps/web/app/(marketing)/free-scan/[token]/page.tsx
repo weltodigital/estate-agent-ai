@@ -14,6 +14,7 @@ import { AutoRefresh } from "@/components/marketing/auto-refresh";
 import { buttonClasses } from "@/components/ui/button";
 import { COPY } from "@/lib/copy";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { excerpt } from "@/lib/data/plain-text";
 
 export const metadata = { title: "Your free scan", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
   const status = run?.status ?? "queued";
   const inFlight = status === "queued" || status === "running";
 
-  const [{ data: results }, { data: competitors }, { data: recs }] = await Promise.all([
+  const [{ data: results }, { data: competitors }, { data: recs }, { data: crawlRows }] = await Promise.all([
     admin
       .from("scan_results")
       .select("id, engine, intent_group, created_at, prompt_text, parse_status, answer_text")
@@ -49,7 +50,16 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
       .eq("status", "todo")
       .order("priority")
       .order("first_seen_at"),
+    admin
+      .from("signals")
+      .select("value_json")
+      .eq("branch_id", scan.branch_id)
+      .eq("type", "website_crawl")
+      .order("captured_at", { ascending: false })
+      .limit(1),
   ]);
+  const crawl = crawlRows?.[0]?.value_json as { ok?: boolean; error?: string } | undefined;
+  const siteBlocked = crawl ? !crawl.ok : false;
   const ids = (results ?? []).map((r) => r.id);
   const { data: mentions } = ids.length
     ? await admin
@@ -140,6 +150,21 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
                 </>
               ) : null}
             </div>
+          ) : !inFlight ? (
+            <div className="mt-10 rounded-lg border border-hairline bg-surface-raised p-6">
+              <p className="text-sm text-brand">Fixes</p>
+              <h2 className="mt-1 text-title">No fixes from this sample</h2>
+              <p className="mt-2 text-ink-muted">
+                {siteBlocked
+                  ? "Your website turned away our automated check, so we couldn't review its structured data, pages or robots.txt. Fixes only appear when we have the evidence for them."
+                  : "Nothing in these answers or your website pointed to a clear fix. Fixes only appear when we have the evidence for them."}
+              </p>
+              {siteBlocked ? (
+                <p className="mt-2 text-small text-ink-muted">
+                  Many sites block unfamiliar crawlers by default. On a paid plan you can allow PrivettBot, or we work from the answers and your Google profile alone.
+                </p>
+              ) : null}
+            </div>
           ) : null}
 
           {locked > 0 || !inFlight ? (
@@ -167,8 +192,7 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
                       </p>
                       {names.length ? <p className="mt-1">Named: {names.join(", ")}</p> : null}
                       <p className="mt-2 text-ink-muted">
-                        {(r.answer_text ?? "").slice(0, 400)}
-                        {(r.answer_text?.length ?? 0) > 400 ? "…" : ""}
+                        {excerpt(r.answer_text, 400)}
                       </p>
                     </div>
                   );

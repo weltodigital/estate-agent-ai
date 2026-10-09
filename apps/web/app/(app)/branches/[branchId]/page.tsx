@@ -22,6 +22,7 @@ import { filterQuery, metricFilter, parseFilters, type SearchParams } from "@/li
 import { buildCards, METRIC_KEYS, perEngine, trendSeries, type MetricKey, type TrendPoint } from "@/lib/data/overview";
 import { COPY } from "@/lib/copy";
 import { cn } from "@/lib/utils";
+import { plainText } from "@/lib/data/plain-text";
 
 export const metadata = { title: "Overview" };
 
@@ -108,7 +109,7 @@ export default async function BranchOverviewPage({
   const describe = topDescriptors.map((d) => {
     const id = descriptorSources.get(d.descriptor) ?? null;
     const text = id ? texts.get(id)?.answer_text : null;
-    return { ...d, id, snippet: extractSnippet(text, [d.descriptor, branch.name, ...branch.aliases]) };
+    return { ...d, id, snippet: extractSnippet(plainText(text), [d.descriptor, branch.name, ...branch.aliases]) };
   });
 
   const gbp = await loadLatestGbp(branch.id, top.map((t) => t.key));

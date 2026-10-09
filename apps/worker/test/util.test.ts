@@ -104,21 +104,28 @@ describe("rollupRows", () => {
 });
 
 describe("buildCitationStats", () => {
-  it("attributes cited domains to agents named in the same answers", () => {
-    const stats = buildCitationStats(
-      results,
-      mentions,
-      [
-        { scan_result_id: "r1", domain: "allagents.co.uk", is_own_domain: false, competitor_id: null },
-        { scan_result_id: "r2", domain: "allagents.co.uk", is_own_domain: false, competitor_id: null },
-        { scan_result_id: "r2", domain: "rightmove.co.uk", is_own_domain: false, competitor_id: null },
-        { scan_result_id: "r1", domain: "branch.co.uk", is_own_domain: true, competitor_id: null },
-      ],
-      new Map([["c1", "Fox"]]),
-    );
-    expect(stats).toEqual([
-      { domain: "allagents.co.uk", responses: 2, citesBranch: true, competitorsCited: ["Fox"] },
-      { domain: "rightmove.co.uk", responses: 1, citesBranch: false, competitorsCited: ["Fox"] },
+  const cite = (scan_result_id: string, url: string, is_own_domain = false) => ({
+    scan_result_id,
+    url,
+    domain: new URL(url).hostname.replace(/^www\./, ""),
+    is_own_domain,
+    competitor_id: null,
+  });
+  const run = (rows: ReturnType<typeof cite>[]) =>
+    buildCitationStats(results, mentions, rows, new Map([["c1", "Fox"]]), ["privett test"], new Map([["c1", "fox"]]));
+
+  it("credits the branch only for pages about it, not for sharing an answer", () => {
+    // r1 names the branch, but the cited directory page is the town listing.
+    const stats = run([
+      cite("r1", "https://www.allagents.co.uk/estate-agents/portsmouth/"),
+      cite("r2", "https://www.allagents.co.uk/fox-estate-agents/"),
+      cite("r1", "https://branch.co.uk/", true),
     ]);
+    expect(stats).toEqual([{ domain: "allagents.co.uk", responses: 2, citesBranch: false, competitorsCited: ["Fox"] }]);
+  });
+
+  it("recognises the branch's own profile page", () => {
+    const stats = run([cite("r1", "https://www.getagent.co.uk/agents/privett-test-portsmouth")]);
+    expect(stats[0]).toMatchObject({ citesBranch: true });
   });
 });

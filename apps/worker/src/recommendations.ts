@@ -8,6 +8,7 @@ import {
   computeSubjectMetrics,
   evaluateRules,
   getScanSettings,
+  normaliseAgentName,
   perPromptMetrics,
   toMetricResponses,
   type GoogleBusinessSignal,
@@ -35,11 +36,37 @@ function topCounts(names: string[], n: number): string[] {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => k);
 }
 
+/** Lower-case alphanumeric tokens of a URL's host and path ("/agents/keats-fearn" -> agents, keats, fearn). */
+function urlTokens(url: string): Set<string> {
+  try {
+    const u = new URL(url);
+    return new Set(`${u.hostname} ${decodeURIComponent(u.pathname)}`.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+  } catch {
+    return new Set();
+  }
+}
+
+/** True if the cited page is about this agent: every token of its normalised name is in the URL. */
+function urlIsAbout(tokens: Set<string>, normalisedName: string): boolean {
+  const name = normalisedName.split(" ").filter(Boolean);
+  return name.length > 0 && name.every((t) => tokens.has(t));
+}
+
+/**
+ * Per cited domain: whether any cited page is about the branch, and which
+ * competitors it's cited for. A page is "about" an agent when the URL names
+ * it (e.g. getagent.co.uk/.../keats-fearn). Being named in the same answer
+ * isn't enough on its own: a visible agent co-occurs with every common
+ * source, which hid real gaps. Competitors are also credited when they're
+ * named in answers citing the domain that don't name the branch.
+ */
 export function buildCitationStats(
   results: ResultRow[],
   mentions: MentionRow[],
   citations: CitationRow[],
   competitorNames: Map<string, string>,
+  branchNormalisedNames: string[],
+  competitorNormalised: Map<string, string>,
 ): RuleCitationStat[] {
   const parsedIds = new Set(results.filter((r) => r.parse_status === "ok").map((r) => r.id));
   const mentionsByResult = new Map<string, MentionRow[]>();
@@ -48,25 +75,33 @@ export function buildCitationStats(
     list.push(m);
     mentionsByResult.set(m.scan_result_id, list);
   }
-  const byDomain = new Map<string, Set<string>>();
+  const byDomain = new Map<string, CitationRow[]>();
   for (const c of citations) {
     if (c.is_own_domain || !parsedIds.has(c.scan_result_id)) continue;
-    const set = byDomain.get(c.domain) ?? new Set();
-    set.add(c.scan_result_id);
-    byDomain.set(c.domain, set);
+    const list = byDomain.get(c.domain) ?? [];
+    list.push(c);
+    byDomain.set(c.domain, list);
   }
-  // A domain "cites" an agent when the agent is named in an answer that cites the domain.
-  return [...byDomain.entries()].map(([domain, ids]) => {
+
+  return [...byDomain.entries()].map(([domain, rows]) => {
     let citesBranch = false;
     const comps = new Set<string>();
-    for (const id of ids) {
-      for (const m of mentionsByResult.get(id) ?? []) {
-        if (m.match_confidence !== "high") continue;
-        if (m.is_branch) citesBranch = true;
-        else if (m.matched_competitor_id && competitorNames.has(m.matched_competitor_id)) comps.add(competitorNames.get(m.matched_competitor_id)!);
+    for (const c of rows) {
+      const tokens = urlTokens(c.url);
+      if (branchNormalisedNames.some((n) => urlIsAbout(tokens, n))) citesBranch = true;
+      for (const [id, norm] of competitorNormalised) {
+        if (urlIsAbout(tokens, norm) && competitorNames.has(id)) comps.add(competitorNames.get(id)!);
       }
     }
-    return { domain, responses: ids.size, citesBranch, competitorsCited: [...comps] };
+    const resultIds = new Set(rows.map((c) => c.scan_result_id));
+    for (const id of resultIds) {
+      const ms = (mentionsByResult.get(id) ?? []).filter((m) => m.match_confidence === "high");
+      if (ms.some((m) => m.is_branch)) continue;
+      for (const m of ms) {
+        if (m.matched_competitor_id && competitorNames.has(m.matched_competitor_id)) comps.add(competitorNames.get(m.matched_competitor_id)!);
+      }
+    }
+    return { domain, responses: resultIds.size, citesBranch, competitorsCited: [...comps] };
   });
 }
 
@@ -97,6 +132,7 @@ export async function buildRuleContext(branch: BranchRow): Promise<RuleContext> 
     domain: string | null;
   }[];
   const names = new Map(competitors.map((c) => [c.id, c.name]));
+  const places = [branch.town, ...branch.areas];
   const ranked = competitors
     .map((c) => ({ c, vis: computeSubjectMetrics(responses, c.id).visibility }))
     .filter((x) => (x.vis ?? 0) > 0)
@@ -152,7 +188,14 @@ export async function buildRuleContext(branch: BranchRow): Promise<RuleContext> 
     gbp: branchGbp.get(branch.id) ?? null,
     topCompetitors,
     prompts,
-    citations: buildCitationStats(results, mentions, citations, names),
+    citations: buildCitationStats(
+      results,
+      mentions,
+      citations,
+      names,
+      [branch.name, ...branch.aliases].map((n) => normaliseAgentName(n, places)),
+      new Map(competitors.map((c) => [c.id, normaliseAgentName(c.name, places)])),
+    ),
     branchVisibility: branchMetrics.visibility,
     totalResponses: branchMetrics.responses,
   };

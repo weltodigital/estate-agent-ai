@@ -16,7 +16,7 @@ export const env = {
   /** OpenAI Responses API web search tool type. */
   openaiWebSearchTool: process.env.OPENAI_WEB_SEARCH_TOOL || "web_search",
   crawlMaxPages: Number(process.env.CRAWL_MAX_PAGES ?? 15),
-  userAgent: "PrivettBot/1.0 (+https://privett.co.uk/bot)",
+  userAgent: "Mozilla/5.0 (compatible; PrivettBot/1.0; +https://www.useprivett.com/bot)",
 };
 
 export function requireDbEnv() {

@@ -107,7 +107,14 @@ async function storeMatches(resultId: string, parsed: ParsedAnswer, citedUrls: s
   let branchRow: { position: number; label: string; score: number; descriptors: string[]; confidence: string } | null = null;
   let needsReview = false;
 
-  for (const agent of parsed.agents) {
+  // The parser sometimes splits "Bourne Estate Agents, Farnham" into two
+  // names; a bare place name is never an agency. Drop it and renumber.
+  const placeNames = new Set(matcher.places.map((p) => normaliseAgentName(p)));
+  const agents = parsed.agents
+    .filter((a) => !placeNames.has(normaliseAgentName(a.name)))
+    .map((a, i) => ({ ...a, position: i + 1 }));
+
+  for (const agent of agents) {
     const normalised = normaliseAgentName(agent.name, matcher.places);
     // Discovery mutates the target list, so match + discover under one lock.
     const { key, confidence } = await mutex.run(async () => {

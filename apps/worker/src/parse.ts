@@ -25,7 +25,7 @@ const AnswerV4 = z.object({ agents: z.array(AgentV4), notes: z.string().nullable
 
 const SYSTEM = `You extract structured data from answers that AI assistants gave to UK consumers asking about estate agents and letting agents.
 
-Return every estate agency, letting agency or property agent named in the answer, in the order each is first mentioned (position 1 = first named). Include online and hybrid agents (for example Purplebricks) if named as an option. Do not include portals (Rightmove, Zoopla, OnTheMarket), review sites, comparison sites, solicitors, mortgage brokers or the AI assistant itself. Do not add agents that are not named in the answer.
+Return every estate agency, letting agency or property agent named in the answer, in the order each is first mentioned (position 1 = first named). Include online and hybrid agents (for example Purplebricks) if named as an option. Do not include portals (Rightmove, Zoopla, OnTheMarket), review sites, comparison sites, solicitors, mortgage brokers or the AI assistant itself. Do not add agents that are not named in the answer. A town, area or street name on its own is not an agent: "Bourne Estate Agents, Farnham" is one agent, Bourne Estate Agents.
 
 For each agent:
 - name: as written in the answer, without extra words.

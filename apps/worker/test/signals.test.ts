@@ -133,3 +133,21 @@ describe("places", () => {
     expect(toSignal(null).found).toBe(false);
   });
 });
+
+import { isPathAllowed } from "../src/signals/robots";
+
+describe("isPathAllowed (PrivettBot obeys robots.txt)", () => {
+  const txt = "User-agent: *\nDisallow: /admin\nAllow: /admin/public\n\nUser-agent: PrivettBot\nDisallow: /private\n";
+  it("uses the PrivettBot group when present, else *", () => {
+    expect(isPathAllowed(txt, "PrivettBot", "/private/x")).toBe(false);
+    expect(isPathAllowed(txt, "PrivettBot", "/admin")).toBe(true); // its own group doesn't block /admin
+    expect(isPathAllowed(txt, "OtherBot", "/admin/x")).toBe(false);
+    expect(isPathAllowed(txt, "OtherBot", "/admin/public/x")).toBe(true);
+  });
+  it("handles full blocks, empty disallow and wildcards", () => {
+    expect(isPathAllowed("User-agent: *\nDisallow: /", "PrivettBot", "/")).toBe(false);
+    expect(isPathAllowed("User-agent: *\nDisallow:", "PrivettBot", "/")).toBe(true);
+    expect(isPathAllowed("User-agent: *\nDisallow: /*.pdf$", "PrivettBot", "/a/b.pdf")).toBe(false);
+    expect(isPathAllowed(null, "PrivettBot", "/")).toBe(true);
+  });
+});

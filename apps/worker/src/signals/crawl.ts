@@ -6,7 +6,7 @@ import { AI_BOTS, normaliseDomain, type WebsiteCrawlSignal } from "@privett/core
 import { env } from "../env";
 import { analyseJsonLd } from "./jsonld";
 import { classifyPage, isAreaPage, linkPriority } from "./pages";
-import { blockedAiBots } from "./robots";
+import { blockedAiBots, isPathAllowed } from "./robots";
 
 const MAX_BYTES = 2_000_000;
 const TIMEOUT_MS = 15_000;
@@ -86,11 +86,30 @@ export async function crawlWebsite(input: CrawlInput): Promise<WebsiteCrawlSigna
     speed: { ttfbMs: null, htmlKb: null },
   };
 
+  // Obey robots.txt for PrivettBot before fetching anything else.
+  const robotsFor = async (origin: string) => {
+    const res = await fetchText(new URL("/robots.txt", origin).toString());
+    const raw = res && res.status < 400 && !/<html/i.test(res.html) ? res.html : null;
+    return { res, raw };
+  };
+  const BOT = "PrivettBot";
+  let robots = await robotsFor(homepageUrl).catch(() => ({ res: null, raw: null }));
+  if (!isPathAllowed(robots.raw, BOT, new URL(homepageUrl).pathname || "/")) {
+    return { ...empty, error: "robots.txt asks PrivettBot not to crawl this site" };
+  }
+
   const home = await fetchText(homepageUrl);
   if (!home || home.status >= 400) {
     return { ...empty, error: home ? `Homepage returned HTTP ${home.status}` : "Homepage could not be fetched" };
   }
   const base = new URL(home.url);
+  if (base.origin !== new URL(homepageUrl).origin) {
+    // Redirected to another host: its robots.txt is the one that applies.
+    robots = await robotsFor(base.origin).catch(() => ({ res: null, raw: null }));
+    if (!isPathAllowed(robots.raw, BOT, base.pathname)) {
+      return { ...empty, error: "robots.txt asks PrivettBot not to crawl this site" };
+    }
+  }
   const host = normaliseDomain(base.hostname);
   const $home = cheerio.load(home.html);
   const homeInfo = pageInfo($home);
@@ -115,6 +134,7 @@ export async function crawlWebsite(input: CrawlInput): Promise<WebsiteCrawlSigna
     candidates.set(key, Math.max(candidates.get(key) ?? 0, p));
   });
   const toFetch = [...candidates.entries()]
+    .filter(([u]) => isPathAllowed(robots.raw, BOT, new URL(u).pathname))
     .sort((a, b) => b[1] - a[1])
     .slice(0, env.crawlMaxPages)
     .map(([u]) => u);
@@ -143,9 +163,9 @@ export async function crawlWebsite(input: CrawlInput): Promise<WebsiteCrawlSigna
   // Schema: homepage plus any other page carrying JSON-LD.
   const schema = analyseJsonLd(pages.flatMap((p) => p.jsonLd));
 
-  const robotsRes = await fetchText(new URL("/robots.txt", base).toString());
-  const robotsRaw = robotsRes && robotsRes.status < 400 && !/<html/i.test(robotsRes.html) ? robotsRes.html : null;
-  const llms = await fetchText(new URL("/llms.txt", base).toString());
+  const robotsRes = robots.res;
+  const robotsRaw = robots.raw;
+  const llms = isPathAllowed(robotsRaw, BOT, "/llms.txt") ? await fetchText(new URL("/llms.txt", base).toString()) : null;
   const llmsTxt = !!llms && llms.status === 200 && llms.html.trim().length > 0 && !/<(html|!doctype)/i.test(llms.html.slice(0, 500));
 
   return {

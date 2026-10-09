@@ -11,6 +11,7 @@ export interface MentionRow extends AgentMentionRow {
 }
 export interface CitationRow {
   scan_result_id: string;
+  url: string;
   domain: string;
   is_own_domain: boolean;
   competitor_id: string | null;
@@ -42,7 +43,7 @@ export async function loadBranchData(branchId: string, fromIso: string, toIso?: 
       "scan_result_id, agent_name, normalised_name, position, is_branch, matched_competitor_id, matched_league_agent_id, match_confidence, sentiment_score, descriptors",
       ids,
     ),
-    byResultIds<CitationRow>("citations", "scan_result_id, domain, is_own_domain, competitor_id", ids),
+    byResultIds<CitationRow>("citations", "scan_result_id, url, domain, is_own_domain, competitor_id", ids),
   ]);
   return { results, mentions, citations };
 }
