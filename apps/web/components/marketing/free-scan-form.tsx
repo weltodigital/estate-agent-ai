@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,11 +10,13 @@ export function FreeScanForm() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signIn, setSignIn] = useState(false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setPending(true);
     setError(null);
+    setSignIn(false);
     const body = Object.fromEntries(new FormData(e.currentTarget).entries());
     try {
       const res = await fetch("/api/free-scan", {
@@ -21,7 +24,8 @@ export function FreeScanForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      const json = (await res.json()) as { token?: string; error?: string };
+      const json = (await res.json()) as { token?: string; error?: string; signIn?: boolean };
+      if (json.signIn) setSignIn(true);
       if (!res.ok || !json.token) throw new Error(json.error ?? "Something went wrong. Please try again.");
       router.push(`/free-scan/${json.token}`);
     } catch (err) {
@@ -41,7 +45,7 @@ export function FreeScanForm() {
       <Field label="Town">
         <Input name="town" required maxLength={80} placeholder="Portsmouth" />
       </Field>
-      <Field label="Work email" hint="We use it to link the results to your account if you sign up.">
+      <Field label="Work email" hint="We use it to link the results to your account if you sign up. One free scan per agency.">
         <Input type="email" name="email" required autoComplete="email" />
       </Field>
       {/* Honeypot, hidden from people. */}
@@ -57,6 +61,14 @@ export function FreeScanForm() {
       {error ? (
         <p role="alert" className="text-sm text-down">
           {error}
+          {signIn ? (
+            <>
+              {" "}
+              <Link href="/login?next=/branches/new" className="font-medium text-brand underline underline-offset-2">
+                Sign in
+              </Link>
+            </>
+          ) : null}
         </p>
       ) : null}
     </form>

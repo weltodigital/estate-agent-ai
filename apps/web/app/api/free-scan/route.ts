@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getPlans, getScanSettings } from "@privett/core";
 import { createBranchWithPrompts, normaliseWebsite } from "@/lib/branches";
+import { getUser } from "@/lib/auth";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -41,6 +42,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That website address doesn't look right." }, { status: 400 });
   }
 
+  // The free scan is for prospects. Anyone with an account (signed in, or
+  // using an email that already has one) should add a branch instead.
+  const signedIn = await getUser().catch(() => null);
+  const ACCOUNT_ERROR = "You already have a Privett account. Sign in and add a branch to track it.";
+  if (signedIn) return NextResponse.json({ error: ACCOUNT_ERROR, signIn: true }, { status: 409 });
+
   const settings = getScanSettings();
   const salt = process.env.IP_HASH_SALT ?? "";
   const ipHash = createHash("sha256").update(`${clientIp(req)}|${salt}`).digest("hex");
@@ -52,6 +59,12 @@ export async function POST(req: NextRequest) {
     const { count: c } = await q;
     return c ?? 0;
   };
+  const { count: existingAccounts } = await admin
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .ilike("email", input.email.replace(/[%_\\]/g, "\\$&"));
+  if (existingAccounts) return NextResponse.json({ error: ACCOUNT_ERROR, signIn: true }, { status: 409 });
+
   const [byEmail, byDomain, byIp, global] = await Promise.all([
     count("email", input.email, DAY),
     count("domain", domain, 7 * DAY),
