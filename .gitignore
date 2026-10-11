@@ -49,3 +49,4 @@ supabase/.temp/
 playwright-report/
 test-results/
 /apps/web/playwright/.cache/
+.next-*/
