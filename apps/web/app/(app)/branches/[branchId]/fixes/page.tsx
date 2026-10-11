@@ -5,6 +5,7 @@ import { requireBranch } from "@/lib/auth";
 import { loadRecommendations } from "@/lib/data/branch-data";
 import { COPY } from "@/lib/copy";
 import { FixesBoard, SourcesLink } from "./fixes-board";
+import { HelpLink } from "@/components/ui/help-link";
 
 export const metadata = { title: "Fixes" };
 
@@ -28,7 +29,7 @@ export default async function FixesPage({ params }: { params: Promise<{ branchId
     <div className="space-y-8">
       <p className="max-w-2xl text-ink-muted">
         What to change so AI has more reasons to name you, most important first. Open a fix for the steps and a draft to copy.
-      </p>
+      {" "}<HelpLink section="fixes" label="How fixes work" /></p>
       {!recs.length || (!open && !recs.some((r) => r.status === "done")) ? (
         <>
           <EmptyState

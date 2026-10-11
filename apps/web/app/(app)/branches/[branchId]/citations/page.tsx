@@ -8,6 +8,7 @@ import { attributeCitations, isCitationGap, normaliseAgentName } from "@privett/
 import { loadBranchResults, loadCitations, loadCompetitors } from "@/lib/data/branch-data";
 import { parseFilters, type SearchParams } from "@/lib/data/filters";
 import { cn } from "@/lib/utils";
+import { HelpLink } from "@/components/ui/help-link";
 
 export const metadata = { title: "Sources" };
 
@@ -69,7 +70,8 @@ export default async function CitationsPage({
         </Link>
         <h2 className="mt-2 text-title text-ink">Where AI gets its information</h2>
         <p className="mt-1 max-w-2xl text-ink-muted">
-          The websites assistants cited when answering questions about agents in {branch.town}, and whether any page about you was among them.
+          The websites assistants cited when answering questions about agents in {branch.town}, and whether any page about you was among them.{" "}
+          <HelpLink section="sources" />
         </p>
       </div>
       <FilterBar basePath={`${base}/citations`} filters={filters} />

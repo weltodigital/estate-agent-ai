@@ -20,6 +20,7 @@ import { buildCards } from "@/lib/data/overview";
 import { buildHeadline, buildSummary, EFFORT_LABEL, firstSentence, relativeTime } from "@/lib/data/summary";
 import { COPY } from "@/lib/copy";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { HelpLink } from "@/components/ui/help-link";
 
 export const metadata = { title: "Overview" };
 
@@ -148,6 +149,8 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
             </>
           ) : null}
           based on <span className="font-mono tabular-nums">{summary.answers}</span> answers in the last {WINDOW_DAYS} days
+          {" · "}
+          <HelpLink section="numbers" label="How we work this out" />
         </p>
       </section>
 
@@ -163,7 +166,9 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
         <Card className="min-w-0 lg:col-span-3">
           <CardBody>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-heading text-ink">Who AI recommends in {branch.town}</h2>
+              <h2 className="flex flex-wrap items-baseline gap-x-3 text-heading text-ink">
+                Who AI recommends in {branch.town} <HelpLink section="recommends" />
+              </h2>
               <p className="text-small text-ink-muted">
                 You&apos;re <span className="font-mono font-medium text-ink tabular-nums">#{summary.voiceRank}</span> of{" "}
                 <span className="font-mono tabular-nums">{summary.voice.length}</span>
@@ -179,7 +184,9 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
         {/* 1d. Your next three fixes */}
         <Card className="min-w-0 lg:col-span-2">
           <CardBody>
-            <h2 className="text-heading text-ink">Your next fixes</h2>
+            <h2 className="flex flex-wrap items-baseline gap-x-3 text-heading text-ink">
+              Your next fixes <HelpLink section="fixes" label="How fixes work" />
+            </h2>
             {nextFixes.length ? (
               <ol className="mt-3 space-y-3">
                 {nextFixes.map((f) => (
@@ -213,7 +220,9 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
       {/* 1e. What changed */}
       <Card>
         <CardBody>
-          <h2 className="text-heading text-ink">What changed since your last scan</h2>
+          <h2 className="flex flex-wrap items-baseline gap-x-3 text-heading text-ink">
+            What changed since your last scan <HelpLink section="scan" label="How scans work" />
+          </h2>
           {changes === null ? (
             <p className="mt-2 text-small text-ink-muted">Changes appear after your second scan.</p>
           ) : changes.length ? (

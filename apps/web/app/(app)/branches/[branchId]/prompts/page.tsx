@@ -11,6 +11,7 @@ import { requireBranch } from "@/lib/auth";
 import { loadActivePrompts, loadBranchResults, toResponses } from "@/lib/data/branch-data";
 import { filterQuery, metricFilter, parseFilters, type SearchParams } from "@/lib/data/filters";
 import { cn } from "@/lib/utils";
+import { HelpLink } from "@/components/ui/help-link";
 
 export const metadata = { title: "Answers" };
 
@@ -120,7 +121,11 @@ export default async function AnswersPage({
     <div className="space-y-8">
       <Card>
         <CardHeader
-          title="Where AI names you"
+          title={
+            <span className="flex flex-wrap items-baseline gap-x-3">
+              Where AI names you <HelpLink section="answers" />
+            </span>
+          }
           description={`Each question you track, on each assistant: the share of answers in the last ${GRID_DAYS} days that name you. Darker means named more often. Click a cell to read those answers.`}
           action={
             <div className="flex gap-1 text-small" role="group" aria-label="Sort questions">

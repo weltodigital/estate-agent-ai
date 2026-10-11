@@ -13,7 +13,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             <Logo size={24} />
           </Link>
           <nav className="ml-auto flex items-center gap-5 text-sm text-ink-muted">
-            <Link href="/#how" className="hidden hover:text-ink sm:inline">How it works</Link>
+            <Link href="/how-it-works" className="hidden hover:text-ink sm:inline">How it works</Link>
             <Link href="/pricing" className="hidden hover:text-ink sm:inline">Pricing</Link>
             <ThemeToggle />
             <Link href="/login" className="hover:text-ink">Sign in</Link>
@@ -27,6 +27,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           <Logo size={24} />
           <p className="text-ink-muted">AI search visibility for UK estate and letting agents.</p>
           <nav className="ml-auto flex gap-5 text-ink-muted">
+            <Link href="/how-it-works" className="hover:text-ink">How it works</Link>
             <Link href="/pricing" className="hover:text-ink">Pricing</Link>
             <Link href="/privacy" className="hover:text-ink">Privacy</Link>
             <Link href="/terms" className="hover:text-ink">Terms</Link>

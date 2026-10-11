@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, CreditCard, LayoutGrid, Shield, Users } from "lucide-react";
+import { BookOpen, Building2, CreditCard, LayoutGrid, Shield, Users } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { NavLink } from "@/components/app/nav-link";
 import { OrgSwitcher } from "@/components/app/org-switcher";
@@ -43,6 +43,11 @@ export function Sidebar({ ctx, branches }: { ctx: OrgContext; branches: { id: st
             <li>
               <NavLink href="/settings/team">
                 <Users {...icon} /> Team
+              </NavLink>
+            </li>
+            <li>
+              <NavLink href="/how-it-works" newTab>
+                <BookOpen {...icon} /> How Privett works
               </NavLink>
             </li>
             {ctx.isAdmin ? (

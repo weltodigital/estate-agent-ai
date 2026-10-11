@@ -9,12 +9,13 @@ import { cn } from "@/lib/utils";
  * Quiet sidebar link (UX spec 10): ink-muted by default, active item in brand
  * on brand-tint. Icons inherit the colour.
  */
-export function NavLink({ href, children, exact = false }: { href: string; children: ReactNode; exact?: boolean }) {
+export function NavLink({ href, children, exact = false, newTab = false }: { href: string; children: ReactNode; exact?: boolean; newTab?: boolean }) {
   const pathname = usePathname();
   const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
   return (
     <Link
       href={href}
+      target={newTab ? "_blank" : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
         "flex min-h-9 items-center gap-2 rounded-md px-2 py-1.5 transition-colors duration-150",

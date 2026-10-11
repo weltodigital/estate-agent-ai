@@ -7,6 +7,7 @@ import { requireBranch } from "@/lib/auth";
 import { loadBranchResults, loadCompetitors, loadLatestGbp, toResponses } from "@/lib/data/branch-data";
 import { metricFilter, parseFilters, type SearchParams } from "@/lib/data/filters";
 import { CompetitorsTable, type CompetitorRowData } from "./competitors-table";
+import { HelpLink } from "@/components/ui/help-link";
 
 export const metadata = { title: "Competitors" };
 
@@ -71,6 +72,7 @@ export default async function CompetitorsPage({
       <Card>
         <CardHeader
           title="Agents AI names in your area"
+          action={<HelpLink section="competitors" />}
           description="Every agent named in answers to your tracked questions. Pin the ones you watch closely; hide any that aren't really competitors."
         />
         {tableRows.length ? (
