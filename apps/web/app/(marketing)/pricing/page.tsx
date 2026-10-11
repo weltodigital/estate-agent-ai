@@ -6,6 +6,7 @@ import { priceLabel, purchasablePlans } from "@/lib/billing";
 import { COPY } from "@/lib/copy";
 import { faqSchema, jsonLd } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { AssistantChips } from "@/components/marketing/assistant-names";
 
 export const metadata = {
   title: "Pricing",
@@ -98,8 +99,8 @@ export default function PricingPage() {
               <h2 className="text-heading text-ink">{p.name}</h2>
               <p className="mt-2 text-title text-ink">{priceLabel(p.id)}</p>
               <p className="mt-2 text-sm text-ink-muted">{p.description}</p>
+              <AssistantChips engines={p.limits.engines} className="mt-4" />
               <ul className="mt-4 space-y-1.5 text-sm text-ink">
-                <li>{p.limits.engines.map(engineLabel).join(", ")}</li>
                 <li>Up to {p.limits.promptsPerBranch} questions per branch</li>
                 <li>{p.limits.runsPerPrompt} runs per question, every week</li>
                 {p.limits.manualScansPerMonth ? <li>{p.limits.manualScansPerMonth} extra scan a month</li> : null}

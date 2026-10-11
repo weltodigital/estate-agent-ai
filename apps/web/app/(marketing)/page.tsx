@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { engineLabel, getPlans, type PlanConfig } from "@privett/core";
+import { getPlans, type PlanConfig } from "@privett/core";
 import { Logo } from "@/components/brand/logo";
 import { AnswersDiagram, FixesDiagram, QuestionsDiagram } from "@/components/marketing/home/diagrams";
 import { FaqList, FaqSchema } from "@/components/marketing/home/faq";
@@ -12,6 +12,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { priceLabel } from "@/lib/billing";
 import { getPublicStats } from "@/lib/marketing/stats";
 import { cn } from "@/lib/utils";
+import { AssistantChips, AssistantStrip } from "@/components/marketing/assistant-names";
 
 // Static, revalidated hourly (the live proof numbers are cached for an hour).
 export const revalidate = 3600;
@@ -54,10 +55,8 @@ const STEPS = [
 
 function planBullets(p: PlanConfig): string[] {
   const l = p.limits;
-  const engines = l.engines.length === 4 ? "All four assistants" : l.engines.map(engineLabel).join(", ");
   return [
     `${l.promptsPerBranch} questions per branch, asked ${l.runsPerPrompt} times each`,
-    p.id === "agency" ? `${engines}, on every branch` : engines,
     p.id === "starter" ? "Scanned every week" : p.id === "agency" ? `From ${l.minBranches} branches, with your whole team` : "Weekly, plus 1 extra scan a month",
   ];
 }
@@ -112,6 +111,7 @@ export default async function HomePage() {
             </p>
             <ScanForm id="hero-form" className="mt-8 max-w-xl" />
             <TrustLine className="mt-3" />
+            <AssistantStrip className="mt-8" />
           </div>
           <div className="min-w-0">
             <HeroAnswer />
@@ -237,6 +237,7 @@ export default async function HomePage() {
                   {popular ? <span className="rounded-sm bg-signal px-2 py-0.5 text-small font-medium text-on-signal">Most popular</span> : null}
                 </div>
                 <p className="mt-3 text-title text-ink">{priceLabel(p.id)}</p>
+                <AssistantChips engines={p.limits.engines} className="mt-4" />
                 <ul className="mt-4 flex-1 space-y-2 text-[15px] leading-[22px] text-ink-muted">
                   {planBullets(p).map((b) => (
                     <li key={b} className="flex gap-2">

@@ -4,6 +4,7 @@ import { Logo } from "@/components/brand/logo";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { SiteSchema } from "@/components/marketing/site-schema";
 import { COPY } from "@/lib/copy";
+import { TRADEMARK_NOTE } from "@/components/marketing/assistant-names";
 
 const FOOTER_LINKS: [string, string][] = [
   ["/how-it-works", "How it works"],
@@ -42,7 +43,10 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           </div>
           <div className="mt-10 flex flex-col gap-2 border-t border-hairline pt-6 text-small text-ink-muted md:flex-row md:justify-between">
             <p>A Welto Limited company</p>
-            <p className="max-w-xl md:text-right">{COPY.noPromise}</p>
+            <div className="max-w-xl space-y-1 md:text-right">
+              <p>{COPY.noPromise}</p>
+              <p>{TRADEMARK_NOTE}</p>
+            </div>
           </div>
         </div>
       </footer>
