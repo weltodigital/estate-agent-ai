@@ -34,8 +34,14 @@ export interface Summary {
   ranking: { name: string; visibility: number; isYou: boolean }[];
   /** Questions where you're named least (with enough answers to judge). */
   missing: { prompt: string; named: number; of: number }[];
-  byEngine: { engine: string; label: string; visibility: number | null; answers: number }[];
+  byEngine: { engine: string; label: string; visibility: number | null; answers: number; mentions: number }[];
   describedAs: string[];
+  /** Every agent named, by share of all agent mentions (you included even at 0). */
+  voice: { id: string | null; name: string; share: number; isYou: boolean }[];
+  /** Your 1-based place in `voice`. */
+  voiceRank: number;
+  /** The competitor named in the most answers, if any. */
+  mostNamed: string | null;
 }
 
 /** "4 out of 10". Rounds to the nearest whole answer, but never shows 0 for a non-zero rate. */
@@ -74,8 +80,15 @@ export function buildSummary(input: SummaryInput): Summary {
 
   const byEngine = ENGINE_IDS.map((engine) => {
     const m = computeSubjectMetrics(responses, BRANCH_KEY, { filter: { ...current, engines: [engine] }, lowSampleThreshold });
-    return { engine, label: engineLabel(engine), visibility: m.visibility, answers: m.responses };
+    return { engine, label: engineLabel(engine), visibility: m.visibility, answers: m.responses, mentions: m.mentions };
   });
+
+  const voice = [
+    { id: null, name: "You", share: you.shareOfVoice ?? 0, isYou: true },
+    ...competitors
+      .map((c) => ({ id: c.id, name: c.name, share: computeSubjectMetrics(responses, c.id, { filter: current }).shareOfVoice ?? 0, isYou: false }))
+      .filter((c) => c.share > 0),
+  ].sort((a, b) => b.share - a.share || Number(b.isYou) - Number(a.isYou) || a.name.localeCompare(b.name));
 
   return {
     answers: you.responses,
@@ -87,7 +100,65 @@ export function buildSummary(input: SummaryInput): Summary {
     missing,
     byEngine,
     describedAs: you.topDescriptors.slice(0, 3).map((d) => d.descriptor),
+    voice,
+    voiceRank: voice.findIndex((v) => v.isYou) + 1,
+    mostNamed: others[0]?.name ?? null,
   };
+}
+
+export type HeadlinePart = { text: string; strong?: boolean };
+
+/**
+ * The overview headline, by template (never an LLM), so it can't say anything
+ * the numbers don't. Strong parts are the key figures.
+ */
+export function buildHeadline(s: Summary, opts: { firstScan: boolean; days: number }): HeadlinePart[] {
+  const engines = s.byEngine.filter((e) => e.answers > 0);
+  const who = listPlain(engines.map((e) => e.label)) || "AI assistants";
+  const pct = (v: number | null) => (v === null ? "—" : `${Math.round(v)}%`);
+  const parts: HeadlinePart[] = [];
+  if (opts.firstScan) parts.push({ text: "This is your first scan. " });
+
+  if (!s.visibility) {
+    parts.push({ text: `${who} didn't name you in any of ` }, { text: `${s.answers} answers`, strong: true }, { text: " yet." });
+  } else {
+    parts.push({ text: `${who} named you in ` }, { text: `${pct(s.visibility)} of answers`, strong: true });
+    parts.push({ text: ` in the last ${opts.days} days` });
+    if (!opts.firstScan && s.previousVisibility !== null) {
+      const diff = Math.round(s.visibility) - Math.round(s.previousVisibility);
+      if (diff > 0) parts.push({ text: ", up from " }, { text: pct(s.previousVisibility), strong: true });
+      else if (diff < 0) parts.push({ text: ", down from " }, { text: pct(s.previousVisibility), strong: true });
+      else parts.push({ text: ", the same as the 30 days before" });
+    }
+    parts.push({ text: "." });
+  }
+  if (s.mostNamed) parts.push({ text: " " }, { text: s.mostNamed, strong: true }, { text: " was named most often." });
+
+  // Biggest gap: the assistant naming you least, among those with enough answers.
+  const gap = [...engines].filter((e) => e.answers >= 3).sort((a, b) => (a.visibility ?? 0) - (b.visibility ?? 0))[0];
+  if (gap && engines.length > 1 && (gap.visibility ?? 0) < (s.visibility ?? 0)) {
+    parts.push(
+      { text: " Your biggest gap is " },
+      { text: gap.label, strong: true },
+      { text: `, which named you in ${gap.mentions} of ${gap.answers} answers.` },
+    );
+  }
+  if (s.lowSample) parts.push({ text: ` Early days: based on ${s.answers} answers, so expect this to move.` });
+  return parts;
+}
+
+function listPlain(words: string[]): string {
+  return words.length > 1 ? `${words.slice(0, -1).join(", ")} and ${words.at(-1)}` : (words[0] ?? "");
+}
+
+const rtf = new Intl.RelativeTimeFormat("en-GB", { numeric: "auto" });
+
+/** "2 days ago", "in 5 days", "today". */
+export function relativeTime(iso: string, now: Date = new Date()): string {
+  const days = Math.round((new Date(iso).getTime() - now.getTime()) / 86_400_000);
+  if (Math.abs(days) >= 1) return rtf.format(days, "day");
+  const hours = Math.round((new Date(iso).getTime() - now.getTime()) / 3_600_000);
+  return Math.abs(hours) >= 1 ? rtf.format(hours, "hour") : "just now";
 }
 
 /** One sentence for a fix's "why": the first sentence of the stored reason. */

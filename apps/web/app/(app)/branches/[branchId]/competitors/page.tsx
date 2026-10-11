@@ -1,14 +1,12 @@
 import Link from "next/link";
-import { BRANCH_KEY, computeSubjectMetrics, fmt, getScanSettings, type GoogleBusinessSignal } from "@privett/core";
-import { Badge } from "@/components/ui/badge";
+import { BRANCH_KEY, computeSubjectMetrics, fmt, fmtPct, fmtPos, getScanSettings, type GoogleBusinessSignal } from "@privett/core";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { requireBranch } from "@/lib/auth";
 import { loadBranchResults, loadCompetitors, loadLatestGbp, toResponses } from "@/lib/data/branch-data";
 import { metricFilter, parseFilters, type SearchParams } from "@/lib/data/filters";
-import { cn } from "@/lib/utils";
-import { setCompetitorStatus } from "./actions";
+import { CompetitorsTable, type CompetitorRowData } from "./competitors-table";
 
 export const metadata = { title: "Competitors" };
 
@@ -18,17 +16,6 @@ function reviews(g: GoogleBusinessSignal | null | undefined) {
 }
 function rating(g: GoogleBusinessSignal | null | undefined) {
   return g?.found && g.rating !== null ? g.rating.toFixed(1) : "—";
-}
-
-function StatusButton({ branchId, competitorId, status, children }: { branchId: string; competitorId: string; status: string; children: React.ReactNode }) {
-  return (
-    <form action={setCompetitorStatus}>
-      <input type="hidden" name="branch_id" value={branchId} />
-      <input type="hidden" name="competitor_id" value={competitorId} />
-      <input type="hidden" name="status" value={status} />
-      <button className="ring-brand-focus rounded px-1.5 text-small text-ink-muted underline-offset-2 hover:underline">{children}</button>
-    </form>
-  );
 }
 
 export default async function CompetitorsPage({
@@ -45,14 +32,21 @@ export default async function CompetitorsPage({
   const [rows, competitors] = await Promise.all([loadBranchResults(branch.id, filters.from), loadCompetitors(branch.id)]);
   const responses = toResponses(rows);
   const filter = metricFilter(filters);
-  const gbp = await loadLatestGbp(branch.id, competitors.filter((c) => c.status !== "hidden").map((c) => c.id));
+  const gbp = await loadLatestGbp(branch.id, competitors.map((c) => c.id));
 
   const you = computeSubjectMetrics(responses, BRANCH_KEY, { filter, lowSampleThreshold });
-  const visible = competitors
-    .filter((c) => c.status !== "hidden")
-    .map((c) => ({ ...c, m: computeSubjectMetrics(responses, c.id, { filter, lowSampleThreshold }) }))
-    .sort((a, b) => Number(b.status === "pinned") - Number(a.status === "pinned") || (b.m.visibility ?? -1) - (a.m.visibility ?? -1));
-  const hidden = competitors.filter((c) => c.status === "hidden");
+  // Every competitor (hidden ones too) so hide/unhide can move rows instantly.
+  const tableRows: CompetitorRowData[] = competitors
+    .map((c) => ({ c, m: computeSubjectMetrics(responses, c.id, { filter, lowSampleThreshold }) }))
+    .sort((a, b) => (b.m.visibility ?? -1) - (a.m.visibility ?? -1))
+    .map(({ c, m }) => ({
+      id: c.id,
+      name: c.name,
+      domain: c.domain,
+      status: c.status as CompetitorRowData["status"],
+      lowSample: m.lowSample,
+      cells: [fmtPct(m.visibility), fmtPos(m.position), fmt.score(m.sentiment), fmtPct(m.shareOfVoice), rating(gbp.competitor.get(c.id)), reviews(gbp.competitor.get(c.id))],
+    }));
 
   // Low-confidence matches, for the agent to check (add an alias in settings
   // if a name really is them or a competitor).
@@ -69,7 +63,6 @@ export default async function CompetitorsPage({
   }
 
   const base = `/branches/${branch.id}`;
-  const cell = "px-3 py-2 text-right";
 
   return (
     <div className="space-y-8">
@@ -80,65 +73,16 @@ export default async function CompetitorsPage({
           title="Agents AI names in your area"
           description="Every agent named in answers to your tracked questions. Pin the ones you watch closely; hide any that aren't really competitors."
         />
-        {visible.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
-              <thead className="text-left text-small text-ink-muted">
-                <tr>
-                  <th className="px-5 py-2 font-medium">Agent</th>
-                  <th className="px-3 py-2 text-right font-medium">Visibility</th>
-                  <th className="px-3 py-2 text-right font-medium">Position</th>
-                  <th className="px-3 py-2 text-right font-medium">Sentiment</th>
-                  <th className="px-3 py-2 text-right font-medium">Share of voice</th>
-                  <th className="px-3 py-2 text-right font-medium">Google rating</th>
-                  <th className="px-3 py-2 text-right font-medium">Reviews</th>
-                  <th className="px-5 py-2 font-medium" />
-                </tr>
-              </thead>
-              <tbody className="font-mono">
-                <tr className="border-t border-hairline bg-brand-tint font-medium">
-                  <td className="px-5 py-2 font-sans">
-                  <span className="inline-flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-signal ring-1 ring-brand/40" aria-hidden="true" />
-                    {branch.name} <span className="text-ink-muted">(you)</span>
-                  </span>
-                </td>
-                  <td className={cell}>{fmt.pct(you.visibility)}</td>
-                  <td className={cell}>{fmt.position(you.position)}</td>
-                  <td className={cell}>{fmt.score(you.sentiment)}</td>
-                  <td className={cell}>{fmt.pct(you.shareOfVoice)}</td>
-                  <td className={cell}>{rating(gbp.branch)}</td>
-                  <td className={cell}>{reviews(gbp.branch)}</td>
-                  <td />
-                </tr>
-                {visible.map((c) => (
-                  <tr key={c.id} className={cn("border-t border-hairline", c.m.lowSample && "text-ink-muted")}>
-                    <td className="px-5 py-2 font-sans">
-                      <span className="text-ink">{c.name}</span>
-                      {c.status === "pinned" ? <Badge className="ml-2">Pinned</Badge> : null}
-                      {c.domain ? <span className="block text-small text-ink-muted">{c.domain}</span> : null}
-                    </td>
-                    <td className={cell}>{fmt.pct(c.m.visibility)}</td>
-                    <td className={cell}>{fmt.position(c.m.position)}</td>
-                    <td className={cell}>{fmt.score(c.m.sentiment)}</td>
-                    <td className={cell}>{fmt.pct(c.m.shareOfVoice)}</td>
-                    <td className={cell}>{rating(gbp.competitor.get(c.id))}</td>
-                    <td className={cell}>{reviews(gbp.competitor.get(c.id))}</td>
-                    <td className="px-5 py-2">
-                      <div className="flex justify-end gap-1">
-                        {c.status === "pinned" ? (
-                          <StatusButton branchId={branch.id} competitorId={c.id} status="discovered">Unpin</StatusButton>
-                        ) : (
-                          <StatusButton branchId={branch.id} competitorId={c.id} status="pinned">Pin</StatusButton>
-                        )}
-                        <StatusButton branchId={branch.id} competitorId={c.id} status="hidden">Hide</StatusButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {tableRows.length ? (
+          <CompetitorsTable
+            branchId={branch.id}
+            headers={["Visibility", "Position", "Sentiment", "Share of voice", "Google rating", "Reviews"]}
+            you={{
+              name: branch.name,
+              cells: [fmtPct(you.visibility), fmtPos(you.position), fmt.score(you.sentiment), fmtPct(you.shareOfVoice), rating(gbp.branch), reviews(gbp.branch)],
+            }}
+            rows={tableRows}
+          />
         ) : (
           <CardBody>
             <EmptyState title="No competitors yet">Agents named in your scan results appear here automatically.</EmptyState>
@@ -177,19 +121,6 @@ export default async function CompetitorsPage({
         </Card>
       ) : null}
 
-      {hidden.length ? (
-        <details className="rounded-lg border border-hairline bg-surface-raised">
-          <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-ink">Hidden ({hidden.length})</summary>
-          <ul className="divide-y divide-hairline border-t border-hairline text-sm">
-            {hidden.map((c) => (
-              <li key={c.id} className="flex items-center justify-between px-5 py-2">
-                <span className="text-ink-muted">{c.name}</span>
-                <StatusButton branchId={branch.id} competitorId={c.id} status="discovered">Unhide</StatusButton>
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
     </div>
   );
 }

@@ -15,10 +15,10 @@ import {
   addLibraryPrompt,
   archiveBranch,
   scanNow,
-  togglePrompt,
   updateBranch,
   updatePromptText,
 } from "./actions";
+import { PromptToggle } from "./prompt-toggle";
 
 export const metadata = { title: "Branch settings" };
 
@@ -146,14 +146,7 @@ export default async function BranchSettingsPage({
                 <Button type="submit" variant="ghost" size="sm" className="h-10">Save</Button>
               </ActionForm>
               <Badge>{INTENT_LABELS[p.intent_group as keyof typeof INTENT_LABELS] ?? p.intent_group}</Badge>
-              <form action={togglePrompt}>
-                {hidden}
-                <input type="hidden" name="prompt_id" value={p.id} />
-                <input type="hidden" name="active" value={String(!p.active)} />
-                <Button type="submit" variant={p.active ? "secondary" : "primary"} size="sm" className="h-10">
-                  {p.active ? "Turn off" : "Turn on"}
-                </Button>
-              </form>
+              <PromptToggle branchId={branch.id} promptId={p.id} active={p.active} text={p.text} />
             </div>
           ))}
         </CardBody>

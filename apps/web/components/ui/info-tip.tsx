@@ -10,7 +10,7 @@ export function InfoTip({ children, label = "How this is calculated" }: { childr
       </button>
       <span
         role="tooltip"
-        className="pointer-events-none absolute left-1/2 top-6 z-20 hidden w-72 -translate-x-1/2 rounded-md border border-hairline bg-surface-raised p-3 text-small leading-relaxed text-ink-muted shadow-pop group-focus-within:block group-hover:block"
+        className="pointer-events-none absolute left-1/2 top-6 z-20 hidden w-72 -translate-x-1/2 rounded-md border border-hairline bg-surface-raised p-3 text-small leading-relaxed text-ink-muted shadow-pop animate-pop-in group-focus-within:block group-hover:block"
       >
         {children}
       </span>

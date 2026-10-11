@@ -63,6 +63,15 @@ export default async function CitationsPage({
 
   return (
     <div className="space-y-8">
+      <div>
+        <Link href={`${base}/fixes`} className="text-sm text-brand hover:underline">
+          Back to fixes
+        </Link>
+        <h2 className="mt-2 text-title text-ink">Where AI gets its information</h2>
+        <p className="mt-1 max-w-2xl text-ink-muted">
+          The websites assistants cited when answering questions about agents in {branch.town}, and whether any page about you was among them.
+        </p>
+      </div>
       <FilterBar basePath={`${base}/citations`} filters={filters} />
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -92,8 +101,8 @@ export default async function CitationsPage({
 
       <Card>
         <CardHeader
-          title="Where AI gets its information"
-          description={`Sites cited in answers about agents in ${branch.town}. Gaps are third-party sites cited for competitors but with no page about you: they feed your fixes.`}
+          title="Every site cited"
+          description="Gaps are other sites AI used for competitors with no page about you. Each one becomes a fix."
           action={
             <Link href={`${base}/fixes`} className="text-sm text-brand hover:underline">
               See fixes

@@ -8,7 +8,8 @@ import {
   type AgentMentionRow,
   type ScanResultRow,
 } from "@privett/core";
-import { AutoRefresh } from "@/components/marketing/auto-refresh";
+import { CountUp } from "@/components/scan/count-up";
+import { LiveScanPanel } from "@/components/scan/live-scan-panel";
 import { buttonClasses } from "@/components/ui/button";
 import { COPY } from "@/lib/copy";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -32,7 +33,7 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
     .maybeSingle();
   if (!scan?.branch_id || !scan.scan_run_id) notFound();
 
-  const { data: run } = await admin.from("scan_runs").select("status, progress").eq("id", scan.scan_run_id).single();
+  const { data: run } = await admin.from("scan_runs").select("status, progress, finished_at").eq("id", scan.scan_run_id).single();
   const status = run?.status ?? "queued";
   const inFlight = status === "queued" || status === "running";
 
@@ -80,7 +81,9 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
   const engines = [...new Set(responses.map((r) => engineLabel(r.engine)))];
   const first = recs?.[0];
   const locked = Math.max((recs?.length ?? 0) - 1, 0);
-  const progress = run?.progress as { done?: number; total?: number } | null;
+  // The reveal: count the headline up once if the scan has only just finished.
+  const finishedAt = (run as { finished_at?: string | null } | null)?.finished_at ?? null;
+  const justFinished = status === "completed" && !!finishedAt && Date.now() - Date.parse(finishedAt) < 2 * 60_000;
 
   const namesByResult = new Map<string, string[]>();
   for (const m of (mentions ?? []) as (AgentMentionRow & { agent_name: string })[]) {
@@ -92,16 +95,15 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-14 md:px-8">
-      <AutoRefresh active={inFlight} />
       <p className="text-label uppercase text-ink-muted">Free scan · {scan.town}</p>
       <h1 className="mt-2 text-display text-ink">{scan.agency_name}</h1>
 
       {inFlight ? (
-        <div className="mt-8 rounded-lg border border-hairline bg-surface-sunken p-6">
-          <p className="font-medium">Asking AI assistants about agents in {scan.town}</p>
-          <p className="mt-1 text-sm text-ink-muted">
-            {progress?.total ? `${progress.done ?? 0} of ${progress.total} answers collected. ` : ""}This page updates by itself. It usually takes a few minutes.
+        <div className="mt-8">
+          <p className="mb-3 text-ink-muted">
+            We&apos;re asking AI assistants who they&apos;d recommend in {scan.town}. Results appear here as they come in, usually within a few minutes.
           </p>
+          <LiveScanPanel runId={scan.scan_run_id} token={token} agencyName={scan.agency_name} />
         </div>
       ) : status !== "completed" && !responses.length ? (
         <div className="mt-8 rounded-lg border border-hairline bg-surface-sunken p-6">
@@ -116,7 +118,10 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
           <div className="mt-8">
             <p className="text-[22px] leading-[30px] text-ink md:text-[26px] md:leading-[34px]">
               When people ask AI for an estate agent in {scan.town}, {scan.agency_name} was named in{" "}
-              <span className="font-semibold">{outOfTen(summary.visibility)} out of 10</span> answers.
+              <span className="font-semibold">
+                <CountUp value={outOfTen(summary.visibility) ?? 0} animate={justFinished} /> out of 10
+              </span>{" "}
+              answers.
             </p>
             <p className="mt-2 text-ink-muted">
               {summary.usualPlace ? `When named, it was usually listed ${ordinal(summary.usualPlace)}. ` : ""}

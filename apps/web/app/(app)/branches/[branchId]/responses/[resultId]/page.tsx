@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { engineLabel, INTENT_LABELS, type IntentGroup } from "@privett/core";
+import { INTENT_LABELS, type IntentGroup } from "@privett/core";
+import { AnswerCard } from "@/components/answers/answer-card";
+import { loadRunStrips } from "@/components/answers/data";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { runKey } from "@/lib/data/answers";
 import { requireBranch } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { formatDateTime, formatUsd } from "@/lib/utils";
+import { formatUsd } from "@/lib/utils";
 
 export const metadata = { title: "Answer" };
 
@@ -34,46 +37,42 @@ export default async function ResponsePage({ params }: { params: Promise<{ branc
     supabase.from("competitors").select("id, name").eq("branch_id", branch.id),
   ]);
   const compName = new Map((competitors ?? []).map((c) => [c.id as string, c.name as string]));
+  const strips = await loadRunStrips([r.scan_run_id as string]);
+  const raw = r.raw_json as { citedUrls?: unknown } | null;
+  const citedUrls = Array.isArray(raw?.citedUrls)
+    ? (raw.citedUrls as unknown[]).filter((u): u is string => typeof u === "string")
+    : (citations ?? []).map((c) => c.url as string);
   const base = `/branches/${branch.id}`;
 
   return (
     <div className="space-y-6">
       <Link href={`${base}/prompts#answers`} className="text-sm text-brand hover:underline">
-        Back to every answer
+        Back to the answers
       </Link>
 
-      <div>
-        <p className="text-sm text-ink-muted">
-          {engineLabel(r.engine)} · {r.model} · {formatDateTime(r.created_at)} · run {r.run_index + 1} ·{" "}
-          {INTENT_LABELS[r.intent_group as IntentGroup] ?? r.intent_group}
-        </p>
-        <h2 className="mt-1 text-heading text-ink">“{r.prompt_text}”</h2>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {r.parse_status !== "ok" ? (
-            r.parse_status === "pending" ? (
-              <Badge>Reading this answer…</Badge>
-            ) : (
-              <Badge tone="warn">{r.parse_status === "engine_error" ? "Engine error" : "Couldn’t read this answer"}</Badge>
-            )
-          ) : r.mentioned ? (
-            <Badge tone="good">Names you at position {r.position ?? "—"}</Badge>
-          ) : (
-            <Badge>Doesn’t name you</Badge>
-          )}
-          {r.needs_review ? <Badge tone="warn">Needs review: possible match to you</Badge> : null}
-          {r.match_confidence ? <Badge>Match confidence: {r.match_confidence}</Badge> : null}
-        </div>
-        {r.parse_status !== "ok" ? (
-          <p className="mt-2 text-sm text-ink-muted">This response is left out of every metric. {r.error ?? ""}</p>
-        ) : null}
-      </div>
+      <AnswerCard
+        id={r.id}
+        engine={r.engine}
+        createdAt={r.created_at}
+        question={r.prompt_text}
+        answerText={r.answer_text}
+        parseStatus={r.parse_status}
+        namesYou={!!r.mentioned}
+        needsReview={r.needs_review}
+        youNames={[branch.name, ...(branch.aliases ?? []), ...(mentions ?? []).filter((m) => m.is_branch).map((m) => m.agent_name as string)]}
+        agentNames={(mentions ?? []).filter((m) => !m.is_branch).map((m) => m.agent_name as string)}
+        citedUrls={citedUrls}
+        runs={strips.get(runKey(r.scan_run_id as string, r.prompt_text, r.engine))}
+        runIndex={r.run_index}
+        preview={null}
+      />
 
-      <Card>
-        <CardHeader title="The answer, as the assistant gave it" />
-        <CardBody>
-          <p className="whitespace-pre-wrap rounded-md bg-surface-sunken p-4 font-mono text-data text-ink">{r.answer_text ?? "No answer text stored."}</p>
-        </CardBody>
-      </Card>
+      <p className="text-small text-ink-muted">
+        {r.model} · run <span className="font-mono">{r.run_index + 1}</span> · {INTENT_LABELS[r.intent_group as IntentGroup] ?? r.intent_group}
+        {r.parse_status === "ok" && r.mentioned ? <> · you were named <span className="font-mono">#{r.position ?? "—"}</span></> : null}
+        {r.match_confidence ? ` · match confidence ${r.match_confidence}` : ""}
+        {r.parse_status !== "ok" ? ` · left out of every metric${r.error ? `: ${r.error}` : ""}` : ""}
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -137,9 +136,13 @@ export default async function ResponsePage({ params }: { params: Promise<{ branc
       </div>
 
       <details className="rounded-lg border border-hairline bg-surface-raised">
-        <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-ink">Raw response data</summary>
+        <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-ink-muted">Raw response data</summary>
         <div className="border-t border-hairline px-5 py-3">
           <p className="mb-2 text-small text-ink-muted">Cost of this response: {formatUsd(r.cost_usd)}</p>
+          <p className="mb-1 text-small font-medium text-ink-muted">Answer text exactly as returned</p>
+          <pre className="mb-4 max-h-[24rem] overflow-auto whitespace-pre-wrap break-words rounded-md bg-surface-sunken p-3 font-mono text-data text-ink">
+            {r.answer_text ?? "No answer text stored."}
+          </pre>
           <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words font-mono text-small text-ink-muted">
             {JSON.stringify(r.raw_json, null, 2)}
           </pre>

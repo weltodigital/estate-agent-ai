@@ -12,14 +12,15 @@ export function CopyButton({ text, label = "Copy" }: { text: string; label?: str
         try {
           await navigator.clipboard.writeText(text);
           setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
+          setTimeout(() => setCopied(false), 1500);
         } catch {
           setCopied(false);
         }
       }}
-      className="ring-brand-focus inline-flex items-center gap-1.5 rounded-md border border-hairline bg-surface-raised px-2.5 py-1 text-small font-medium text-ink hover:bg-brand-tint"
+      aria-live="polite"
+      className="ring-brand-focus inline-flex items-center gap-1.5 rounded-md border border-hairline bg-surface-raised px-2.5 py-1 text-small font-medium text-ink transition-[transform,background-color] duration-120 ease-out active:scale-[0.97] hover-fine:bg-brand-tint"
     >
-      {copied ? <Check size={14} strokeWidth={1.5} /> : <Copy size={14} strokeWidth={1.5} className="text-ink-muted" />}
+      {copied ? <Check size={14} strokeWidth={1.5} className="animate-tick-pop text-up" /> : <Copy size={14} strokeWidth={1.5} className="text-ink-muted" />}
       {copied ? "Copied" : label}
     </button>
   );

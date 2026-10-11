@@ -63,6 +63,23 @@ export async function updatePromptText(_prev: ActionResult, formData: FormData):
   return { ok: "Saved." };
 }
 
+/** Optimistic version for the prompt switch: returns an error instead of redirecting. */
+export async function setPromptActive(branchId: string, promptId: string, activate: boolean): Promise<{ ok: true } | { error: string }> {
+  const ctx = await requireBranch(branchId);
+  if (activate && (await activePromptCount(ctx.branch.id)) >= ctx.plan.limits.promptsPerBranch) {
+    return { error: `Your plan tracks up to ${ctx.plan.limits.promptsPerBranch} questions per branch. Turn one off first.` };
+  }
+  const supabase = await getSupabaseServerClient();
+  const { error, count } = await supabase
+    .from("branch_prompts")
+    .update({ active: activate }, { count: "exact" })
+    .eq("id", promptId)
+    .eq("branch_id", ctx.branch.id);
+  if (error || !count) return { error: "We couldn’t save that change. Please try again." };
+  revalidatePath(path(ctx.branch.id));
+  return { ok: true };
+}
+
 export async function togglePrompt(formData: FormData) {
   const ctx = await requireBranch(String(formData.get("branch_id")));
   const activate = formData.get("active") === "true";

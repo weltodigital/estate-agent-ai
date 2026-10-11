@@ -25,17 +25,17 @@ export function MetricCard({ card, evidenceHref, days }: { card: CardData; evide
   const sign = improved === null ? "" : card.key === "position" ? (card.change! < 0 ? "−" : "+") : card.change! > 0 ? "+" : "−";
   const deltaText =
     abs === null
-      ? "No earlier period"
+      ? null
       : card.key === "position"
-        ? `${sign}${abs.toFixed(1)} vs previous ${days} days`
-        : `${sign}${abs.toFixed(abs < 10 ? 1 : 0)}${copy.changeUnit} vs previous ${days} days`;
+        ? `${sign}${abs.toFixed(1)}`
+        : `${sign}${abs.toFixed(abs < 10 ? 1 : 0)}${copy.changeUnit}`;
 
   return (
-    <div className="flex flex-col rounded-lg border border-hairline bg-surface-raised">
+    <div className="flex min-w-0 flex-col rounded-lg border border-hairline bg-surface-raised">
       <Link
         href={evidenceHref}
-        className="ring-brand-focus group block rounded-t-lg px-6 pb-4 pt-5 hover:bg-surface-sunken/50"
-        aria-label={`View the responses behind ${copy.label}`}
+        className="ring-brand-focus group block rounded-t-lg px-5 pb-4 pt-4 transition-colors duration-150 hover:bg-surface-sunken/60"
+        aria-label={`View the answers behind ${copy.label}`}
       >
         <div className="flex items-center gap-1.5">
           <span className="text-label uppercase text-ink-muted">{copy.label}</span>
@@ -44,46 +44,39 @@ export function MetricCard({ card, evidenceHref, days }: { card: CardData; evide
             <span className="mt-1 block">{sampleText(card.key, m.responses, m.mentions, m.sentimentSamples)}</span>
           </InfoTip>
         </div>
-        <div className="mt-2 flex items-end justify-between gap-3">
-          <span className="font-mono text-metric text-ink">{copy.format(card.current)}</span>
-          <Sparkline values={card.trend} invert={card.key === "position"} className="h-8 w-24" />
+        <div className="mt-2 flex items-end justify-between gap-2">
+          <span className="font-mono text-[28px] font-medium leading-9 tracking-[-0.03em] text-ink tabular-nums sm:text-metric">
+            {copy.format(card.current)}
+          </span>
+          <Sparkline values={card.trend} invert={card.key === "position"} className="h-8 w-20 shrink-0 sm:w-24" />
         </div>
-        <div className="mt-2">
+        <div className="mt-2 min-h-5">
           {m.lowSample ? (
             <span className="inline-flex items-center gap-1 text-small text-warn">
               <AlertTriangle size={14} strokeWidth={1.5} aria-hidden="true" /> Low sample
             </span>
-          ) : (
+          ) : deltaText ? (
             <Delta value={card.change} improved={improved} text={deltaText} />
+          ) : (
+            <span className="text-small text-ink-muted">No earlier scan to compare yet</span>
           )}
         </div>
-        <p className="mt-1 font-mono text-data text-ink-muted">{evidenceLine(card.key, m)}</p>
+        {card.previous !== null ? (
+          <p className="mt-1 font-mono text-data text-ink-muted tabular-nums">{`${copy.format(card.previous)} previous ${days} days`}</p>
+        ) : null}
+        <p className="font-mono text-data text-ink-muted tabular-nums">{evidenceLine(card.key, m)}</p>
       </Link>
 
-      {card.key === "sentiment" && m.topDescriptors.length ? (
-        <div className="flex flex-wrap gap-1.5 px-6 pb-4">
-          {m.topDescriptors.slice(0, 3).map((d) => (
-            <span key={d.descriptor} className="rounded-sm bg-surface-sunken px-1.5 py-0.5 text-small text-ink-muted">
-              {d.descriptor}
-            </span>
+      {card.competitors.length ? (
+        <ul className="mt-auto space-y-1 border-t border-hairline px-5 py-3 text-small">
+          {card.competitors.map((c) => (
+            <li key={c.name} className="flex justify-between gap-2 text-ink-muted">
+              <span className="truncate" title={c.name}>{c.name}</span>
+              <span className="font-mono text-data text-ink tabular-nums">{copy.format(c.value)}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : null}
-
-      <div className="mt-auto border-t border-hairline px-6 py-3">
-        {card.competitors.length ? (
-          <ul className="space-y-1 text-small">
-            {card.competitors.map((c) => (
-              <li key={c.name} className="flex justify-between gap-2 text-ink-muted">
-                <span className="truncate">{c.name}</span>
-                <span className="font-mono text-data text-ink">{copy.format(c.value)}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-small text-ink-muted">No competitors named in this period.</p>
-        )}
-      </div>
     </div>
   );
 }

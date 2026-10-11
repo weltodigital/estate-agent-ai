@@ -103,3 +103,43 @@ body {
     text-transform: uppercase;
   }
 }
+
+/* Every number someone compares lines up (docs/ux-spec.md section 9). */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* List items appearing: stagger 40ms via --i (section 8). */
+.stagger > * {
+  animation: fade-in-up 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Reduced motion: no movement, opacity fades only. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-property: opacity, color, background-color, border-color !important;
+  }
+  .animate-skeleton {
+    animation: none !important;
+  }
+  [class*="active:scale"]:active {
+    transform: none !important;
+  }
+}
