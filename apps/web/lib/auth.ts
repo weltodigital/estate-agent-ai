@@ -1,7 +1,8 @@
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { effectiveLimits, type PlanId, type PlanLimits } from "@privett/core";
+import { effectiveLimits, getPlans, type PlanId, type PlanLimits } from "@privett/core";
+import { DEMO_BRANCH_ID } from "@/lib/demo";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -83,8 +84,41 @@ export async function getOrgPlan(orgId: string) {
   return effectiveLimits(subs ?? []);
 }
 
-/** Loads a branch the current user can see, or 404s. */
+/**
+ * The public example agency (/sample-report): read-only, no sign-in. Returns
+ * null for any other branch. Refuses server actions, so nothing on the demo
+ * can be changed or scanned, whatever the RLS policies allow.
+ */
+async function demoBranchContext(branchId: string): Promise<(OrgContext & { branch: BranchRow; readOnly: true }) | null> {
+  if (branchId !== DEMO_BRANCH_ID) return null;
+  const admin = getSupabaseAdminClient();
+  const { data: branch } = await admin
+    .from("branches")
+    .select("*, organisations!inner(id, name, is_demo)")
+    .eq("id", branchId)
+    .eq("organisations.is_demo", true)
+    .is("archived_at", null)
+    .maybeSingle();
+  if (!branch) return null;
+  if ((await headers()).get("next-action")) throw new Error("The example report is read-only.");
+  const org = branch.organisations as unknown as { id: string; name: string };
+  const { organisations: _o, ...row } = branch as Record<string, unknown>;
+  return {
+    user: { id: "", email: "" },
+    org: { id: org.id, name: org.name, stripe_customer_id: null },
+    role: "member",
+    isAdmin: false,
+    plan: { planId: "pro", limits: getPlans().pro.limits, paid: true },
+    memberships: [],
+    branch: row as unknown as BranchRow,
+    readOnly: true,
+  };
+}
+
+/** Loads a branch the current user can see (or the public demo), or 404s. */
 export async function requireBranch(branchId: string) {
+  const demo = await demoBranchContext(branchId);
+  if (demo) return demo;
   const ctx = await requireOrg();
   const supabase = await getSupabaseServerClient();
   const { data: branch } = await supabase
@@ -98,7 +132,7 @@ export async function requireBranch(branchId: string) {
     const { notFound } = await import("next/navigation");
     notFound();
   }
-  return { ...ctx, branch: branch as BranchRow };
+  return { ...ctx, branch: branch as BranchRow, readOnly: false as const };
 }
 
 export interface BranchRow {

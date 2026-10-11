@@ -166,7 +166,7 @@ const missingAreaPages: Rule = {
         ruleId: missingAreaPages.id,
         ruleVersion: missingAreaPages.version,
         fingerprint: `${missingAreaPages.id}:${m.area.toLowerCase()}`,
-        title: `Create a ${m.area} area page`,
+        title: `Create ${/^[aeiou]/i.test(m.area) ? "an" : "a"} ${m.area} area page`,
         why: `You track ${areaPrompts.length} question${areaPrompts.length === 1 ? "" : "s"} about ${m.area}${vis !== null ? ` and AI names you in ${Math.round(vis)}% of those answers` : ""}, but we couldn't find a page about ${m.area} on your site.${namedInstead.length ? ` AI names ${namedInstead.join(", ")} instead.` : ""}`,
         priority: vis !== null && vis < 20 ? 2 : 3,
         effort: "M",

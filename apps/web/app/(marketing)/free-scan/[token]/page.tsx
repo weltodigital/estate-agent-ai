@@ -11,6 +11,8 @@ import {
 import { CountUp } from "@/components/scan/count-up";
 import { LiveScanPanel } from "@/components/scan/live-scan-panel";
 import { buttonClasses } from "@/components/ui/button";
+import { ShareResult } from "@/components/marketing/free-scan/share-result";
+import { priceLabel } from "@/lib/billing";
 import { COPY } from "@/lib/copy";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { excerpt } from "@/lib/data/plain-text";
@@ -23,6 +25,7 @@ export const dynamic = "force-dynamic";
 const UUID = /^[0-9a-f-]{36}$/i;
 
 export default async function FreeScanResultPage({ params }: { params: Promise<{ token: string }> }) {
+  const startingPrice = priceLabel("starter").split(/\s/)[0] ?? "£39";
   const { token } = await params;
   if (!UUID.test(token)) notFound();
   const admin = getSupabaseAdminClient();
@@ -180,7 +183,12 @@ export default async function FreeScanResultPage({ params }: { params: Promise<{
                 {locked > 0 ? `${locked} more fix${locked === 1 ? "" : "es"} found. ` : ""}
                 Track {scan.agency_name} every week on up to four assistants, with every fix and the answers behind it.
               </p>
-              <Link href="/login?next=/onboarding" className={buttonClasses("inverse")}>Keep these results</Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href="/login?next=/onboarding" className={buttonClasses("inverse", "md", "min-h-11")}>
+                  Start tracking from {startingPrice}
+                </Link>
+                <ShareResult title={`${scan.agency_name}: AI search visibility in ${scan.town}`} className="text-on-brand hover:bg-on-brand/10" />
+              </div>
             </div>
           ) : null}
 

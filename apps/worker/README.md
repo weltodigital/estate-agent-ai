@@ -49,3 +49,13 @@ pnpm --filter @privett/worker typecheck
 ## Deploy on Railway
 
 Create a service from this repository with the repository root as its root directory. Railway reads `railway.json` at the root, which builds `apps/worker/Dockerfile`; leave any custom build or start command empty. Add the environment variables above. One replica is enough to start; add replicas or raise `WORKER_CONCURRENCY` as branches grow, since runs are claimed with `SKIP LOCKED`.
+
+## Free-scan results email
+
+When a free scan finishes, the worker emails the results link once (via Resend). Set on Railway:
+
+- `RESEND_API_KEY`: a Resend key with sending access for useprivett.com. Without it, no email is sent.
+- `EMAIL_FROM` (optional): defaults to `Privett <ed@useprivett.com>`.
+- `APP_URL` (optional): defaults to `https://www.useprivett.com`.
+
+Then set `NEXT_PUBLIC_RESULTS_BY_EMAIL=true` on Vercel so the free scan says results come by email. Sends are guarded by `free_scans.emailed_at`.

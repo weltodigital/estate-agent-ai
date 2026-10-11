@@ -16,7 +16,7 @@ export default async function BranchLayout({
   params: Promise<{ branchId: string }>;
 }) {
   const { branchId } = await params;
-  const { branch, org, plan } = await requireBranch(branchId);
+  const { branch, org, plan, readOnly } = await requireBranch(branchId);
   const supabase = await getSupabaseServerClient();
   const windowStart = new Date(Date.now() - WINDOW_MS).toISOString();
   const [{ data: branches }, { data: inFlight }, { data: manual }] = await Promise.all([
@@ -48,6 +48,7 @@ export default async function BranchLayout({
         branches={branches ?? []}
         scanBlockedReason={blocked}
         scanHint={hint}
+        readOnly={readOnly}
       />
       <BranchTabs branchId={branch.id} />
       {children}

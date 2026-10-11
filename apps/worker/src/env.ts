@@ -18,6 +18,10 @@ export const env = {
   /** Claude engine: web searches per answer and effort. Lower is cheaper (see plans.ts margin notes). */
   anthropicEngineMaxSearches: Number(process.env.ANTHROPIC_ENGINE_MAX_SEARCHES ?? 2),
   anthropicEngineEffort: (process.env.ANTHROPIC_ENGINE_EFFORT ?? "medium") as "low" | "medium" | "high",
+  /** Free-scan results email via Resend. Skipped when unset. */
+  resendApiKey: process.env.RESEND_API_KEY || "",
+  emailFrom: process.env.EMAIL_FROM || "Privett <ed@useprivett.com>",
+  appUrl: (process.env.APP_URL || "https://www.useprivett.com").replace(/\/$/, ""),
   crawlMaxPages: Number(process.env.CRAWL_MAX_PAGES ?? 15),
   userAgent: "Mozilla/5.0 (compatible; PrivettBot/1.0; +https://www.useprivett.com/bot)",
 };

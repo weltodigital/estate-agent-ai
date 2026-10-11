@@ -28,6 +28,7 @@ import { db, fetchAll, insertChunked, must } from "./db";
 import { availableEngines, EngineError, runPrompt } from "./engines";
 import { env } from "./env";
 import { errMessage, log } from "./log";
+import { sendFreeScanEmail } from "./notify";
 import { parseAnswer } from "./parse";
 import { generateRecommendations } from "./recommendations";
 import { updateRollups } from "./rollups";
@@ -524,6 +525,7 @@ export async function processRun(run: ScanRunRow): Promise<void> {
       "update scan_runs",
     );
     log.info("scan finished", { run: run.id, kind: run.kind, status, costUsd: budget.spentUsd });
+    if (run.kind === "free") await sendFreeScanEmail(run.id);
   } finally {
     clearInterval(heartbeat);
   }

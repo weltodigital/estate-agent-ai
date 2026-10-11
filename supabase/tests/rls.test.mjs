@@ -54,4 +54,20 @@ assert.equal(await as(B, async () => (await q(`select count(*)::int n from promp
 await as(A, () => q(`update profiles set full_name='Ann' where id=$1`, [A]));
 assert.equal((await q(`select full_name from profiles where id=$1`, [A])).rows[0].full_name, "Ann");
 assert.equal(await as(B, async () => (await q(`select count(*)::int n from profiles where id=$1`, [A])).rows[0].n), 0);
+
+// Demo organisation: readable by anyone (anon or any signed-in user), never writable.
+async function asAnon(fn) {
+  await db.exec(`set role anon; select set_config('request.jwt.claim.role','anon',false);`);
+  try { return await fn(); } finally { await db.exec(`reset role; select set_config('request.jwt.claim.role','',false);`); }
+}
+const demoOrg = (await q(`insert into organisations (name, is_demo) values ('Demo', true) returning id`)).rows[0].id;
+const demoBr = (await q(`insert into branches (org_id,name,town) values ($1,'Harbour & Hale','Southsea') returning id`, [demoOrg])).rows[0].id;
+const demoRec = (await q(`insert into recommendations (org_id,branch_id,rule_id,fingerprint,title,why,priority,effort,evidence_json) values ($1,$2,'r','r','t','w',1,'S','{"a":1}') returning id`, [demoOrg, demoBr])).rows[0].id;
+assert.deepEqual(await asAnon(async () => (await q(`select name from branches`)).rows.map((r) => r.name)), ["Harbour & Hale"], "anon sees only demo branches");
+assert.equal(await asAnon(async () => (await q(`select count(*)::int n from recommendations`)).rows[0].n), 1, "anon reads demo fixes only");
+assert.equal(await asAnon(async () => (await q(`select count(*)::int n from organisations`)).rows[0].n), 1, "anon sees only the demo org");
+assert.equal(await as(B, async () => (await q(`select count(*)::int n from branches where id=$1`, [demoBr])).rows[0].n), 1, "signed-in users can read the demo");
+assert.equal(await asAnon(async () => (await q(`update recommendations set status='done' where id=$1`, [demoRec])).affectedRows), 0, "anon can't write demo rows");
+assert.equal(await as(B, async () => (await q(`update recommendations set status='done' where id=$1`, [demoRec])).affectedRows), 0, "non-members can't write demo rows");
+await assert.rejects(asAnon(() => q(`insert into branches (org_id,name,town) values ($1,'x','y')`, [demoOrg])), /row-level security|permission denied/);
 console.log("db tests passed");
