@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { getScanSettings } from "@privett/core";
 import { Card, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { RankingBars } from "@/components/dashboard/ranking-bars";
 import { ScanProgress } from "@/components/dashboard/scan-status";
 import { requireBranch } from "@/lib/auth";
 import {
@@ -15,7 +16,7 @@ import {
 } from "@/lib/data/branch-data";
 import { buildSummary, EFFORT_LABEL, firstSentence, ordinal, outOfTen } from "@/lib/data/summary";
 import { COPY } from "@/lib/copy";
-import { cn, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Overview" };
 
@@ -78,7 +79,6 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
   const now10 = outOfTen(summary.visibility);
   const prev10 = outOfTen(summary.previousVisibility);
   const fixes = recs.filter((r) => r.status === "todo").slice(0, 3);
-  const topScore = Math.max(...summary.ranking.map((r) => r.visibility), 1);
   const engines = summary.byEngine.filter((e) => e.answers > 0);
   const latestDate = latestRun?.finished_at ?? rows.at(-1)?.created_at ?? null;
 
@@ -121,24 +121,9 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
           <CardBody>
             <h2 className="text-heading text-ink">Who AI names most</h2>
             <p className="mt-0.5 text-small text-ink-muted">Share of answers that name each agent.</p>
-            <ul className="mt-4 space-y-2.5">
-              {summary.ranking.map((r) => (
-                <li key={r.name} className="grid grid-cols-[minmax(0,9rem)_1fr_3rem] items-center gap-3 text-small">
-                  <span className={cn("truncate", r.isYou ? "font-semibold text-ink" : "text-ink-muted")}>
-                    {r.isYou ? "You" : r.name}
-                  </span>
-                  <span className="h-2.5 rounded-sm bg-rival-soft">
-                    <span
-                      className={cn("block h-full rounded-sm", r.isYou ? "bg-brand" : "bg-rival")}
-                      style={{ width: `${Math.max(2, (r.visibility / topScore) * 100)}%` }}
-                    />
-                  </span>
-                  <span className={cn("text-right font-mono text-data", r.isYou ? "text-ink" : "text-ink-muted")}>
-                    {Math.round(r.visibility)}%
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-4">
+              <RankingBars rows={summary.ranking} />
+            </div>
             {engines.length > 1 ? (
               <p className="mt-4 text-small text-ink-muted">
                 By assistant:{" "}
@@ -236,6 +221,8 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
   );
 }
 
+/** AI's own words, quoted: "independent", "family-run" and "local". */
 function listWords(words: string[]): string {
-  return words.length > 1 ? `${words.slice(0, -1).join(", ")} and ${words.at(-1)}` : (words[0] ?? "");
+  const q = words.map((w) => `“${w}”`);
+  return q.length > 1 ? `${q.slice(0, -1).join(", ")} and ${q.at(-1)}` : (q[0] ?? "");
 }
