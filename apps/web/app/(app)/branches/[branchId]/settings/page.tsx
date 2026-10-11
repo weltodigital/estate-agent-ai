@@ -71,7 +71,9 @@ export default async function BranchSettingsPage({
             {hidden}
             <Button type="submit" variant="secondary">Scan now</Button>
             <p className="mt-1 text-small text-ink-muted">
-              {plan.limits.manualScansPerWeek} extra scan{plan.limits.manualScansPerWeek === 1 ? "" : "s"} a week per branch, on top of the weekly scan.
+              {plan.limits.manualScansPerMonth
+                ? `${plan.limits.manualScansPerMonth} extra scan a month per branch, on top of the weekly scan.`
+                : "Extra scans come with Pro and Agency. Your weekly scan runs as normal."}
             </p>
           </ActionForm>
           {runs?.length ? (

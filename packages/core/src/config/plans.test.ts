@@ -13,6 +13,8 @@ describe("plans", () => {
     expect(p.starter.limits.engines).toEqual(["openai", "perplexity", "gemini"]);
     expect(p.pro.limits.engines).toHaveLength(4);
     expect(p.agency.limits.minBranches).toBe(2);
+    // Extra "Scan now": none on Starter, one a month on Pro and Agency.
+    expect([p.starter, p.pro, p.agency].map((x) => x.limits.manualScansPerMonth)).toEqual([0, 1, 1]);
   });
   it("uses the best active subscription and its branch quantity", () => {
     const r = effectiveLimits(

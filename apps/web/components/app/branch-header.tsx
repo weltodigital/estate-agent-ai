@@ -13,7 +13,7 @@ export interface BranchHeaderProps {
   branches: { id: string; name: string; town: string }[];
   /** Why Scan now is unavailable, or null if it can run. */
   scanBlockedReason: string | null;
-  /** e.g. "1 extra scan left this week". */
+  /** e.g. "1 extra scan left this month". */
   scanHint: string | null;
 }
 

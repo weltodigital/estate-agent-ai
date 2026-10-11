@@ -1,8 +1,9 @@
 import "server-only";
+import { MANUAL_SCAN_WINDOW_DAYS } from "@privett/core";
 import { getOrgPlan } from "@/lib/auth";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 86_400_000;
 
 /**
  * Queue a scan for a branch, enforcing plan limits server-side:
@@ -40,11 +41,14 @@ export async function enqueueScan(opts: {
       .select("id", { count: "exact", head: true })
       .eq("branch_id", opts.branchId)
       .eq("kind", "manual")
-      .gte("created_at", new Date(Date.now() - WEEK_MS).toISOString());
-    if ((recent ?? 0) >= plan.limits.manualScansPerWeek) {
+      .gte("created_at", new Date(Date.now() - MANUAL_SCAN_WINDOW_DAYS * DAY_MS).toISOString());
+    const allowance = plan.limits.manualScansPerMonth;
+    if ((recent ?? 0) >= allowance) {
       return {
         ok: false,
-        error: `Your plan includes ${plan.limits.manualScansPerWeek} extra scan${plan.limits.manualScansPerWeek === 1 ? "" : "s"} a week per branch. Weekly scans still run as normal.`,
+        error: allowance
+          ? `Your plan includes ${allowance} extra scan a month per branch, and it's been used. Weekly scans still run as normal.`
+          : "Extra scans come with Pro and Agency. Your weekly scan still runs as normal.",
       };
     }
   }

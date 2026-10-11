@@ -117,8 +117,8 @@ export default function HowItWorksPage() {
             </li>
           </ol>
           <p>
-            Paid plans scan every week, and you can run one extra scan a week with <strong>Scan now</strong>. A scan usually takes a few
-            minutes.
+            Paid plans scan every week. Pro and Agency also include one extra scan a month with <strong>Scan now</strong>, handy for
+            checking a fix straight away. A scan usually takes a few minutes.
           </p>
         </Section>
 

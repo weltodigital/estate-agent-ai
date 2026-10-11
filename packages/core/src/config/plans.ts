@@ -4,6 +4,9 @@
 
 import type { EngineId } from "./engines";
 
+/** The rolling window for extra "Scan now" runs. */
+export const MANUAL_SCAN_WINDOW_DAYS = 30;
+
 export type PlanId = "free" | "starter" | "pro" | "agency";
 
 export interface PlanLimits {
@@ -14,8 +17,8 @@ export interface PlanLimits {
   promptsPerBranch: number;
   /** Minimum days between scheduled scans. */
   scanIntervalDays: number;
-  /** Manual "scan now" runs allowed per branch per rolling 7 days. */
-  manualScansPerWeek: number;
+  /** Extra "Scan now" runs allowed per branch in any MANUAL_SCAN_WINDOW_DAYS (rolling). */
+  manualScansPerMonth: number;
   engines: EngineId[];
   runsPerPrompt: number;
   /** Hard cost cap per scan run, USD. */
@@ -52,7 +55,7 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
         minBranches: 1,
         promptsPerBranch: 5,
         scanIntervalDays: 36500, // once
-        manualScansPerWeek: 0,
+        manualScansPerMonth: 0,
         engines: ["openai", "perplexity"],
         runsPerPrompt: 1,
         scanBudgetUsd: Number(env.FREE_SCAN_BUDGET_USD ?? 0.75),
@@ -69,7 +72,7 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
         minBranches: 1,
         promptsPerBranch: 12,
         scanIntervalDays: 7,
-        manualScansPerWeek: 1,
+        manualScansPerMonth: 0,
         engines: ["openai", "perplexity", "gemini"],
         runsPerPrompt: 3,
         scanBudgetUsd: Number(env.STARTER_SCAN_BUDGET_USD ?? 4),
@@ -86,7 +89,7 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
         minBranches: 1,
         promptsPerBranch: 18,
         scanIntervalDays: 7,
-        manualScansPerWeek: 1,
+        manualScansPerMonth: 1,
         engines: ALL_ENGINES,
         runsPerPrompt: 3,
         scanBudgetUsd: Number(env.PRO_SCAN_BUDGET_USD ?? 12),
@@ -103,7 +106,7 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
         minBranches: 2,
         promptsPerBranch: 14,
         scanIntervalDays: 7,
-        manualScansPerWeek: 1,
+        manualScansPerMonth: 1,
         engines: ALL_ENGINES,
         runsPerPrompt: 3,
         scanBudgetUsd: Number(env.AGENCY_SCAN_BUDGET_USD ?? 10),

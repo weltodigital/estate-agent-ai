@@ -27,6 +27,7 @@ export default function PricingPage() {
               <li>Up to {p.limits.promptsPerBranch} questions per branch</li>
               <li>{p.limits.engines.map(engineLabel).join(", ")}</li>
               <li>{p.limits.runsPerPrompt} runs per question, every week</li>
+              {p.limits.manualScansPerMonth ? <li>{p.limits.manualScansPerMonth} extra scan a month, whenever you need it</li> : null}
               <li>Competitors, citations and every raw answer</li>
               <li>Fixes with ready-to-paste drafts</li>
               <li>AI referral tracking for your website</li>
