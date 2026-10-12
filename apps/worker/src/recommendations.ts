@@ -9,6 +9,7 @@ import {
   evaluateRules,
   getScanSettings,
   attributeCitations,
+  classifyAgencyPage,
   normaliseAgentName,
   type CitationSubject,
   type ResultNames,
@@ -18,6 +19,7 @@ import {
   type IntentGroup,
   type RecommendationDraft,
   type RuleCitationStat,
+  type RuleCompetitorSite,
   type RuleCompetitor,
   type RuleContext,
   type RulePromptStat,
@@ -79,12 +81,44 @@ export function buildCitationStats(
     }));
 }
 
+/**
+ * Competitors' own websites that AI cited, with the kinds of page it read
+ * there, for the "Learn from their website" fix. Most cited first.
+ */
+export function buildCompetitorSites(
+  results: ResultRow[],
+  citations: CitationRow[],
+  competitorNames: Map<string, string>,
+  branchNormalisedNames: string[],
+  competitors: CitationSubject[],
+  branchDomain: string | null,
+  places: string[],
+): RuleCompetitorSite[] {
+  const parsedIds = new Set(results.filter((r) => r.parse_status === "ok").map((r) => r.id));
+  return attributeCitations(
+    citations
+      .filter((c) => parsedIds.has(c.scan_result_id))
+      .map((c) => ({ resultId: c.scan_result_id, url: c.url, domain: c.domain, isOwnDomain: c.is_own_domain })),
+    new Map(),
+    { normalisedNames: branchNormalisedNames, domain: branchDomain },
+    competitors,
+  )
+    .filter((a) => a.ownerIds.length && !a.citesBranch)
+    .map((a) => ({
+      name: competitorNames.get(a.ownerIds[0]!) ?? a.domain,
+      domain: a.domain,
+      responses: a.responses,
+      pages: a.urls.map((url) => ({ url, kind: classifyAgencyPage(url, places) })),
+    }));
+}
+
 /** Can this rule's absence be trusted as "fixed"? Only if its inputs were available. */
 function canDecide(ruleId: string, ctx: RuleContext): boolean {
   switch (ruleId) {
     case "review_gap":
       return !!ctx.gbp?.found && ctx.topCompetitors.filter((c) => c.gbp?.found).length >= 2;
     case "citation_gap":
+    case "competitor_site":
       return ctx.totalResponses > 0;
     case "robots_blocks_ai":
       return !!ctx.crawl?.robots.fetched;
@@ -107,6 +141,8 @@ export async function buildRuleContext(branch: BranchRow): Promise<RuleContext> 
   }[];
   const names = new Map(competitors.map((c) => [c.id, c.name]));
   const places = [branch.town, ...branch.areas];
+  const branchNames = [branch.name, ...branch.aliases].map((n) => normaliseAgentName(n, places));
+  const citationSubjects = competitors.map((c) => ({ id: c.id, normalisedName: normaliseAgentName(c.name, places), domain: c.domain, name: c.name }));
   const ranked = competitors
     .map((c) => ({ c, vis: computeSubjectMetrics(responses, c.id).visibility }))
     .filter((x) => (x.vis ?? 0) > 0)
@@ -162,15 +198,8 @@ export async function buildRuleContext(branch: BranchRow): Promise<RuleContext> 
     gbp: branchGbp.get(branch.id) ?? null,
     topCompetitors,
     prompts,
-    citations: buildCitationStats(
-      results,
-      mentions,
-      citations,
-      names,
-      [branch.name, ...branch.aliases].map((n) => normaliseAgentName(n, places)),
-      competitors.map((c) => ({ id: c.id, normalisedName: normaliseAgentName(c.name, places), domain: c.domain })),
-      branch.domain,
-    ),
+    citations: buildCitationStats(results, mentions, citations, names, branchNames, citationSubjects, branch.domain),
+    competitorSites: buildCompetitorSites(results, citations, names, branchNames, citationSubjects, branch.domain, places),
     branchVisibility: branchMetrics.visibility,
     totalResponses: branchMetrics.responses,
   };

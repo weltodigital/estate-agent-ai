@@ -50,6 +50,7 @@ function rows(plans: PlanConfig[]): { label: string; cells: Cell[] }[] {
       cells: plans.map((p) => (p.limits.engines.length === ENGINE_IDS.length ? "All four" : p.limits.engines.map(engineLabel).join(", "))),
     },
     { label: "Questions per branch", cells: plans.map((p) => `Up to ${p.limits.promptsPerBranch}`) },
+    { label: "Neighbourhoods per branch", cells: plans.map((p) => `Up to ${p.limits.maxAreas}`) },
     { label: "Runs per question", cells: plans.map((p) => String(p.limits.runsPerPrompt)) },
     { label: "Scan frequency", cells: plans.map(() => "Weekly") },
     { label: "Extra scans", cells: plans.map((p) => (p.limits.manualScansPerMonth ? `${p.limits.manualScansPerMonth} a month` : false)) },

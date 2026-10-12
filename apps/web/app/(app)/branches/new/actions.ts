@@ -20,6 +20,10 @@ export async function createBranch(_prev: ActionResult, formData: FormData): Pro
   const website = String(formData.get("website") ?? "").trim();
   if (!name || !town) return { error: "Branch name and town are required." };
   if (website && !normaliseWebsite(website).domain) return { error: "That website address doesn't look right." };
+  const areas = splitList(formData.get("areas"));
+  if (areas.length > ctx.plan.limits.maxAreas) {
+    return { error: `Your plan covers up to ${ctx.plan.limits.maxAreas} neighbourhoods per branch. Remove ${areas.length - ctx.plan.limits.maxAreas} to save.` };
+  }
 
   let branchId: string;
   try {
@@ -29,7 +33,7 @@ export async function createBranch(_prev: ActionResult, formData: FormData): Pro
       aliases: splitList(formData.get("aliases")).slice(0, 10),
       website: website || null,
       town: town.slice(0, 80),
-      areas: splitList(formData.get("areas")).slice(0, 10),
+      areas,
       postcode: String(formData.get("postcode") ?? "").trim().toUpperCase() || null,
       promptLimit: ctx.plan.limits.promptsPerBranch,
     }));

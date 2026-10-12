@@ -69,3 +69,25 @@ describe("attributeCitations", () => {
     expect(stats.map((s) => s.domain)).toEqual(["trustpilot.com"]);
   });
 });
+
+import { classifyAgencyPage, domainResemblesName, looksLikeAgencySite } from "./citations";
+
+describe("agency sites missed in the Keats Fearn scan", () => {
+  it("matches full trading names and initial + surname", () => {
+    expect(domainResemblesName("lklettingsco.com", "lk", "LK Lettings Co.")).toBe(true);
+    expect(domainResemblesName("hmorley.co.uk", "howard morley sons")).toBe(true);
+    expect(domainResemblesName("rightmove.co.uk", "howard morley sons")).toBe(false);
+  });
+  it("spots an unknown agency's site by its pages", () => {
+    expect(looksLikeAgencySite(["https://x.co.uk/property-for-sale/1", "https://x.co.uk/valuation"])).toBe(true);
+    expect(looksLikeAgencySite(["https://x.co.uk/news/1"])).toBe(false);
+  });
+  it("classifies the pages AI read", () => {
+    const places = ["Farnham", "Bentley"];
+    expect(classifyAgencyPage("https://www.winkworth.co.uk/farnham", places)).toBe("area-guide");
+    expect(classifyAgencyPage("https://www.winkworth.co.uk/estate-agents-in-farnham", places)).toBe("branch");
+    expect(classifyAgencyPage("https://www.romans.co.uk/valuation", places)).toBe("valuation");
+    expect(classifyAgencyPage("https://www.savills.co.uk/insight-and-opinion/research", places)).toBe("market");
+    expect(classifyAgencyPage("https://www.bourneestateagents.com/", places)).toBe("home");
+  });
+});

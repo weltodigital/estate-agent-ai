@@ -8,7 +8,7 @@ const STATUS: Record<ScanRunRow["status"], { label: string; tone: "neutral" | "g
   running: { label: "Running", tone: "brand" },
   completed: { label: "Completed", tone: "good" },
   failed: { label: "Failed", tone: "bad" },
-  budget_exceeded: { label: "Stopped at cost cap", tone: "warn" },
+  budget_exceeded: { label: "Partly complete", tone: "warn" },
 };
 
 export function ScanProgress({ run }: { run: ScanRunRow }) {

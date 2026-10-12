@@ -16,6 +16,7 @@ import {
   CITATION_SOURCE_GUIDES,
   DRAFT_NOTE,
 } from "./assets";
+import { AGENCY_PAGE_LABEL, type AgencyPageKind } from "../citations";
 import type { RecommendationDraft, Rule, RuleContext } from "./types";
 
 export type * from "./types";
@@ -144,6 +145,93 @@ const citationGap: Rule = {
         effort: "S",
         evidence: { domain: g.domain, responses: g.responses, competitorsCited: g.competitorsCited },
         asset: { kind: "steps", text: steps.map((s, n) => `${n + 1}. ${s}`).join("\n") },
+      };
+    });
+  },
+};
+
+// A competitor's own site can never list you, but AI citing it shows what
+// works: say which of their pages AI read, and what to build or improve on
+// yours to match, checked against our crawl of your site.
+const competitorSite: Rule = {
+  id: "competitor_site",
+  version: 1,
+  description: "AI cites a competitor's own website: learn from the pages it reads there.",
+  evaluate(ctx) {
+    const sites = (ctx.competitorSites ?? []).filter((s) => s.responses >= 3 && s.pages.length).slice(0, 2);
+    const c = ctx.crawl;
+    const town = ctx.branch.town;
+    return sites.map((site, idx): RecommendationDraft => {
+      const counts = new Map<AgencyPageKind, number>();
+      for (const p of site.pages) counts.set(p.kind, (counts.get(p.kind) ?? 0) + 1);
+      const kinds = [...counts.entries()].filter(([k]) => k !== "other").sort((a, b) => b[1] - a[1]);
+      const example = (k: AgencyPageKind) => {
+        const u = site.pages.find((p) => p.kind === k)?.url;
+        try {
+          return u ? new URL(u).pathname : "";
+        } catch {
+          return "";
+        }
+      };
+      const n = (k: AgencyPageKind) => counts.get(k) ?? 0;
+      const pl = (k: AgencyPageKind) => `${n(k)} ${n(k) === 1 ? "page" : "pages"}`;
+      const missingAreas = c?.ok ? c.pages.areaPages.filter((a) => !a.url).map((a) => a.area) : [];
+      const steps: string[] = [];
+      for (const [k] of kinds.slice(0, 4)) {
+        if (k === "area-guide")
+          steps.push(
+            missingAreas.length
+              ? `Add area guides for ${missingAreas.slice(0, 3).join(", ")}. AI read ${pl(k)} of ${site.name}'s area guides (for example ${example(k)}).`
+              : `Make your area guides as specific as ${site.name}'s (AI read ${pl(k)}, for example ${example(k)}): local prices, schools, transport and recent sales.`,
+          );
+        else if (k === "branch")
+          steps.push(`Give your ${town} office a page of its own: the areas you cover, your team, address, opening hours and reviews. AI read ${pl(k)} of ${site.name}'s branch pages (for example ${example(k)}).`);
+        else if (k === "valuation")
+          steps.push(
+            c?.ok && c.pages.valuationUrl
+              ? `Strengthen your valuation page with how you value homes in ${town} and recent results. AI read ${pl(k)} of ${site.name}'s valuation pages.`
+              : `Add a valuation page explaining how you value homes in ${town}. AI read ${pl(k)} of ${site.name}'s valuation pages.`,
+          );
+        else if (k === "team")
+          steps.push(
+            c?.ok && c.pages.teamUrl
+              ? `Add local experience to your team page: years in ${town}, specialisms, languages. AI read ${pl(k)} of ${site.name}'s team pages.`
+              : `Add a team page with who works in your ${town} office and their local experience. AI read ${pl(k)} of ${site.name}'s team pages.`,
+          );
+        else if (k === "reviews")
+          steps.push(`Show your reviews on your own website (with reviewers' permission), not only on Google. AI read ${pl(k)} of ${site.name}'s review pages.`);
+        else if (k === "market")
+          steps.push(`Publish a short monthly ${town} market update: prices, demand and what's selling. AI read ${pl(k)} of ${site.name}'s news and market articles.`);
+        else if (k === "landlords")
+          steps.push(`Add a landlords page covering your management service, compliance and fees. AI read ${pl(k)} of ${site.name}'s landlord pages.`);
+        else if (k === "fees")
+          steps.push(
+            c?.ok && c.pages.feesUrl
+              ? `Make your fees page clear and easy to find. AI read ${pl(k)} of ${site.name}'s fees pages.`
+              : `Publish your fees clearly on your website. AI read ${pl(k)} of ${site.name}'s fees pages.`,
+          );
+        else if (k === "listings")
+          steps.push(`Keep full, detailed property pages on your own website, not only on portals. AI read ${pl(k)} of ${site.name}'s property pages.`);
+        else if (k === "home")
+          steps.push(`Make your homepage say plainly who you are, where you work and what you're known for. AI read ${site.name}'s homepage.`);
+      }
+      if (!steps.length) steps.push(`Look at the pages AI read on ${site.domain} (listed in the evidence) and cover the same ground for your own area.`);
+      const mostly = kinds.slice(0, 2).map(([k]) => AGENCY_PAGE_LABEL[k]);
+      return {
+        ruleId: competitorSite.id,
+        ruleVersion: competitorSite.version,
+        fingerprint: `${competitorSite.id}:${site.domain}`,
+        title: `Learn from ${site.name}'s website`,
+        why: `AI used ${site.domain} in ${site.responses} answers about agents in ${town}${mostly.length ? `, mostly their ${mostly.join(" and ")}` : ""}. Those pages give assistants specific, local reasons to name ${site.name}. Their site can't list you, but you can publish the same kind of pages on yours.`,
+        priority: idx === 0 ? 2 : 3,
+        effort: "M",
+        evidence: {
+          domain: site.domain,
+          responses: site.responses,
+          pageKinds: Object.fromEntries(kinds.map(([k, v]) => [AGENCY_PAGE_LABEL[k], v])),
+          pagesRead: site.pages.slice(0, 8).map((p) => p.url),
+        },
+        asset: { kind: "steps", text: steps.map((s, i) => `${i + 1}. ${s}`).join("\n") },
       };
     });
   },
@@ -320,6 +408,7 @@ export const RULES: Rule[] = [
   reviewGap,
   missingSchema,
   citationGap,
+  competitorSite,
   missingAreaPages,
   missingFaq,
   missingValuationPage,

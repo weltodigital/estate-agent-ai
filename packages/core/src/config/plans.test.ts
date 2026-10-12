@@ -15,6 +15,7 @@ describe("plans", () => {
     expect(p.agency.limits.minBranches).toBe(2);
     // Extra "Scan now": none on Starter, one a month on Pro and Agency.
     expect([p.starter, p.pro, p.agency].map((x) => x.limits.manualScansPerMonth)).toEqual([0, 1, 1]);
+    expect([p.starter, p.pro, p.agency].map((x) => x.limits.maxAreas)).toEqual([3, 5, 5]);
   });
   it("uses the best active subscription and its branch quantity", () => {
     const r = effectiveLimits(

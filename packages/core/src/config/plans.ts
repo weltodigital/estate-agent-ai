@@ -15,6 +15,8 @@ export interface PlanLimits {
   /** Minimum billable branches (Agency starts at 2). */
   minBranches: number;
   promptsPerBranch: number;
+  /** Neighbourhoods tracked per branch, besides the town itself. */
+  maxAreas: number;
   /** Minimum days between scheduled scans. */
   scanIntervalDays: number;
   /** Extra "Scan now" runs allowed per branch in any MANUAL_SCAN_WINDOW_DAYS (rolling). */
@@ -54,6 +56,7 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
         maxBranches: 1,
         minBranches: 1,
         promptsPerBranch: 5,
+        maxAreas: 0,
         scanIntervalDays: 36500, // once
         manualScansPerMonth: 0,
         engines: ["openai", "perplexity"],
@@ -71,6 +74,7 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
         maxBranches: 1,
         minBranches: 1,
         promptsPerBranch: 12,
+        maxAreas: 3,
         scanIntervalDays: 7,
         manualScansPerMonth: 0,
         engines: ["openai", "perplexity", "gemini"],
@@ -88,6 +92,7 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
         maxBranches: 1,
         minBranches: 1,
         promptsPerBranch: 18,
+        maxAreas: 5,
         scanIntervalDays: 7,
         manualScansPerMonth: 1,
         engines: ALL_ENGINES,
@@ -105,6 +110,7 @@ export function getPlans(env: Env = process.env): Record<PlanId, PlanConfig> {
         maxBranches: 50,
         minBranches: 2,
         promptsPerBranch: 14,
+        maxAreas: 5,
         scanIntervalDays: 7,
         manualScansPerMonth: 1,
         engines: ALL_ENGINES,

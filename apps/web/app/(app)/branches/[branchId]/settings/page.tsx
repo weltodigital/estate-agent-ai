@@ -9,7 +9,7 @@ import { requireBranch } from "@/lib/auth";
 import { loadPromptLibrary } from "@/lib/branches";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { formatDateTime, formatUsd } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import {
   addCustomPrompt,
   addLibraryPrompt,
@@ -41,7 +41,7 @@ export default async function BranchSettingsPage({
     supabase.from("branch_prompts").select("id, text, intent_group, area, active, prompt_id").eq("branch_id", branch.id).order("created_at"),
     supabase
       .from("scan_runs")
-      .select("id, kind, status, engines, created_at, finished_at, cost_usd, error")
+      .select("id, kind, status, engines, created_at, finished_at, error")
       .eq("branch_id", branch.id)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -83,7 +83,6 @@ export default async function BranchSettingsPage({
                   <th className="py-1 font-medium">Started</th>
                   <th className="font-medium">Type</th>
                   <th className="font-medium">Status</th>
-                  <th className="text-right font-medium">API cost</th>
                 </tr>
               </thead>
               <tbody className="font-mono">
@@ -92,9 +91,8 @@ export default async function BranchSettingsPage({
                     <td className="py-1.5">{formatDateTime(r.created_at)}</td>
                     <td className="capitalize">{r.kind}</td>
                     <td>
-                      <Badge tone={STATUS_TONE[r.status as keyof typeof STATUS_TONE] ?? "neutral"}>{r.status.replace("_", " ")}</Badge>
+                      <Badge tone={STATUS_TONE[r.status as keyof typeof STATUS_TONE] ?? "neutral"}>{r.status === "budget_exceeded" ? "partly complete" : r.status.replace("_", " ")}</Badge>
                     </td>
-                    <td className="text-right">{formatUsd(r.cost_usd)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -125,7 +123,7 @@ export default async function BranchSettingsPage({
             <Field label="Other names AI might use" hint="Comma separated. Exact matches count as mentions; near matches are flagged for review.">
               <Input name="aliases" defaultValue={branch.aliases.join(", ")} />
             </Field>
-            <Field label="Neighbourhoods you cover" hint="Comma separated. Add questions about new areas below.">
+            <Field label="Neighbourhoods you cover" hint={`Up to ${plan.limits.maxAreas}, comma separated. Add questions about new areas below.`}>
               <Input name="areas" defaultValue={branch.areas.join(", ")} />
             </Field>
             <Button type="submit">Save details</Button>

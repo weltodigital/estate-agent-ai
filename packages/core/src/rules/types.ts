@@ -1,3 +1,4 @@
+import type { AgencyPageKind } from "../citations";
 import type { GoogleBusinessSignal, IntentGroup, WebsiteCrawlSignal } from "../domain";
 
 export interface RuleBranch {
@@ -39,6 +40,15 @@ export interface RuleCitationStat {
   competitorsCited: string[];
 }
 
+/** A competitor's own website that AI cited, and the kinds of page it read. */
+export interface RuleCompetitorSite {
+  name: string;
+  domain: string;
+  /** Answers citing the site. */
+  responses: number;
+  pages: { url: string; kind: AgencyPageKind }[];
+}
+
 export interface RuleContext {
   branch: RuleBranch;
   crawl: WebsiteCrawlSignal | null;
@@ -47,6 +57,8 @@ export interface RuleContext {
   topCompetitors: RuleCompetitor[];
   prompts: RulePromptStat[];
   citations: RuleCitationStat[];
+  /** Competitors' own sites that AI cites, most cited first. */
+  competitorSites?: RuleCompetitorSite[];
   branchVisibility: number | null;
   totalResponses: number;
 }

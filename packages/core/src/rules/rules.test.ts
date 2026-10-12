@@ -53,6 +53,31 @@ describe("rules", () => {
     expect(drafts[0]!.ruleId).toBe("robots_blocks_ai");
   });
 
+  it("learns from a competitor's own site instead of 'getting listed' on it", () => {
+    const drafts = evaluateRules({
+      ...ctx,
+      competitorSites: [
+        {
+          name: "Winkworth",
+          domain: "winkworth.co.uk",
+          responses: 12,
+          pages: [
+            { url: "https://www.winkworth.co.uk/southsea-area-guide", kind: "area-guide" },
+            { url: "https://www.winkworth.co.uk/estate-agents-in-southsea", kind: "branch" },
+            { url: "https://www.winkworth.co.uk/news/market-update", kind: "market" },
+          ],
+        },
+      ],
+    });
+    const d = drafts.find((x) => x.ruleId === "competitor_site")!;
+    expect(d.title).toBe("Learn from Winkworth's website");
+    expect(d.why).toContain("can't list you");
+    const steps = (d.asset as { text: string }).text;
+    expect(steps).toContain("Add area guides for Southsea");
+    expect(steps).toContain("Give your Portsmouth office a page of its own");
+    expect(drafts.some((x) => x.title.includes("winkworth.co.uk") && x.ruleId === "citation_gap")).toBe(false);
+  });
+
   it("stays silent without data", () => {
     const drafts = evaluateRules({ ...ctx, crawl: null, gbp: null, citations: [], prompts: [], topCompetitors: [] });
     expect(drafts).toEqual([]);

@@ -8,7 +8,6 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { runKey } from "@/lib/data/answers";
 import { requireBranch } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { formatUsd } from "@/lib/utils";
 
 export const metadata = { title: "Answer" };
 
@@ -20,7 +19,7 @@ export default async function ResponsePage({ params }: { params: Promise<{ branc
   const { data: r } = await supabase
     .from("scan_results")
     .select(
-      "id, scan_run_id, engine, model, prompt_text, intent_group, run_index, answer_text, raw_json, parse_status, mentioned, position, sentiment_label, sentiment_score, descriptors, match_confidence, needs_review, error, cost_usd, created_at",
+      "id, scan_run_id, engine, model, prompt_text, intent_group, run_index, answer_text, raw_json, parse_status, mentioned, position, sentiment_label, sentiment_score, descriptors, match_confidence, needs_review, error, created_at",
     )
     .eq("id", resultId)
     .eq("branch_id", branch.id)
@@ -138,16 +137,28 @@ export default async function ResponsePage({ params }: { params: Promise<{ branc
       <details className="rounded-lg border border-hairline bg-surface-raised">
         <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-ink-muted">Raw response data</summary>
         <div className="border-t border-hairline px-5 py-3">
-          <p className="mb-2 text-small text-ink-muted">Cost of this response: {formatUsd(r.cost_usd)}</p>
           <p className="mb-1 text-small font-medium text-ink-muted">Answer text exactly as returned</p>
           <pre className="mb-4 max-h-[24rem] overflow-auto whitespace-pre-wrap break-words rounded-md bg-surface-sunken p-3 font-mono text-data text-ink">
             {r.answer_text ?? "No answer text stored."}
           </pre>
           <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words font-mono text-small text-ink-muted">
-            {JSON.stringify(r.raw_json, null, 2)}
+            {JSON.stringify(withoutCosts(r.raw_json), null, 2)}
           </pre>
         </div>
       </details>
     </div>
   );
+}
+
+/** The provider's raw response without its usage and cost figures, which are ours to know, not customers'. */
+function withoutCosts(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutCosts);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([k]) => !/^(usage|usageMetadata|cost|costUsd|cost_usd|billing)$/i.test(k))
+        .map(([k, v]) => [k, withoutCosts(v)]),
+    );
+  }
+  return value;
 }

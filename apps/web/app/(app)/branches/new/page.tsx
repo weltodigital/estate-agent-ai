@@ -61,7 +61,7 @@ export default async function NewBranchPage() {
                 <Input name="postcode" maxLength={10} />
               </Field>
             </div>
-            <Field label="Neighbourhoods you cover" hint="Comma separated, e.g. Southsea, Drayton. We'll track questions about each.">
+            <Field label="Neighbourhoods you cover" hint={`Up to ${ctx.plan.limits.maxAreas}, comma separated, e.g. Southsea, Drayton. We'll track questions about each.`}>
               <Input name="areas" />
             </Field>
             <Button type="submit">Save and start scanning</Button>

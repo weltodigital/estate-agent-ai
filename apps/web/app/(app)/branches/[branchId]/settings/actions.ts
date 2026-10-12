@@ -22,13 +22,17 @@ async function activePromptCount(branchId: string) {
 }
 
 export async function updateBranch(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { branch } = await requireBranch(String(formData.get("branch_id")));
+  const { branch, plan } = await requireBranch(String(formData.get("branch_id")));
   const name = String(formData.get("name") ?? "").trim();
   const town = String(formData.get("town") ?? "").trim();
   const websiteRaw = String(formData.get("website") ?? "").trim();
   if (!name || !town) return { error: "Branch name and town are required." };
   const { website, domain } = normaliseWebsite(websiteRaw);
   if (websiteRaw && !domain) return { error: "That website address doesn't look right." };
+  const areas = splitList(formData.get("areas"));
+  if (areas.length > plan.limits.maxAreas) {
+    return { error: `Your plan covers up to ${plan.limits.maxAreas} neighbourhoods per branch. Remove ${areas.length - plan.limits.maxAreas} to save.` };
+  }
 
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase
@@ -39,7 +43,7 @@ export async function updateBranch(_prev: ActionResult, formData: FormData): Pro
       website,
       domain,
       aliases: splitList(formData.get("aliases")).slice(0, 10),
-      areas: splitList(formData.get("areas")).slice(0, 10),
+      areas,
       postcode: String(formData.get("postcode") ?? "").trim().toUpperCase() || null,
     })
     .eq("id", branch.id);
