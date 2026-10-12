@@ -50,3 +50,17 @@ describe("summary helpers", () => {
     expect(s.describedAs).toEqual(["independent"]);
   });
 });
+
+import { buildHeadline } from "./summary";
+
+describe("buildHeadline comparisons", () => {
+  const base = buildSummary({ responses: [], competitors: [], from: "2026-09-01T00:00:00Z", prevFrom: "2026-08-01T00:00:00Z", lowSampleThreshold: 1 });
+  const s = { ...base, answers: 100, visibility: 43, previousVisibility: 37, byEngine: [] };
+  const text = (o: Parameters<typeof buildHeadline>[1]) => buildHeadline(s, o).map((p) => p.text).join("");
+  it("compares with the latest scan once there are two", () => {
+    expect(text({ firstScan: false, days: 30, sinceLastScan: true })).toContain("up from 37% before your latest scan");
+  });
+  it("falls back to the previous 30 days", () => {
+    expect(text({ firstScan: false, days: 30 })).toContain("up from 37%.");
+  });
+});

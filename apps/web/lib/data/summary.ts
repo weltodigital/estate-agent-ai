@@ -19,6 +19,8 @@ export interface SummaryInput {
   /** Current window [from, now) and the previous equal-length window. */
   from: string;
   prevFrom: string;
+  /** End of the previous window (default: `from`). With two or more scans it is the latest scan's start. */
+  prevTo?: string;
   lowSampleThreshold: number;
 }
 
@@ -59,10 +61,11 @@ export function ordinal(n: number): string {
 
 export function buildSummary(input: SummaryInput): Summary {
   const { responses, competitors, from, prevFrom, lowSampleThreshold } = input;
+  const prevTo = input.prevTo ?? from;
   const current = { from };
   const scoped = filterResponses(responses, current);
   const you = computeSubjectMetrics(responses, BRANCH_KEY, { filter: current, lowSampleThreshold });
-  const prev = computeSubjectMetrics(responses, BRANCH_KEY, { filter: { from: prevFrom, to: from }, lowSampleThreshold });
+  const prev = computeSubjectMetrics(responses, BRANCH_KEY, { filter: { from: prevFrom, to: prevTo }, lowSampleThreshold });
 
   const others = competitors
     .map((c) => ({ name: c.name, visibility: computeSubjectMetrics(responses, c.id, { filter: current }).visibility ?? 0, isYou: false }))
@@ -112,7 +115,7 @@ export type HeadlinePart = { text: string; strong?: boolean };
  * The overview headline, by template (never an LLM), so it can't say anything
  * the numbers don't. Strong parts are the key figures.
  */
-export function buildHeadline(s: Summary, opts: { firstScan: boolean; days: number }): HeadlinePart[] {
+export function buildHeadline(s: Summary, opts: { firstScan: boolean; days: number; sinceLastScan?: boolean }): HeadlinePart[] {
   const engines = s.byEngine.filter((e) => e.answers > 0);
   const who = listPlain(engines.map((e) => e.label)) || "AI assistants";
   const pct = (v: number | null) => (v === null ? "—" : `${Math.round(v)}%`);
@@ -126,9 +129,10 @@ export function buildHeadline(s: Summary, opts: { firstScan: boolean; days: numb
     parts.push({ text: ` in the last ${opts.days} days` });
     if (!opts.firstScan && s.previousVisibility !== null) {
       const diff = Math.round(s.visibility) - Math.round(s.previousVisibility);
-      if (diff > 0) parts.push({ text: ", up from " }, { text: pct(s.previousVisibility), strong: true });
-      else if (diff < 0) parts.push({ text: ", down from " }, { text: pct(s.previousVisibility), strong: true });
-      else parts.push({ text: ", the same as the 30 days before" });
+      const before = opts.sinceLastScan ? " before your latest scan" : "";
+      if (diff > 0) parts.push({ text: ", up from " }, { text: pct(s.previousVisibility), strong: true }, { text: before });
+      else if (diff < 0) parts.push({ text: ", down from " }, { text: pct(s.previousVisibility), strong: true }, { text: before });
+      else parts.push({ text: opts.sinceLastScan ? ", no change from your latest scan" : ", the same as the 30 days before" });
     }
     parts.push({ text: "." });
   }

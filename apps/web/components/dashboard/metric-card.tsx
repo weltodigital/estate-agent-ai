@@ -17,7 +17,18 @@ function evidenceLine(key: CardData["key"], m: CardData["metrics"]): string {
   return `Ranked in ${m.mentions} responses`;
 }
 
-export function MetricCard({ card, evidenceHref, days }: { card: CardData; evidenceHref: string; days: number }) {
+export function MetricCard({
+  card,
+  evidenceHref,
+  days,
+  sinceLastScan = false,
+}: {
+  card: CardData;
+  evidenceHref: string;
+  days: number;
+  /** Compare with everything before the latest scan, rather than the previous 30 days. */
+  sinceLastScan?: boolean;
+}) {
   const copy = METRIC_COPY[card.key];
   const m = card.metrics;
   const improved = isImprovement(card.key, card.change);
@@ -56,13 +67,13 @@ export function MetricCard({ card, evidenceHref, days }: { card: CardData; evide
               <AlertTriangle size={14} strokeWidth={1.5} aria-hidden="true" /> Low sample
             </span>
           ) : deltaText ? (
-            <Delta value={card.change} improved={improved} text={deltaText} />
+            <Delta value={card.change} improved={improved} text={`${deltaText} ${sinceLastScan ? "since your last scan" : `vs previous ${days} days`}`} />
           ) : (
             <span className="text-small text-ink-muted">No earlier scan to compare yet</span>
           )}
         </div>
         {card.previous !== null ? (
-          <p className="mt-1 font-mono text-data text-ink-muted tabular-nums">{`${copy.format(card.previous)} previous ${days} days`}</p>
+          <p className="mt-1 font-mono text-data text-ink-muted tabular-nums">{sinceLastScan ? `${copy.format(card.previous)} before your latest scan` : `${copy.format(card.previous)} previous ${days} days`}</p>
         ) : null}
         <p className="font-mono text-data text-ink-muted tabular-nums">{evidenceLine(card.key, m)}</p>
       </Link>

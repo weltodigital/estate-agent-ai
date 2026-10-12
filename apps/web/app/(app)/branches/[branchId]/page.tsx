@@ -58,13 +58,20 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
   const nextScan =
     plan.paid && latestRun ? new Date(new Date(latestRun.created_at).getTime() + plan.limits.scanIntervalDays * DAY).toISOString() : null;
 
+  // With two or more scans, compare with everything before the latest scan
+  // (what the latest scan changed); with one, with the previous 30 days.
+  const sinceLastScan = finishedRuns.length >= 2;
+  const compareAt = sinceLastScan ? finishedRuns[0]!.created_at : from;
+  const compareFrom = sinceLastScan ? new Date(new Date(compareAt).getTime() - WINDOW_DAYS * DAY).toISOString() : prevFrom;
+
   const visible = competitors.filter((c) => c.status !== "hidden");
   const responses = toResponses(rows);
   const summary = buildSummary({
     responses,
     competitors: visible.map((c) => ({ id: c.id, name: c.name })),
     from,
-    prevFrom,
+    prevFrom: compareFrom,
+    prevTo: compareAt,
     lowSampleThreshold,
   });
 
@@ -96,11 +103,11 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
     );
   }
 
-  const headline = buildHeadline(summary, { firstScan: finishedRuns.length <= 1, days: WINDOW_DAYS });
+  const headline = buildHeadline(summary, { firstScan: finishedRuns.length <= 1, days: WINDOW_DAYS, sinceLastScan });
   const { cards } = buildCards({
     responses,
     current: { from },
-    previous: { from: prevFrom, to: from },
+    previous: { from: compareFrom, to: compareAt },
     trendFilter: { from: sparkFrom },
     competitors: visible.map((c) => ({ key: c.id, name: c.name })),
     lowSampleThreshold,
@@ -157,7 +164,7 @@ export default async function BranchOverviewPage({ params }: { params: Promise<{
       {/* 1b. The four numbers, with context */}
       <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4" aria-label="Headline numbers">
         {cards.map((c) => (
-          <MetricCard key={c.key} card={c} evidenceHref={evidenceHref(c.key)} days={WINDOW_DAYS} />
+          <MetricCard key={c.key} card={c} evidenceHref={evidenceHref(c.key)} days={WINDOW_DAYS} sinceLastScan={sinceLastScan} />
         ))}
       </section>
 
