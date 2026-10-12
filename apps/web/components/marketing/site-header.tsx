@@ -6,11 +6,34 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/brand/theme-toggle";
 import { buttonClasses } from "@/components/ui/button";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 // Sticky header. The hairline appears only once the page has scrolled, so the
 // hero sits on one uninterrupted surface. "Run free scan" is the only button.
+/**
+ * Marketing pages are static, so the server can't tell who's signed in. The
+ * browser can: the session lives in a cookie, read locally with no request.
+ */
+function useSignedIn(): boolean {
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    getSupabaseBrowserClient()
+      .auth.getSession()
+      .then(({ data }) => {
+        if (live) setSignedIn(!!data.session);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+  return signedIn;
+}
+
 export function SiteHeader() {
+  const signedIn = useSignedIn();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 4);
@@ -35,12 +58,22 @@ export function SiteHeader() {
           <Link href="/how-it-works" className="hover-fine:text-ink">How it works</Link>
           <Link href="/pricing" className="hover-fine:text-ink">Pricing</Link>
           <ThemeToggle />
-          <Link href="/login" className="hover-fine:text-ink">Sign in</Link>
-          <Link href="/free-scan" className={buttonClasses("primary", "sm")}>Run free scan</Link>
+          {signedIn ? (
+            <Link href="/dashboard" className={buttonClasses("primary", "sm")}>Go to dashboard</Link>
+          ) : (
+            <>
+              <Link href="/login" className="hover-fine:text-ink">Sign in</Link>
+              <Link href="/free-scan" className={buttonClasses("primary", "sm")}>Run free scan</Link>
+            </>
+          )}
         </nav>
 
         <div className="ml-auto flex items-center gap-2 md:hidden">
-          <Link href="/free-scan" className={buttonClasses("primary", "sm", "h-10")}>Free scan</Link>
+          {signedIn ? (
+            <Link href="/dashboard" className={buttonClasses("primary", "sm", "h-10")}>Dashboard</Link>
+          ) : (
+            <Link href="/free-scan" className={buttonClasses("primary", "sm", "h-10")}>Free scan</Link>
+          )}
           <details className="group relative">
             <summary className="ring-brand-focus flex h-12 w-12 cursor-pointer list-none items-center justify-center rounded-md text-ink" aria-label="Menu">
               <Menu size={20} strokeWidth={1.5} className="group-open:hidden" aria-hidden="true" />
@@ -51,7 +84,7 @@ export function SiteHeader() {
                 ["/how-it-works", "How it works"],
                 ["/pricing", "Pricing"],
                 ["/sample-report", "Sample report"],
-                ["/login", "Sign in"],
+                signedIn ? ["/dashboard", "Dashboard"] : ["/login", "Sign in"],
               ].map(([href, label]) => (
                 <Link key={href} href={href!} className="flex min-h-12 items-center rounded-md px-3 text-ink hover-fine:bg-surface-sunken">
                   {label}

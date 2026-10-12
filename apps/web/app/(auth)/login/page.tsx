@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getUser } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -13,6 +15,8 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   const { next, error } = await searchParams;
+  // Already signed in: go straight where they were heading.
+  if (!error && (await getUser().catch(() => null))) redirect(safeNext(next));
   return (
     <>
       <h1 className="text-title text-ink">Sign in or create an account</h1>

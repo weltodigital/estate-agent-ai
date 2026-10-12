@@ -30,9 +30,10 @@
     ".next-demo/types/**/*.ts",
     ".next-funnel/types/**/*.ts",
     ".next-home/types/**/*.ts",
+    ".next-logo/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-logo/types/**/*.ts"
+    ".next-hdr/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
