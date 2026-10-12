@@ -44,7 +44,8 @@ export function getEngineConfigs(env: Env = process.env): Record<EngineId, Engin
       id: "gemini",
       label: "Gemini",
       envKey: "GEMINI_API_KEY",
-      model: env.GEMINI_MODEL ?? "gemini-2.5-flash",
+      // gemini-2.5-flash was retired for new API users (Oct 2026); Google names 3.8 Flash as its replacement.
+      model: env.GEMINI_MODEL ?? "gemini-3.8-flash",
       rpm: num(env, "GEMINI_RPM", 60),
     },
     anthropic: {
@@ -92,6 +93,8 @@ const DEFAULT_PRICING: Record<string, ModelPrice> = {
   "gpt-5-mini": { inputPerMTok: 0.25, outputPerMTok: 2, perRequest: 0.01 },
   sonar: { inputPerMTok: 1, outputPerMTok: 1, perRequest: 0.008 },
   "gemini-2.5-flash": { inputPerMTok: 0.3, outputPerMTok: 2.5, perRequest: 0.035 },
+  // Estimate carried over from 2.5 Flash until checked against Google's price list.
+  "gemini-3.8-flash": { inputPerMTok: 0.3, outputPerMTok: 2.5, perRequest: 0.035 },
   "claude-opus-5-5": { inputPerMTok: 4, outputPerMTok: 20, perRequest: 0 },
   "claude-sonnet-5-5": { inputPerMTok: 2, outputPerMTok: 10, perRequest: 0 },
   "claude-haiku-5-5": { inputPerMTok: 0.1, outputPerMTok: 0.5, perRequest: 0 },
