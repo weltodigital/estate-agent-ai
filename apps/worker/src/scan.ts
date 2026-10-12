@@ -28,6 +28,7 @@ import { db, fetchAll, insertChunked, must } from "./db";
 import { availableEngines, EngineError, runPrompt } from "./engines";
 import { env } from "./env";
 import { errMessage, log } from "./log";
+import { checkRunHealth, sendAlert } from "./alerts";
 import { sendFreeScanEmail } from "./notify";
 import { parseAnswer } from "./parse";
 import { generateRecommendations } from "./recommendations";
@@ -526,6 +527,13 @@ export async function processRun(run: ScanRunRow): Promise<void> {
     );
     log.info("scan finished", { run: run.id, kind: run.kind, status, costUsd: budget.spentUsd });
     if (run.kind === "free") await sendFreeScanEmail(run.id);
+    await checkRunHealth(run);
+    if (status === "budget_exceeded" && run.kind !== "free") {
+      await sendAlert(`run-cap:${run.id}`, `A ${run.kind} scan stopped at its cost cap`, [
+        `Scan run ${run.id} (${run.kind}) stopped at its cap of $${Number(run.budget_usd).toFixed(2)} after spending $${budget.spentUsd.toFixed(2)}.`,
+        "If this keeps happening, raise the plan's scan budget or check the per-answer costs.",
+      ]);
+    }
   } finally {
     clearInterval(heartbeat);
   }
@@ -546,4 +554,10 @@ export async function failRun(run: ScanRunRow, err: unknown) {
     .eq("id", run.id);
   if (!retry && run.league_table_id) await db().from("league_tables").update({ status: "failed" }).eq("id", run.league_table_id);
   log.error("scan failed", { run: run.id, attempt: run.attempts, willRetry: retry, err: message });
+  if (!retry) {
+    await sendAlert(`run-failed:${run.id}`, `A ${run.kind} scan failed`, [
+      `Scan run ${run.id} (${run.kind}) failed after ${run.attempts} attempts.`,
+      `Error: ${message.slice(0, 500)}`,
+    ]);
+  }
 }

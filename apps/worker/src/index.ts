@@ -6,6 +6,7 @@ import { db } from "./db";
 import { env, requireDbEnv } from "./env";
 import { errMessage, log } from "./log";
 import { failRun, processRun, type ScanRunRow } from "./scan";
+import { checkDailySpend } from "./alerts";
 import { scheduleDueScans } from "./scheduler";
 
 requireDbEnv();
@@ -53,6 +54,7 @@ async function schedulerLoop() {
   while (!stopping) {
     try {
       await scheduleDueScans();
+      await checkDailySpend();
     } catch (err) {
       log.error("scheduler failed", { err: errMessage(err) });
     }

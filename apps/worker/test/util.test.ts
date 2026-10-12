@@ -129,3 +129,18 @@ describe("buildCitationStats", () => {
     expect(stats[0]).toMatchObject({ citesBranch: true });
   });
 });
+
+import { runHealthProblems } from "../src/alerts";
+
+describe("runHealthProblems", () => {
+  const ok = (engine: string): { engine: string; parse_status: string; error: string | null } => ({ engine, parse_status: "ok", error: null });
+  it("flags an engine failing on 30%+ of its answers", () => {
+    const rows = [...Array(7)].map(() => ok("gemini")).concat([...Array(3)].map(() => ({ engine: "gemini", parse_status: "engine_error", error: "HTTP 400: bad tool" })));
+    expect(runHealthProblems(rows)[0]).toContain("gemini: 3 of 10 answers failed. First error: HTTP 400: bad tool");
+  });
+  it("flags bulk parse failures, and stays quiet when healthy", () => {
+    const rows = [...Array(8)].map(() => ok("openai")).concat([...Array(2)].map(() => ({ engine: "openai", parse_status: "failed", error: null })));
+    expect(runHealthProblems(rows)).toEqual(["Parsing: 2 of 10 answers couldn't be read."]);
+    expect(runHealthProblems([...Array(20)].map(() => ok("openai")))).toEqual([]);
+  });
+});

@@ -20,6 +20,10 @@ export const env = {
   anthropicEngineEffort: (process.env.ANTHROPIC_ENGINE_EFFORT ?? "medium") as "low" | "medium" | "high",
   /** Free-scan results email via Resend. Skipped when unset. */
   resendApiKey: process.env.RESEND_API_KEY || "",
+  /** Where operational alerts go (failed scans, engine errors, spend). Empty disables them. */
+  alertEmail: process.env.ALERT_EMAIL || "",
+  /** Daily AI spend (USD, UTC day) that triggers an alert. 0 disables it. */
+  alertDailySpendUsd: Number(process.env.ALERT_DAILY_SPEND_USD ?? 25),
   emailFrom: process.env.EMAIL_FROM || "Privett <ed@useprivett.com>",
   appUrl: (process.env.APP_URL || "https://www.useprivett.com").replace(/\/$/, ""),
   crawlMaxPages: Number(process.env.CRAWL_MAX_PAGES ?? 15),
