@@ -1,15 +1,17 @@
+import Link from "next/link";
 import { engineLabel, getPlans, MANUAL_SCAN_WINDOW_DAYS, type PlanId, type PlanLimits } from "@privett/core";
 import { AssistantChips } from "@/components/marketing/assistant-names";
 import { PRICES_GBP } from "@/lib/seo";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireOrg } from "@/lib/auth";
 import { countActiveBranches, getOrgSubscriptions, priceLabel, purchasablePlans } from "@/lib/billing";
 import { COPY } from "@/lib/copy";
+import { loadStripeSubscription, type PendingChange } from "@/lib/plan-change";
 import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Plan and billing" };
@@ -17,6 +19,7 @@ export const metadata = { title: "Plan and billing" };
 const MESSAGES: Record<string, string> = {
   success: "Thank you. Your plan will update within a minute.",
   cancelled: "Checkout cancelled. Nothing has been charged.",
+  changed: "Done. Your plan change is saved; this page updates within a minute.",
 };
 const ERRORS: Record<string, string> = {
   owner: "Only an owner can change the plan.",
@@ -43,6 +46,7 @@ export default async function BillingPage({
     .eq("org_id", ctx.org.id)
     .eq("kind", "manual")
     .gte("created_at", new Date(Date.now() - MANUAL_SCAN_WINDOW_DAYS * 86_400_000).toISOString());
+  const pending = sub?.stripe_subscription_id && ctx.plan.paid ? ((await loadStripeSubscription(sub.stripe_subscription_id))?.pending ?? null) : null;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -64,6 +68,7 @@ export default async function BillingPage({
           extraScansUsed={extraScansUsed}
           isOwner={isOwner}
           orgName={ctx.org.name}
+          pending={pending}
         />
       ) : (
         <Card className="mb-8">
@@ -147,6 +152,7 @@ function PaidPlan({
   extraScansUsed,
   isOwner,
   orgName,
+  pending,
 }: {
   planName: string;
   planId: PlanId;
@@ -156,6 +162,7 @@ function PaidPlan({
   extraScansUsed: number | null;
   isOwner: boolean;
   orgName: string;
+  pending: PendingChange | null;
 }) {
   const unit = PRICES_GBP[planId as keyof typeof PRICES_GBP] ?? 0;
   const perBranch = planId === "agency";
@@ -183,6 +190,12 @@ function PaidPlan({
               ? `Your plan ends on ${formatDate(sub.current_period_end)} and won't renew. Weekly scans stop then; your results stay viewable.`
               : `Next payment £${monthly} on ${formatDate(sub.current_period_end)}.`}
           </p>
+          {pending?.planId && !sub.cancel_at_period_end ? (
+            <p className="pt-2 text-sm text-ink">
+              Switching to {getPlans()[pending.planId].name}
+              {pending.planId === "agency" ? ` (${pending.quantity} branches)` : ""} on {formatDate(pending.from)}.
+            </p>
+          ) : null}
           {sub.status === "past_due" ? (
             <p className="pt-2 text-sm text-warn">Your last payment didn&apos;t go through. Update your card to keep scans running.</p>
           ) : null}
@@ -213,11 +226,11 @@ function PaidPlan({
           {isOwner ? (
             <>
               <div className="space-y-1">
-                <PortalButton flow="update" variant="primary">{perBranch ? "Change plan or branches" : "Change plan"}</PortalButton>
+                <Link href="/settings/billing/change" className={buttonClasses("primary")}>
+                  {perBranch ? "Change plan or branches" : "Change plan"}
+                </Link>
                 <p className="text-small text-ink-muted">
-                  {perBranch
-                    ? `Add a branch for £${unit} a month, or remove one. Stripe adjusts this month's bill automatically.`
-                    : "Switch to Agency to track more than one branch. Stripe adjusts this month's bill automatically."}
+                  See what each plan changes for your branches before you confirm. Upgrades start today; downgrades at the end of the billing period.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

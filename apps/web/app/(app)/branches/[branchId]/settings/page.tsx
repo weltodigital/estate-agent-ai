@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { engineLabel, INTENT_GROUPS, INTENT_LABELS, renderPromptsForBranch } from "@privett/core";
+import { engineLabel, INTENT_GROUPS, INTENT_LABELS, renderPromptsForBranch, trackedAreas, trackedPrompts } from "@privett/core";
 import { ActionForm } from "@/components/platform/action-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,13 @@ export default async function BranchSettingsPage({
   ]);
 
   const active = (prompts ?? []).filter((p) => p.active).length;
+  // What the next scan asks, by the same rule the worker uses.
+  const tracked = trackedPrompts(prompts ?? [], branch.areas, plan.limits);
+  const notAsked = new Map<string, string>([
+    ...tracked.overArea.map((p) => [p.id, "Not asked: neighbourhood over your plan"] as const),
+    ...tracked.overCount.map((p) => [p.id, "Not asked: over your plan's limit"] as const),
+  ]);
+  const droppedAreas = trackedAreas(branch.areas, plan.limits).dropped;
   const existing = new Set((prompts ?? []).map((p) => p.text.toLowerCase()));
   const libraryOptions = renderPromptsForBranch(library, branch, 500).filter((p) => !existing.has(p.text.toLowerCase()));
   const hidden = <input type="hidden" name="branch_id" value={branch.id} />;
@@ -101,7 +108,7 @@ export default async function BranchSettingsPage({
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="details" className="scroll-mt-24">
         <CardHeader title="Branch details" description="How we recognise you in AI answers." />
         <CardBody>
           <ActionForm action={updateBranch} className="space-y-4">
@@ -123,7 +130,14 @@ export default async function BranchSettingsPage({
             <Field label="Other names AI might use" hint="Comma separated. Exact matches count as mentions; near matches are flagged for review.">
               <Input name="aliases" defaultValue={branch.aliases.join(", ")} />
             </Field>
-            <Field label="Neighbourhoods you cover" hint={`Up to ${plan.limits.maxAreas}, comma separated. Add questions about new areas below.`}>
+            <Field
+              label="Neighbourhoods you cover"
+              hint={
+                droppedAreas.length
+                  ? `Your plan covers the first ${plan.limits.maxAreas}, so ${droppedAreas.join(", ")} ${droppedAreas.length === 1 ? "isn't" : "aren't"} tracked. Remove or reorder to choose which.`
+                  : `Up to ${plan.limits.maxAreas}, comma separated. Add questions about new areas below.`
+              }
+            >
               <Input name="areas" defaultValue={branch.areas.join(", ")} />
             </Field>
             <Button type="submit">Save details</Button>
@@ -131,10 +145,14 @@ export default async function BranchSettingsPage({
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="questions" className="scroll-mt-24">
         <CardHeader
           title="Tracked questions"
-          description={`${active} of ${plan.limits.promptsPerBranch} active. Each one is asked on every engine, ${plan.limits.runsPerPrompt} times per scan.`}
+          description={
+            notAsked.size
+              ? `${tracked.asked.length} of ${active} turned-on questions are asked; your plan covers ${plan.limits.promptsPerBranch}. Turn off the ones you don't need to choose which.`
+              : `${active} of ${plan.limits.promptsPerBranch} active. Each one is asked on every engine, ${plan.limits.runsPerPrompt} times per scan.`
+          }
         />
         <CardBody className="space-y-2">
           {(prompts ?? []).map((p) => (
@@ -146,6 +164,7 @@ export default async function BranchSettingsPage({
                 <Button type="submit" variant="ghost" size="sm" className="h-10">Save</Button>
               </ActionForm>
               <Badge>{INTENT_LABELS[p.intent_group as keyof typeof INTENT_LABELS] ?? p.intent_group}</Badge>
+              {notAsked.has(p.id) ? <Badge tone="warn">{notAsked.get(p.id)}</Badge> : null}
               <PromptToggle branchId={branch.id} promptId={p.id} active={p.active} text={p.text} />
             </div>
           ))}

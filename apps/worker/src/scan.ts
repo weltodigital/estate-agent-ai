@@ -17,6 +17,8 @@ import {
   normaliseAgentName,
   normaliseDomain,
   renderPromptsForBranch,
+  trackedAreas,
+  trackedPrompts,
   type EngineId,
   type IntentGroup,
   type MatchTarget,
@@ -404,10 +406,12 @@ async function topCompetitorsThisRun(runId: string, limit: number): Promise<stri
 async function runBranchScan(run: ScanRunRow, budget: RunBudget): Promise<"completed" | "budget_exceeded"> {
   const branch = must(await db().from("branches").select("*").eq("id", run.branch_id).single(), "select branch") as BranchRow;
   const limits = await orgLimits(run);
-  const prompts = must(
-    await db().from("branch_prompts").select("id, text, intent_group, area").eq("branch_id", branch.id).eq("active", true).order("created_at").limit(limits.promptsPerBranch),
+  const activePrompts = must(
+    await db().from("branch_prompts").select("id, text, intent_group, area, active").eq("branch_id", branch.id).eq("active", true).order("created_at"),
     "select branch_prompts",
-  ) as { id: string; text: string; intent_group: IntentGroup; area: string | null }[];
+  ) as { id: string; text: string; intent_group: IntentGroup; area: string | null; active: boolean }[];
+  // The same selection the billing and settings pages show the customer.
+  const prompts = trackedPrompts(activePrompts, branch.areas, limits).asked;
   if (!prompts.length) throw new Error("Branch has no active prompts");
   const engines = availableEngines(run.engines);
   if (!engines.length) throw new Error("No engine API keys configured for this scan's engines");
@@ -429,7 +433,7 @@ async function runBranchScan(run: ScanRunRow, budget: RunBudget): Promise<"compl
 
   // Signals: the branch, then (paid scans) its most-named competitors.
   const promptAreas = prompts.map((p) => p.area).filter((a): a is string => !!a);
-  const areas = [...new Set([...branch.areas, ...promptAreas])];
+  const areas = [...new Set([...trackedAreas(branch.areas, limits).kept, ...promptAreas])];
   const branchSubject: SignalSubject = { kind: "branch", id: branch.id, orgId: branch.org_id, name: branch.name, website: branch.website, domain: branch.domain, town: branch.town, areas, placeId: branch.place_id };
   await collectSignals(branchSubject, { runId: run.id, budget, places: true });
   if (run.kind !== "free") {

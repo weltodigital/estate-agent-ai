@@ -34,14 +34,12 @@ export default async function NewBranchPage() {
     const firstBranch = existing?.[0]?.name ?? "your current branch";
     const twoBranches = `£${PRICES_GBP.agency * agency.minBranches}`;
 
-    // Owners go straight to Stripe's plan / branch-count screen.
+    // Owners see the change (and its price) on the change-plan page first.
     const action = (label: string) =>
       isOwner ? (
-        <form action="/api/stripe/portal" method="post">
-          <input type="hidden" name="flow" value="update" />
-          <input type="hidden" name="return_to" value="/branches/new" />
-          <Button type="submit">{label}</Button>
-        </form>
+        <Link href={`/settings/billing/change?plan=agency&branches=${Math.max(used + 1, agency.minBranches)}`} className={buttonClasses("primary")}>
+          {label}
+        </Link>
       ) : (
         <p className="text-small text-ink-muted">Ask an owner of {ctx.org.name} to change the plan.</p>
       );
