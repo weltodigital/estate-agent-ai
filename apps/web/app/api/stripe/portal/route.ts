@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireOrg } from "@/lib/auth";
 import { getStripe } from "@/lib/stripe";
+import { getPortalConfigurationId } from "@/lib/stripe-portal";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { appUrl } from "@/lib/utils";
 
@@ -22,11 +23,18 @@ export async function POST(request: Request) {
   const returnTo = String(form?.get("return_to") ?? "/settings/billing");
   const return_url = appUrl(returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/settings/billing");
   const stripe = getStripe();
+  // Our own portal setup (plans, branch counts, downgrade timing). If Stripe
+  // rejects it, fall back to the account's default portal.
+  const configuration = await getPortalConfigurationId().catch((err) => {
+    console.error("portal configuration unavailable", err);
+    return undefined;
+  });
 
   if (flow === "payment") {
     try {
       const session = await stripe.billingPortal.sessions.create({
         customer: ctx.org.stripe_customer_id,
+        configuration,
         return_url,
         flow_data: { type: "payment_method_update" },
       });
@@ -49,6 +57,7 @@ export async function POST(request: Request) {
       try {
         const session = await stripe.billingPortal.sessions.create({
           customer: ctx.org.stripe_customer_id,
+        configuration,
           return_url,
           flow_data:
             flow === "cancel"
@@ -62,6 +71,6 @@ export async function POST(request: Request) {
     }
   }
 
-  const session = await stripe.billingPortal.sessions.create({ customer: ctx.org.stripe_customer_id, return_url });
+  const session = await stripe.billingPortal.sessions.create({ customer: ctx.org.stripe_customer_id, configuration, return_url });
   return NextResponse.redirect(session.url, 303);
 }
