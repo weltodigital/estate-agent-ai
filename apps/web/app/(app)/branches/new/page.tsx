@@ -6,7 +6,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Field, Input } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireOrg } from "@/lib/auth";
+import { getPlans } from "@privett/core";
 import { countActiveBranches } from "@/lib/billing";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { PRICES_GBP } from "@/lib/seo";
 import { createBranch } from "./actions";
 
 export const metadata = { title: "Add a branch" };
@@ -16,21 +19,86 @@ export default async function NewBranchPage() {
   const used = await countActiveBranches(ctx.org.id);
 
   if (!ctx.plan.paid || used >= ctx.plan.limits.maxBranches) {
+    const plans = getPlans();
+    const agency = plans.agency.limits;
+    const isOwner = ctx.role === "owner";
+    const current = ctx.plan.paid ? plans[ctx.plan.planId] : null;
+    const singleBranchPlan = ctx.plan.paid && ctx.plan.limits.maxBranches === 1;
+    const { data: existing } = await (await getSupabaseServerClient())
+      .from("branches")
+      .select("name")
+      .eq("org_id", ctx.org.id)
+      .is("archived_at", null)
+      .order("created_at")
+      .limit(1);
+    const firstBranch = existing?.[0]?.name ?? "your current branch";
+    const twoBranches = `£${PRICES_GBP.agency * agency.minBranches}`;
+
+    // Owners go straight to Stripe's plan / branch-count screen.
+    const action = (label: string) =>
+      isOwner ? (
+        <form action="/api/stripe/portal" method="post">
+          <input type="hidden" name="flow" value="update" />
+          <input type="hidden" name="return_to" value="/branches/new" />
+          <Button type="submit">{label}</Button>
+        </form>
+      ) : (
+        <p className="text-small text-ink-muted">Ask an owner of {ctx.org.name} to change the plan.</p>
+      );
+
     return (
       <div className="mx-auto max-w-2xl">
         <PageHeader title="Add a branch" />
-        <EmptyState
-          title={ctx.plan.paid ? "You've used every branch on your plan" : "Tracking a branch needs a plan"}
-          action={
-            <Link href="/settings/billing" className={buttonClasses("primary")}>
-              {ctx.plan.paid ? "Add branches" : "Choose a plan"}
-            </Link>
-          }
-        >
-          {ctx.plan.paid
-            ? `Your plan covers ${ctx.plan.limits.maxBranches} branch${ctx.plan.limits.maxBranches === 1 ? "" : "es"}.`
-            : "Plans include weekly scans across ChatGPT, Perplexity, Gemini and Claude, with fixes for each branch."}
-        </EmptyState>
+        {!ctx.plan.paid ? (
+          <EmptyState
+            title="Tracking a branch needs a plan"
+            action={<Link href="/settings/billing" className={buttonClasses("primary")}>Choose a plan</Link>}
+          >
+            Plans start at £{PRICES_GBP.starter} a month and include weekly scans, every answer and fixes for each branch.
+          </EmptyState>
+        ) : singleBranchPlan ? (
+          <Card>
+            <CardBody className="space-y-4">
+              <div>
+                <h2 className="text-heading text-ink">Your {current!.name} plan covers one branch</h2>
+                <p className="mt-1 text-ink-muted">To track more than one branch, switch to <strong className="text-ink">Agency</strong>.</p>
+              </div>
+              <ul className="space-y-2 text-sm text-ink">
+                <li>
+                  £{PRICES_GBP.agency} per branch a month, minimum {agency.minBranches} branches.
+                </li>
+                <li>
+                  {firstBranch} moves across with you, so two branches cost {twoBranches} a month, replacing your{" "}
+                  {`£${PRICES_GBP[ctx.plan.planId as keyof typeof PRICES_GBP]}`} a month {current!.name} plan.
+                </li>
+                <li>
+                  Each branch gets all four assistants and up to {agency.promptsPerBranch} questions
+                  {agency.promptsPerBranch < ctx.plan.limits.promptsPerBranch ? ` (${current!.name} has ${ctx.plan.limits.promptsPerBranch})` : ""}.
+                </li>
+                <li>Stripe adjusts your bill for the rest of this month automatically.</li>
+              </ul>
+              <div className="flex flex-wrap items-center gap-4 pt-1">
+                {action("Switch to Agency")}
+                <Link href="/pricing" className="text-sm text-brand hover:underline">Compare plans</Link>
+              </div>
+            </CardBody>
+          </Card>
+        ) : (
+          <Card>
+            <CardBody className="space-y-4">
+              <div>
+                <h2 className="text-heading text-ink">
+                  Your Agency plan covers {ctx.plan.limits.maxBranches} branches, and you&apos;re tracking all of them
+                </h2>
+                <p className="mt-1 text-ink-muted">
+                  Add another branch to your plan for £{PRICES_GBP.agency} a month. Stripe adjusts
+                  your bill for the rest of this month automatically, then you can set the new branch up here.
+                </p>
+              </div>
+              {action("Add a branch to my plan")}
+            </CardBody>
+          </Card>
+        )}
       </div>
     );
   }

@@ -32,9 +32,10 @@
     ".next-hdr/types/**/*.ts",
     ".next-home/types/**/*.ts",
     ".next-logo/types/**/*.ts",
+    ".next-tip/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-tip/types/**/*.ts"
+    ".next-nb/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
