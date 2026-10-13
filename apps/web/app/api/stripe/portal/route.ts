@@ -7,9 +7,10 @@ import { appUrl } from "@/lib/utils";
 export const runtime = "nodejs";
 
 /**
- * Opens the Stripe customer portal. With `flow=update` it goes straight to
- * the plan / branch-count screen for the current subscription (used by "Add
- * a branch"); if Stripe can't open that screen, the normal portal opens.
+ * Opens the Stripe customer portal, optionally straight at one screen:
+ * `flow=update` (plan / branch count), `flow=payment` (card) or
+ * `flow=cancel`. If Stripe can't open that screen, the normal portal opens
+ * (it also lists invoices).
  */
 export async function POST(request: Request) {
   const ctx = await requireOrg();
@@ -22,7 +23,20 @@ export async function POST(request: Request) {
   const return_url = appUrl(returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/settings/billing");
   const stripe = getStripe();
 
-  if (flow === "update") {
+  if (flow === "payment") {
+    try {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: ctx.org.stripe_customer_id,
+        return_url,
+        flow_data: { type: "payment_method_update" },
+      });
+      return NextResponse.redirect(session.url, 303);
+    } catch (err) {
+      console.error("portal payment flow unavailable, opening the portal instead", err);
+    }
+  }
+
+  if (flow === "update" || flow === "cancel") {
     const { data: sub } = await getSupabaseAdminClient()
       .from("subscriptions")
       .select("stripe_subscription_id")
@@ -36,7 +50,10 @@ export async function POST(request: Request) {
         const session = await stripe.billingPortal.sessions.create({
           customer: ctx.org.stripe_customer_id,
           return_url,
-          flow_data: { type: "subscription_update", subscription_update: { subscription: sub.stripe_subscription_id } },
+          flow_data:
+            flow === "cancel"
+              ? { type: "subscription_cancel", subscription_cancel: { subscription: sub.stripe_subscription_id } }
+              : { type: "subscription_update", subscription_update: { subscription: sub.stripe_subscription_id } },
         });
         return NextResponse.redirect(session.url, 303);
       } catch (err) {
