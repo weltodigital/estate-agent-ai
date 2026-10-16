@@ -38,3 +38,12 @@ export async function removeMember(formData: FormData) {
     .eq("user_id", String(formData.get("user_id")));
   revalidatePath("/settings/team");
 }
+
+export async function makeOwner(formData: FormData) {
+  const ctx = await requireOrg();
+  const supabase = await getSupabaseServerClient();
+  // The function checks the caller is an owner of this organisation.
+  await supabase.rpc("make_org_owner", { target_org: ctx.org.id, target_user: String(formData.get("user_id")) });
+  revalidatePath("/settings/team");
+  revalidatePath("/settings/account");
+}

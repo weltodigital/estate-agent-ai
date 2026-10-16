@@ -12,7 +12,12 @@ async function syncSubscription(sub: Stripe.Subscription) {
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
   let orgId = sub.metadata?.org_id ?? null;
-  if (!orgId) {
+  if (orgId) {
+    // The organisation may have been deleted (its subscriptions are cancelled
+    // as it goes); the cancellation event then has nothing to update.
+    const { data } = await admin.from("organisations").select("id").eq("id", orgId).maybeSingle();
+    if (!data) return;
+  } else {
     const { data } = await admin.from("organisations").select("id").eq("stripe_customer_id", customerId).maybeSingle();
     orgId = data?.id ?? null;
   }

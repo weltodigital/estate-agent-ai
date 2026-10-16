@@ -70,4 +70,20 @@ assert.equal(await as(B, async () => (await q(`select count(*)::int n from branc
 assert.equal(await asAnon(async () => (await q(`update recommendations set status='done' where id=$1`, [demoRec])).affectedRows), 0, "anon can't write demo rows");
 assert.equal(await as(B, async () => (await q(`update recommendations set status='done' where id=$1`, [demoRec])).affectedRows), 0, "non-members can't write demo rows");
 await assert.rejects(asAnon(() => q(`insert into branches (org_id,name,town) values ($1,'x','y')`, [demoOrg])), /row-level security|permission denied/);
+
+// Account deletion: records a user created don't block deleting them, and
+// deleting an organisation removes everything scoped to it.
+await q(`insert into organisation_members (org_id,user_id,role) values ($1,$2,'member')`, [orgB, A]);
+await assert.rejects(as(A, () => q(`select make_org_owner($1,$2)`, [orgB, A])), /Only an owner/);
+await as(B, () => q(`select make_org_owner($1,$2)`, [orgB, A]));
+assert.equal((await q(`select role from organisation_members where org_id=$1 and user_id=$2`, [orgB, A])).rows[0].role, "owner");
+const invite = (await q(`insert into organisation_invites (org_id,email,invited_by) values ($1,'c@x.com',$2) returning id`, [orgB, B])).rows[0].id;
+await q(`insert into free_scans (email,website,domain,town,agency_name,ip_hash,org_id,claimed_by) values ('b@x.com','https://b.co.uk','b.co.uk','Portsmouth','B','h',$1,$2)`, [orgB, B]);
+await q(`delete from auth.users where id=$1`, [B]);
+assert.equal((await q(`select invited_by from organisation_invites where id=$1`, [invite])).rows[0].invited_by, null, "invite survives its inviter");
+assert.equal((await q(`select count(*)::int n from organisation_members where user_id=$1`, [B])).rows[0].n, 0);
+await q(`delete from organisations where id=$1`, [orgA]);
+for (const t of ["branches", "scan_runs", "scan_results", "recommendations", "organisation_members"]) {
+  assert.equal((await q(`select count(*)::int n from ${t} where org_id=$1`, [orgA])).rows[0].n, 0, `${t} removed with the org`);
+}
 console.log("db tests passed");

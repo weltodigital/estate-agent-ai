@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { requireOrg } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { appUrl, formatDate } from "@/lib/utils";
-import { inviteMember, removeMember, revokeInvite } from "./actions";
+import { inviteMember, makeOwner, removeMember, revokeInvite } from "./actions";
 
 export const metadata = { title: "Team" };
 
@@ -35,6 +35,12 @@ export default async function TeamPage() {
                   {p?.full_name ? <p className="truncate text-ink-muted">{p.email}</p> : null}
                 </div>
                 <Badge tone={m.role === "owner" ? "brand" : "neutral"}>{m.role}</Badge>
+                {isOwner && m.user_id !== ctx.user.id && m.role !== "owner" ? (
+                  <form action={makeOwner}>
+                    <input type="hidden" name="user_id" value={m.user_id} />
+                    <Button variant="ghost" size="sm">Make owner</Button>
+                  </form>
+                ) : null}
                 {isOwner && m.user_id !== ctx.user.id ? (
                   <form action={removeMember}>
                     <input type="hidden" name="user_id" value={m.user_id} />
