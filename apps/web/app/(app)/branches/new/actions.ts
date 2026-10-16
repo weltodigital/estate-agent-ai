@@ -5,6 +5,7 @@ import type { ActionResult } from "@/components/platform/action-form";
 import { requireOrg } from "@/lib/auth";
 import { countActiveBranches } from "@/lib/billing";
 import { createBranchWithPrompts, normaliseWebsite, splitList } from "@/lib/branches";
+import { lookupCounty } from "@/lib/county";
 import { enqueueScan } from "@/lib/scans";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -25,6 +26,9 @@ export async function createBranch(_prev: ActionResult, formData: FormData): Pro
     return { error: `Your plan covers up to ${ctx.plan.limits.maxAreas} neighbourhoods per branch. Remove ${areas.length - ctx.plan.limits.maxAreas} to save.` };
   }
 
+  const postcode = String(formData.get("postcode") ?? "").trim().toUpperCase() || null;
+  const county = await lookupCounty(postcode, town);
+
   let branchId: string;
   try {
     ({ branchId } = await createBranchWithPrompts(getSupabaseAdminClient(), {
@@ -34,7 +38,8 @@ export async function createBranch(_prev: ActionResult, formData: FormData): Pro
       website: website || null,
       town: town.slice(0, 80),
       areas,
-      postcode: String(formData.get("postcode") ?? "").trim().toUpperCase() || null,
+      postcode,
+      county,
       promptLimit: ctx.plan.limits.promptsPerBranch,
     }));
   } catch (err) {

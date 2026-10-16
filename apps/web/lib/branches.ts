@@ -43,6 +43,8 @@ export async function createBranchWithPrompts(
     town: string;
     areas: string[];
     postcode: string | null;
+    /** Only when the town's name is shared elsewhere (lib/county.ts). */
+    county?: string | null;
     promptLimit: number;
     /** Render only town-level prompts (free scan). */
     townOnly?: boolean;
@@ -60,6 +62,7 @@ export async function createBranchWithPrompts(
       town: input.town,
       areas: input.areas,
       postcode: input.postcode,
+      county: input.county ?? null,
     })
     .select("id")
     .single();
@@ -68,7 +71,7 @@ export async function createBranchWithPrompts(
   const library = await loadPromptLibrary(admin);
   const rendered = renderPromptsForBranch(
     input.townOnly ? library.filter((t) => !t.uses_area) : library,
-    { town: input.town, areas: input.townOnly ? [] : input.areas },
+    { town: input.town, areas: input.townOnly ? [] : input.areas, county: input.county },
     input.promptLimit,
   );
   if (rendered.length) {

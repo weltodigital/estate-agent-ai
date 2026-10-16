@@ -123,7 +123,7 @@ export default async function NewBranchPage() {
               <Field label="Town">
                 <Input name="town" required maxLength={80} placeholder="Portsmouth" />
               </Field>
-              <Field label="Postcode">
+              <Field label="Postcode" hint="If another town shares your town's name, we use this to add your county to questions.">
                 <Input name="postcode" maxLength={10} />
               </Field>
             </div>

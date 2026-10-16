@@ -145,6 +145,7 @@ export interface BranchRow {
   town: string;
   areas: string[];
   postcode: string | null;
+  county: string | null;
   place_id: string | null;
   tracking_key: string;
   archived_at: string | null;

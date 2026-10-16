@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { INTENT_GROUPS, renderPromptsForBranch, type IntentGroup } from "@privett/core";
+import { INTENT_GROUPS, renderPromptsForBranch, renderPromptText, type IntentGroup } from "@privett/core";
 import type { ActionResult } from "@/components/platform/action-form";
 import { requireBranch } from "@/lib/auth";
 import { loadPromptLibrary, normaliseWebsite, splitList } from "@/lib/branches";
+import { lookupCounty } from "@/lib/county";
 import { enqueueScan } from "@/lib/scans";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -34,6 +35,12 @@ export async function updateBranch(_prev: ActionResult, formData: FormData): Pro
     return { error: `Your plan covers up to ${plan.limits.maxAreas} neighbourhoods per branch. Remove ${areas.length - plan.limits.maxAreas} to save.` };
   }
 
+  const postcode = String(formData.get("postcode") ?? "").trim().toUpperCase() || null;
+  const countyInput = String(formData.get("county") ?? "").trim().slice(0, 60);
+  const placeChanged = postcode !== branch.postcode || town.toLowerCase() !== branch.town.toLowerCase();
+  // A new town or postcode gets a fresh lookup, unless the county was edited too.
+  const county = placeChanged && countyInput === (branch.county ?? "") ? await lookupCounty(postcode, town) : countyInput || null;
+
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase
     .from("branches")
@@ -44,12 +51,39 @@ export async function updateBranch(_prev: ActionResult, formData: FormData): Pro
       domain,
       aliases: splitList(formData.get("aliases")).slice(0, 10),
       areas,
-      postcode: String(formData.get("postcode") ?? "").trim().toUpperCase() || null,
+      postcode,
+      county,
     })
     .eq("id", branch.id);
   if (error) return { error: "Couldn't save. Please try again." };
+  if (town !== branch.town || county !== branch.county) {
+    await rerenderLibraryPrompts(branch.id, branch, { town: town.slice(0, 80), county });
+  }
   revalidatePath(`/branches/${branch.id}`, "layout");
-  return { ok: "Saved. Changes apply from the next scan." };
+  return { ok: county ? `Saved. Questions about your town now say “${town}, ${county}”.` : "Saved. Changes apply from the next scan." };
+}
+
+/**
+ * After the town or county changes, rewrite library questions to match,
+ * unless the user has edited their wording.
+ */
+async function rerenderLibraryPrompts(
+  branchId: string,
+  before: { town: string; county: string | null },
+  after: { town: string; county: string | null },
+) {
+  const supabase = await getSupabaseServerClient();
+  const [library, { data: rows }] = await Promise.all([
+    loadPromptLibrary(getSupabaseAdminClient()),
+    supabase.from("branch_prompts").select("id, prompt_id, area, text").eq("branch_id", branchId).not("prompt_id", "is", null),
+  ]);
+  const templates = new Map(library.map((t) => [t.id, t.template]));
+  for (const r of rows ?? []) {
+    const template = templates.get(r.prompt_id as string);
+    if (!template || r.text !== renderPromptText(template, r.area, before)) continue;
+    const text = renderPromptText(template, r.area, after);
+    if (text !== r.text) await supabase.from("branch_prompts").update({ text }).eq("id", r.id).eq("branch_id", branchId);
+  }
 }
 
 export async function updatePromptText(_prev: ActionResult, formData: FormData): Promise<ActionResult> {

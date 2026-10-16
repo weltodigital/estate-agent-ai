@@ -126,6 +126,16 @@ export default async function BranchSettingsPage({
               <Field label="Postcode">
                 <Input name="postcode" defaultValue={branch.postcode ?? ""} />
               </Field>
+              <Field
+                label="County in questions"
+                hint={
+                  branch.county
+                    ? `Questions say “${branch.town}, ${branch.county}”, because other places share the name. Clear it to leave the county out.`
+                    : "Only needed if another town shares your town's name. We fill it in from your postcode."
+                }
+              >
+                <Input name="county" defaultValue={branch.county ?? ""} maxLength={60} />
+              </Field>
             </div>
             <Field label="Other names AI might use" hint="Comma separated. Exact matches count as mentions; near matches are flagged for review.">
               <Input name="aliases" defaultValue={branch.aliases.join(", ")} />

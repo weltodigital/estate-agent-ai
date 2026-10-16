@@ -15,15 +15,26 @@ export interface RenderedPrompt {
   area: string | null;
 }
 
+export interface PromptPlace {
+  town: string;
+  areas: string[];
+  /** Set only when another UK town or village shares the town's name. */
+  county?: string | null;
+}
+
 /**
- * Small places share names across the country (there's a Southsea in
- * Portsmouth and one near Wrexham), so an area is always asked about with its
- * town: "best estate agent in Drayton, Portsmouth". Templates that already
- * name the town are left as written.
+ * Small places share names across the country, so questions name enough to
+ * pin the place down. A town that shares its name gets its county ("best
+ * estate agent in Newport, Isle of Wight"); an area always gets its town
+ * ("best estate agent in Drayton, Portsmouth"). Templates that already name
+ * the town are left as written.
  */
-function qualifiedArea(template: string, area: string, town: string): string {
-  if (template.includes("{town}") || area.trim().toLowerCase() === town.trim().toLowerCase()) return area;
-  return `${area}, ${town}`;
+export function renderPromptText(template: string, area: string | null, place: Pick<PromptPlace, "town" | "county">): string {
+  const town = place.town;
+  if (area === null) return template.replaceAll("{town}", place.county ? `${town}, ${place.county}` : town);
+  const sameAsTown = area.trim().toLowerCase() === town.trim().toLowerCase();
+  const areaText = template.includes("{town}") || sameAsTown ? area : `${area}, ${town}`;
+  return template.replaceAll("{area}", areaText).replaceAll("{town}", town);
 }
 
 /**
@@ -31,30 +42,12 @@ function qualifiedArea(template: string, area: string, town: string): string {
  * per area. Ordered so the most important prompts survive the plan cap:
  * one of each intent first, then the rest round-robin.
  */
-export function renderPromptsForBranch(
-  library: PromptTemplate[],
-  branch: { town: string; areas: string[] },
-  limit: number,
-): RenderedPrompt[] {
+export function renderPromptsForBranch(library: PromptTemplate[], branch: PromptPlace, limit: number): RenderedPrompt[] {
   const rendered: RenderedPrompt[] = [];
   const sorted = [...library].sort((a, b) => a.sort_order - b.sort_order);
   for (const t of sorted) {
-    if (t.uses_area) {
-      for (const area of branch.areas) {
-        rendered.push({
-          prompt_id: t.id,
-          text: t.template.replaceAll("{area}", qualifiedArea(t.template, area, branch.town)).replaceAll("{town}", branch.town),
-          intent_group: t.intent_group,
-          area,
-        });
-      }
-    } else {
-      rendered.push({
-        prompt_id: t.id,
-        text: t.template.replaceAll("{town}", branch.town),
-        intent_group: t.intent_group,
-        area: null,
-      });
+    for (const area of t.uses_area ? branch.areas : [null]) {
+      rendered.push({ prompt_id: t.id, text: renderPromptText(t.template, area, branch), intent_group: t.intent_group, area });
     }
   }
 
