@@ -127,7 +127,7 @@ export default async function NewBranchPage() {
                 <Input name="postcode" maxLength={10} />
               </Field>
             </div>
-            <Field label="Neighbourhoods you cover" hint={`Up to ${ctx.plan.limits.maxAreas}, comma separated, e.g. Southsea, Drayton. We'll track questions about each.`}>
+            <Field label="Neighbourhoods you cover" hint={`Up to ${ctx.plan.limits.maxAreas}, comma separated, e.g. Southsea, Drayton. We always ask with your town, e.g. "best estate agent in Drayton, Portsmouth", so places with the same name elsewhere don't get mixed in.`}>
               <Input name="areas" />
             </Field>
             <Button type="submit">Save and start scanning</Button>

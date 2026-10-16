@@ -135,7 +135,7 @@ export default async function BranchSettingsPage({
               hint={
                 droppedAreas.length
                   ? `Your plan covers the first ${plan.limits.maxAreas}, so ${droppedAreas.join(", ")} ${droppedAreas.length === 1 ? "isn't" : "aren't"} tracked. Remove or reorder to choose which.`
-                  : `Up to ${plan.limits.maxAreas}, comma separated. Add questions about new areas below.`
+                  : `Up to ${plan.limits.maxAreas}, comma separated. We always ask about them with your town, e.g. "in Drayton, ${branch.town}". Add questions about new areas below.`
               }
             >
               <Input name="areas" defaultValue={branch.areas.join(", ")} />

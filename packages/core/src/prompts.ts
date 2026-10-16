@@ -16,6 +16,17 @@ export interface RenderedPrompt {
 }
 
 /**
+ * Small places share names across the country (there's a Southsea in
+ * Portsmouth and one near Wrexham), so an area is always asked about with its
+ * town: "best estate agent in Drayton, Portsmouth". Templates that already
+ * name the town are left as written.
+ */
+function qualifiedArea(template: string, area: string, town: string): string {
+  if (template.includes("{town}") || area.trim().toLowerCase() === town.trim().toLowerCase()) return area;
+  return `${area}, ${town}`;
+}
+
+/**
  * Render the library for a branch. Town templates once; area templates once
  * per area. Ordered so the most important prompts survive the plan cap:
  * one of each intent first, then the rest round-robin.
@@ -32,7 +43,7 @@ export function renderPromptsForBranch(
       for (const area of branch.areas) {
         rendered.push({
           prompt_id: t.id,
-          text: t.template.replaceAll("{area}", area).replaceAll("{town}", branch.town),
+          text: t.template.replaceAll("{area}", qualifiedArea(t.template, area, branch.town)).replaceAll("{town}", branch.town),
           intent_group: t.intent_group,
           area,
         });
