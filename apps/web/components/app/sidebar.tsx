@@ -11,7 +11,7 @@ export function Sidebar({ ctx, branches }: { ctx: OrgContext; branches: { id: st
   const nav = (
     <>
       <OrgSwitcher current={ctx.org.id} memberships={ctx.memberships} />
-      <nav className="flex-1 space-y-6 px-3 py-4 text-sm">
+      <nav className="space-y-6 px-3 py-4 text-sm">
         <div>
           <p className="px-2 pb-1 text-label uppercase text-ink-muted">Branches</p>
           <ul className="space-y-0.5">
@@ -64,13 +64,13 @@ export function Sidebar({ ctx, branches }: { ctx: OrgContext; branches: { id: st
             ) : null}
           </ul>
         </div>
+        <div className="border-t border-hairline px-2 pt-4 text-small text-ink-muted">
+          <p className="truncate">{ctx.user.email}</p>
+          <form action="/auth/signout" method="post">
+            <button className="mt-1 text-ink-muted underline-offset-2 hover:underline">Sign out</button>
+          </form>
+        </div>
       </nav>
-      <div className="border-t border-hairline px-5 py-4 text-small text-ink-muted">
-        <p className="truncate">{ctx.user.email}</p>
-        <form action="/auth/signout" method="post">
-          <button className="mt-1 text-ink-muted underline-offset-2 hover:underline">Sign out</button>
-        </form>
-      </div>
     </>
   );
   return (
