@@ -4,7 +4,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { requireBranch } from "@/lib/auth";
-import { attributeCitations, isCitationGap, normaliseAgentName } from "@privett/core";
+import { attributeCitations, isCitationGap, normaliseAgentName, uncreditedAgents } from "@privett/core";
 import { loadBranchResults, loadCitations, loadCompetitors } from "@/lib/data/branch-data";
 import { parseFilters, type SearchParams } from "@/lib/data/filters";
 import { cn } from "@/lib/utils";
@@ -57,6 +57,11 @@ export default async function CitationsPage({
     competitors
       .filter((c) => !hidden.has(c.id))
       .map((c) => ({ id: c.id, normalisedName: normaliseAgentName(c.name, places), domain: c.domain })),
+    // Hidden or unmatched agencies aren't credited, but their sites are still agency sites.
+    uncreditedAgents(
+      scoped.flatMap((r) => r.agent_mentions),
+      competitors.filter((c) => hidden.has(c.id)).map((c) => ({ name: c.name, normalisedName: normaliseAgentName(c.name, places), domain: c.domain })),
+    ),
   );
   const gaps = stats.filter(isCitationGap);
   const totalAnswers = new Set(citations.map((c) => c.scan_result_id)).size;

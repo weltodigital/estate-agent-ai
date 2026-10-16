@@ -59,6 +59,31 @@ describe("attributeCitations", () => {
     expect(by["getagent.co.uk"]).toMatchObject({ aboutIds: [], competitorIds: ["w"] });
   });
 
+  it("never treats any agency's site as a listing gap", () => {
+    const stats = attributeCitations(
+      [
+        // A national agency nobody named in this town.
+        cite("r2", "https://www.purplebricks.co.uk/"),
+        // One page that only an agency's site has.
+        cite("r2", "https://www.smallagent.co.uk/book-a-valuation"),
+        // A hidden competitor, and a name we couldn't match confidently.
+        cite("r2", "https://www.hiddenhomes.co.uk/"),
+        cite("r2", "https://www.oakleyproperty.co.uk/about"),
+        cite("r2", "https://www.farnhamherald.co.uk/news/housing"),
+      ],
+      names,
+      branch,
+      comps,
+      [{ normalisedName: "hidden homes", domain: "hiddenhomes.co.uk" }, { normalisedName: "oakley", name: "Oakley Property", domain: null }],
+    );
+    const by = Object.fromEntries(stats.map((s) => [s.domain, s]));
+    for (const d of ["purplebricks.co.uk", "smallagent.co.uk", "hiddenhomes.co.uk", "oakleyproperty.co.uk"]) {
+      expect(isCitationGap(by[d]!), d).toBe(false);
+    }
+    // Local press is still a real gap.
+    expect(isCitationGap(by["farnhamherald.co.uk"]!)).toBe(true);
+  });
+
   it("merges country subdomains into one site", () => {
     const stats = attributeCitations(
       [cite("r2", "https://uk.trustpilot.com/review/x"), cite("r2", "https://www.trustpilot.com/review/y")],

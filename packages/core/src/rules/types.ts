@@ -59,6 +59,8 @@ export interface RuleContext {
   citations: RuleCitationStat[];
   /** Competitors' own sites that AI cites, most cited first. */
   competitorSites?: RuleCompetitorSite[];
+  /** Cited sites that belong to any agency: never somewhere to get listed. */
+  agentSiteDomains?: string[];
   branchVisibility: number | null;
   totalResponses: number;
 }

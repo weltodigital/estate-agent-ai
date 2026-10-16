@@ -16,7 +16,8 @@ import {
   CITATION_SOURCE_GUIDES,
   DRAFT_NOTE,
 } from "./assets";
-import { AGENCY_PAGE_LABEL, type AgencyPageKind } from "../citations";
+import { AGENCY_PAGE_LABEL, isKnownAgencyDomain, type AgencyPageKind } from "../citations";
+import { domainMatches } from "../text";
 import type { RecommendationDraft, Rule, RuleContext } from "./types";
 
 export type * from "./types";
@@ -122,8 +123,10 @@ const citationGap: Rule = {
           c.competitorsCited.length > 0 &&
           c.responses >= 2 &&
           c.domain !== own &&
-          // Competitors' own websites aren't somewhere you can "get listed".
-          !ctx.topCompetitors.some((tc) => tc.domain && c.domain.endsWith(tc.domain)),
+          // Agencies' own websites aren't somewhere you can "get listed".
+          !ctx.agentSiteDomains?.includes(c.domain) &&
+          !isKnownAgencyDomain(c.domain) &&
+          !ctx.topCompetitors.some((tc) => tc.domain && domainMatches(c.domain, tc.domain)),
       )
       .sort((a, b) => b.responses - a.responses)
       .slice(0, 5);

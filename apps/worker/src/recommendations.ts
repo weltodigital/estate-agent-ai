@@ -10,7 +10,9 @@ import {
   getScanSettings,
   attributeCitations,
   classifyAgencyPage,
+  isKnownAgencyDomain,
   normaliseAgentName,
+  uncreditedAgents,
   type CitationSubject,
   type ResultNames,
   perPromptMetrics,
@@ -54,7 +56,8 @@ export function buildCitationStats(
   branchNormalisedNames: string[],
   competitors: CitationSubject[],
   branchDomain: string | null = null,
-): RuleCitationStat[] {
+  otherAgents: Omit<CitationSubject, "id">[] = [],
+): { stats: RuleCitationStat[]; agentSiteDomains: string[] } {
   const parsedIds = new Set(results.filter((r) => r.parse_status === "ok").map((r) => r.id));
   const names = new Map<string, ResultNames>();
   for (const m of mentions) {
@@ -64,21 +67,26 @@ export function buildCitationStats(
     else if (m.matched_competitor_id && competitorNames.has(m.matched_competitor_id)) n.competitorIds.push(m.matched_competitor_id);
     names.set(m.scan_result_id, n);
   }
-  return attributeCitations(
+  const attributed = attributeCitations(
     citations
       .filter((c) => parsedIds.has(c.scan_result_id))
       .map((c) => ({ resultId: c.scan_result_id, url: c.url, domain: c.domain, isOwnDomain: c.is_own_domain })),
     names,
     { normalisedNames: branchNormalisedNames, domain: branchDomain },
     competitors,
-  )
-    .filter((a) => !a.isAgentSite && a.domain !== branchDomain)
-    .map((a) => ({
-      domain: a.domain,
-      responses: a.responses,
-      citesBranch: a.citesBranch,
-      competitorsCited: a.competitorIds.map((id) => competitorNames.get(id)!).filter(Boolean),
-    }));
+    otherAgents,
+  );
+  return {
+    stats: attributed
+      .filter((a) => !a.isAgentSite && a.domain !== branchDomain)
+      .map((a) => ({
+        domain: a.domain,
+        responses: a.responses,
+        citesBranch: a.citesBranch,
+        competitorsCited: a.competitorIds.map((id) => competitorNames.get(id)!).filter(Boolean),
+      })),
+    agentSiteDomains: attributed.filter((a) => a.isAgentSite).map((a) => a.domain),
+  };
 }
 
 /**
@@ -134,15 +142,22 @@ export async function buildRuleContext(branch: BranchRow): Promise<RuleContext> 
   const threshold = getScanSettings().lowSampleThreshold;
   const branchMetrics = computeSubjectMetrics(responses, BRANCH_KEY, { lowSampleThreshold: threshold });
 
-  const competitors = must(await db().from("competitors").select("id, name, domain, status").eq("branch_id", branch.id).neq("status", "hidden"), "select competitors") as {
+  const allCompetitors = must(await db().from("competitors").select("id, name, domain, status").eq("branch_id", branch.id), "select competitors") as {
     id: string;
     name: string;
     domain: string | null;
+    status: string;
   }[];
+  const competitors = allCompetitors.filter((c) => c.status !== "hidden");
   const names = new Map(competitors.map((c) => [c.id, c.name]));
   const places = [branch.town, ...branch.areas];
   const branchNames = [branch.name, ...branch.aliases].map((n) => normaliseAgentName(n, places));
   const citationSubjects = competitors.map((c) => ({ id: c.id, normalisedName: normaliseAgentName(c.name, places), domain: c.domain, name: c.name }));
+  // Hidden or unmatched agencies aren't credited, but their sites are still agency sites.
+  const otherAgents = uncreditedAgents(
+    mentions,
+    allCompetitors.filter((c) => c.status === "hidden").map((c) => ({ name: c.name, normalisedName: normaliseAgentName(c.name, places), domain: c.domain })),
+  );
   const ranked = competitors
     .map((c) => ({ c, vis: computeSubjectMetrics(responses, c.id).visibility }))
     .filter((x) => (x.vis ?? 0) > 0)
@@ -192,13 +207,15 @@ export async function buildRuleContext(branch: BranchRow): Promise<RuleContext> 
     };
   });
 
+  const citationStats = buildCitationStats(results, mentions, citations, names, branchNames, citationSubjects, branch.domain, otherAgents);
   return {
     branch: { id: branch.id, name: branch.name, domain: branch.domain, website: branch.website, town: branch.town, areas: branch.areas, postcode: branch.postcode },
     crawl: branchCrawl.get(branch.id) ?? null,
     gbp: branchGbp.get(branch.id) ?? null,
     topCompetitors,
     prompts,
-    citations: buildCitationStats(results, mentions, citations, names, branchNames, citationSubjects, branch.domain),
+    citations: citationStats.stats,
+    agentSiteDomains: citationStats.agentSiteDomains,
     competitorSites: buildCompetitorSites(results, citations, names, branchNames, citationSubjects, branch.domain, places),
     branchVisibility: branchMetrics.visibility,
     totalResponses: branchMetrics.responses,
@@ -291,8 +308,22 @@ export async function generateRecommendations(branch: BranchRow, opts: { runId: 
     }
   }
 
+  // "Get listed on" items for a site we now know is an agency's own were
+  // never valid advice: remove them rather than report them as resolved.
+  const agentSites = new Set(ctx.agentSiteDomains ?? []);
+  const invalid = existing.filter((r) => {
+    if (r.rule_id !== "citation_gap" || fired.has(r.fingerprint)) return false;
+    const domain = r.fingerprint.slice("citation_gap:".length);
+    return agentSites.has(domain) || isKnownAgencyDomain(domain);
+  });
+  if (invalid.length) {
+    must(await db().from("recommendations").delete().in("id", invalid.map((r) => r.id)), "delete agency-site fixes");
+  }
+  const invalidIds = new Set(invalid.map((r) => r.id));
+
   // Items that no longer fire, where we had the data to know.
   for (const r of existing) {
+    if (invalidIds.has(r.id)) continue;
     if (fired.has(r.fingerprint) || r.verified_result === "resolved" || !canDecide(r.rule_id, ctx)) continue;
     must(await db().from("recommendations").update({ verified_at: now, verified_result: "resolved" }).eq("id", r.id), "resolve recommendation");
   }

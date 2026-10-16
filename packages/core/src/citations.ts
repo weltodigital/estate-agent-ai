@@ -11,13 +11,37 @@ import { domainMatches, normaliseDomain } from "./text";
 const NON_AGENT_DOMAINS = [
   "rightmove.co.uk", "zoopla.co.uk", "onthemarket.com", "primelocation.com", "home.co.uk", "homemove.com",
   "getagent.co.uk", "allagents.co.uk", "agentseeker.co.uk", "compareagents.co.uk", "yably.co.uk", "thinkproperty.co.uk",
-  "estateagentsranked.co.uk", "housesimple.com", "nimblefins.co.uk", "which.co.uk", "moneysavingexpert.com",
+  "estateagentsranked.co.uk", "nimblefins.co.uk", "which.co.uk", "moneysavingexpert.com",
   "trustpilot.com", "reviews.co.uk", "reviews.io", "feefo.com", "yell.com", "thomsonlocal.com", "192.com", "cylex-uk.co.uk",
   "google.com", "google.co.uk", "maps.app.goo.gl", "facebook.com", "instagram.com", "linkedin.com", "x.com", "twitter.com",
   "youtube.com", "tiktok.com", "reddit.com", "wikipedia.org", "bbc.co.uk", "theguardian.com", "propertyindustryeye.com",
   "britishpropertyawards.co.uk", "estateagenttoday.co.uk", "companieshouse.gov.uk", "find-and-update.company-information.service.gov.uk",
 ];
 const NON_AGENT_SUFFIXES = [".gov.uk", ".ac.uk", ".nhs.uk", ".police.uk", ".sch.uk"];
+
+/**
+ * National, online and franchise estate and letting agencies. Their sites are
+ * agency sites wherever they're cited, even in a town where nobody named
+ * them, so they're never suggested as somewhere to get listed.
+ */
+const KNOWN_AGENCY_DOMAINS = [
+  "purplebricks.co.uk", "purplebricks.com", "yopa.co.uk", "strike.co.uk", "emoov.co.uk", "tepilo.com", "doorsteps.co.uk",
+  "housesimple.com", "housesimple.co.uk", "settled.co.uk", "openrent.co.uk", "openrent.com", "upad.co.uk", "makeurmove.co.uk",
+  "foxtons.co.uk", "savills.com", "savills.co.uk", "knightfrank.co.uk", "knightfrank.com", "struttandparker.com",
+  "hamptons.co.uk", "chestertons.co.uk", "winkworth.co.uk", "johndwood.co.uk", "dexters.co.uk", "marshandparsons.co.uk",
+  "kfh.co.uk", "douglasandgordon.com", "jacksonstops.co.uk", "fineandcountry.co.uk", "fineandcountry.com", "carterjonas.co.uk",
+  "connells.co.uk", "sequencehome.co.uk", "yourmove.co.uk", "your-move.co.uk", "reedsrains.co.uk", "haart.co.uk",
+  "bairstoweves.co.uk", "williamhbrown.co.uk", "hunters.com", "belvoir.co.uk", "martinco.com", "northwoodhomes.co.uk",
+  "leaders.co.uk", "romans.co.uk", "abbotts.co.uk", "bridgfords.co.uk", "entwistlegreen.co.uk", "fox-and-sons.co.uk",
+  "foxandsons.co.uk", "manningstainton.co.uk", "taylorsestateagents.co.uk", "spencersproperty.co.uk", "chancellors.co.uk",
+  "goodfellows.co.uk", "ewemove.com", "exp-uk.co.uk", "expuk.co.uk", "keller-williams.co.uk",
+  "kwuk.com", "fitzroyproperty.co.uk", "remax.co.uk", "century21uk.com",
+];
+
+export function isKnownAgencyDomain(domain: string | null | undefined): boolean {
+  const d = normaliseDomain(domain ?? null);
+  return !!d && KNOWN_AGENCY_DOMAINS.some((n) => domainMatches(d, n));
+}
 
 export function isNonAgentDomain(domain: string | null | undefined): boolean {
   const d = normaliseDomain(domain ?? null);
@@ -89,13 +113,17 @@ export interface CitationSubject {
 
 // URL paths that only an estate or letting agency's own site has.
 const AGENCY_PATH = /(property-for-sale|properties-for-sale|for-sale|to-let|to-rent|property-to-rent|lettings|valuation|our-branches|branches|our-offices|estate-agents-in|sold-properties|landlords)/;
+// Paths a directory or news site doesn't have: one is enough.
+const AGENCY_ONLY_PATH = /(book-a-valuation|free-valuation|instant-valuation|request-a-valuation|our-branches|our-offices|meet-the-team|landlord-services|our-fees|sell-with-us|let-with-us|register-with-us)/;
 
 /** Pages on this site look like an agency's own (listings, valuations, branches). */
 export function looksLikeAgencySite(urls: string[]): boolean {
   let hits = 0;
   for (const u of urls) {
     try {
-      if (AGENCY_PATH.test(new URL(u).pathname.toLowerCase())) hits++;
+      const path = new URL(u).pathname.toLowerCase();
+      if (AGENCY_ONLY_PATH.test(path)) return true;
+      if (AGENCY_PATH.test(path)) hits++;
     } catch {
       // ignore malformed URLs
     }
@@ -153,12 +181,16 @@ function urlIsAbout(tokens: Set<string>, normalisedName: string): boolean {
  * in the same answer isn't enough: a visible agent co-occurs with every common
  * source. Competitors are also credited when named in answers citing the
  * source that don't name the branch.
+ *
+ * `otherAgents` are agencies that aren't credited (hidden competitors, names
+ * we couldn't match confidently): they only mark their sites as agency sites.
  */
 export function attributeCitations(
   citations: CitationIn[],
   namesByResult: Map<string, ResultNames>,
   branch: { normalisedNames: string[]; domain: string | null },
   competitors: CitationSubject[],
+  otherAgents: Omit<CitationSubject, "id">[] = [],
 ): CitationAttribution[] {
   const byDomain = new Map<string, CitationIn[]>();
   for (const c of citations) {
@@ -203,8 +235,15 @@ export function attributeCitations(
         citesBranch,
         competitorIds: [...comps],
         aboutIds: [...about],
-        // An unknown agency's site is still an agency site, never a listing gap.
-        isAgentSite: ownerComps.length > 0 || (!isNonAgentDomain(domain) && looksLikeAgencySite(urls)),
+        // Any agency's site, known to us or not, is never a listing gap.
+        isAgentSite:
+          ownerComps.length > 0 ||
+          isKnownAgencyDomain(domain) ||
+          (!isNonAgentDomain(domain) &&
+            (looksLikeAgencySite(urls) ||
+              otherAgents.some(
+                (a) => (a.domain && domainMatches(domain, a.domain)) || domainResemblesName(domain, a.normalisedName, a.name),
+              ))),
         ownerIds: ownerComps.map((s) => s.id),
         urls,
         responsesNamingBranch: namingBranch,
@@ -212,6 +251,24 @@ export function attributeCitations(
       };
     })
     .sort((a, b) => b.responses - a.responses || a.domain.localeCompare(b.domain));
+}
+
+/**
+ * Agencies named in answers that aren't credited as competitors (we couldn't
+ * match them confidently), plus hidden competitors. Passed to
+ * attributeCitations as `otherAgents` so their sites are never listing gaps.
+ */
+export function uncreditedAgents(
+  mentions: { agent_name: string; normalised_name: string; is_branch: boolean; matched_competitor_id: string | null; match_confidence?: string }[],
+  hiddenCompetitors: { name: string; normalisedName: string; domain: string | null }[] = [],
+): Omit<CitationSubject, "id">[] {
+  const out = new Map<string, Omit<CitationSubject, "id">>();
+  for (const m of mentions) {
+    if (m.is_branch || (m.matched_competitor_id && m.match_confidence === "high")) continue;
+    if (m.normalised_name && !out.has(m.normalised_name)) out.set(m.normalised_name, { normalisedName: m.normalised_name, name: m.agent_name, domain: null });
+  }
+  for (const c of hiddenCompetitors) out.set(`hidden:${c.normalisedName}`, c);
+  return [...out.values()];
 }
 
 /** A gap: a third-party source cited for competitors but never for the branch. */
